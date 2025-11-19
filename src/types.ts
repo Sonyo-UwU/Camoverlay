@@ -1,3 +1,6 @@
+export type Coords = { x: number, y: number; };
+export type FullCoords = { tile: Coords, pixel: Coords; };
+
 export type UserData = {
     allianceId: number,
     allianceRole: string,

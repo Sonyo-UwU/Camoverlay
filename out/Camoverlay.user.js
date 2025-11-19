@@ -242,6 +242,32 @@ div#ca-overlay {
       } else {
         displayUserData(json);
       }
+    } else if (contentType.includes("application/json") && endpoint.includes("/pixel")) {
+      const endpointSplitted = endpoint.split("/");
+      const tilesCoords = {
+        x: parseInt(endpointSplitted[endpointSplitted.length - 2]),
+        y: parseInt(endpointSplitted[endpointSplitted.length - 1])
+      };
+      const last = endpointSplitted[endpointSplitted.length - 1];
+      const pixelCoords = {
+        x: parseInt(last.substring(last.indexOf("?") + 3)),
+        y: parseInt(last.substring(last.indexOf("&") + 3))
+      };
+      const textCoords = `Tile X: ${tilesCoords.x}, Tile Y: ${tilesCoords.y} ; Pixel X: ${pixelCoords.x}, Pixel Y: ${pixelCoords.y}`;
+      const displayCoords = document.getElementById("ca-display-coords");
+      if (displayCoords !== null) {
+        displayCoords.textContent = textCoords;
+      } else {
+        const div = document.getElementsByClassName("text-base-content/80 mt-1 px-3 text-sm")[0];
+        if (div !== void 0) {
+          const span = document.createElement("span");
+          span.id = "ca-display-coords";
+          span.textContent = textCoords;
+          span.style.paddingInline = "calc(var(--spacing)*3)";
+          span.style.fontSize = "small";
+          div.insertAdjacentElement("beforebegin", span);
+        }
+      }
     }
     return response;
   };

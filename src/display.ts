@@ -1,10 +1,10 @@
-import { UserData } from './types';
+import type { UserData } from './types';
 
 declare function GM_addStyle(css: string): void;
 
 export function injectOverlay() {
     // Inject HTML
-    document.body.appendChild(document.createElement('div')).outerHTML =`
+    document.body.appendChild(document.createElement('div')).outerHTML = `
 %overlay.html%`;
 
     // Inject CSS
