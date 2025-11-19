@@ -2,7 +2,7 @@ import { displayStatus, displayTileCoords, displayUserData, importFont, injectOv
 import { addListeners } from './eventListeners';
 import { Manager } from './Manager';
 import type { ScriptGetInfo, UserData } from './types';
-import { parseCoordsFromPixelURL, parseCoordsFromTileURL } from './utils';
+import { coordsToString, parseCoordsFromPixelURL, parseCoordsFromTileURL } from './utils';
 
 declare const GM_info: ScriptGetInfo;
 declare const unsafeWindow: typeof window;
@@ -17,7 +17,7 @@ displayStatus('version ' + GM_info.script.version);
 
 // Override fetch
 const originalFetch = unsafeWindow.fetch;
-unsafeWindow.fetch = async function (input, init?) {
+unsafeWindow.fetch = async function (input: Parameters<typeof window.fetch>[0], init?: Parameters<typeof window.fetch>[1]): ReturnType<typeof window.fetch> {
     const response = await originalFetch(input, init);
 
     const url = input instanceof Request ? input.url : input as string;
@@ -50,7 +50,7 @@ unsafeWindow.fetch = async function (input, init?) {
         const start = performance.now();
         const modified = await Manager.processTile(coords, response);
         const time = performance.now() - start;
-        console.log('Processed on tile in ' + time + 'ms');
+        console.log('Processed tile' + coordsToString(coords) + ' in ' + time + 'ms');
 
         return modified;
     }
@@ -59,4 +59,4 @@ unsafeWindow.fetch = async function (input, init?) {
     return response;
 };
 
-console.log(Manager);
+(unsafeWindow as any).Manager = Manager;

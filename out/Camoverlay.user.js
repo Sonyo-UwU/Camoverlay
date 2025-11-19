@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.0.9
+// @version      0.0.10
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -256,12 +256,43 @@ div#ca-overlay {
     }
   };
 
+  // dist/utils.js
+  function parseCoordsFromPixelURL(url) {
+    const urlSplitted = url.split("/");
+    const last = urlSplitted[urlSplitted.length - 1];
+    return {
+      tile: {
+        x: parseInt(urlSplitted[urlSplitted.length - 2]),
+        y: parseInt(urlSplitted[urlSplitted.length - 1])
+      },
+      pixel: {
+        x: parseInt(last.substring(last.indexOf("?") + 3)),
+        y: parseInt(last.substring(last.indexOf("&") + 3))
+      }
+    };
+  }
+  function parseCoordsFromTileURL(url) {
+    const urlSplitted = url.split("/");
+    return {
+      x: parseInt(urlSplitted[urlSplitted.length - 2] ?? ""),
+      y: parseInt(urlSplitted[urlSplitted.length - 1] ?? "")
+    };
+  }
+  function coordsToString(coords) {
+    return `[${coords.x}, ${coords.y}]`;
+  }
+  function coordsToIndex(coords) {
+    return coords.x * 2048 + coords.y;
+  }
+
   // dist/Manager.js
   var ManagerClass = class {
-    templates;
     lastClickedCoords = null;
+    templates;
+    tilesInfo;
     constructor() {
       this.templates = [];
+      this.tilesInfo = /* @__PURE__ */ new Map();
     }
     async createTemplate(file) {
       const bitmap = await createImageBitmap(file);
@@ -270,10 +301,21 @@ div#ca-overlay {
       return template;
     }
     async processTile(coords, response) {
-      const lastUpdated = new Date(response.headers.get("last-modified") ?? "");
+      const lastUpdated = new Date(response.headers.get("last-modified") ?? 0).getTime();
+      const tileIndex = coordsToIndex(coords);
+      let tileInfo;
+      if (this.tilesInfo.has(tileIndex)) {
+        tileInfo = this.tilesInfo.get(tileIndex);
+        if (tileInfo.lastUpdated <= lastUpdated)
+          return response;
+        tileInfo.lastUpdated = lastUpdated;
+      } else {
+        tileInfo = {
+          lastUpdated
+        };
+        this.tilesInfo.set(tileIndex, tileInfo);
+      }
       const blob = await response.blob();
-      lastUpdated;
-      coords;
       const modifiedBlob = await this.drawOnTile(blob);
       return new Response(modifiedBlob, {
         headers: response.headers,
@@ -319,29 +361,6 @@ div#ca-overlay {
     });
   }
 
-  // dist/utils.js
-  function parseCoordsFromPixelURL(url) {
-    const urlSplitted = url.split("/");
-    const last = urlSplitted[urlSplitted.length - 1];
-    return {
-      tile: {
-        x: parseInt(urlSplitted[urlSplitted.length - 2]),
-        y: parseInt(urlSplitted[urlSplitted.length - 1])
-      },
-      pixel: {
-        x: parseInt(last.substring(last.indexOf("?") + 3)),
-        y: parseInt(last.substring(last.indexOf("&") + 3))
-      }
-    };
-  }
-  function parseCoordsFromTileURL(url) {
-    const urlSplitted = url.split("/");
-    return {
-      x: parseInt(urlSplitted[urlSplitted.length - 2] ?? ""),
-      y: parseInt(urlSplitted[urlSplitted.length - 1] ?? "")
-    };
-  }
-
   // dist/app.js
   importFont();
   injectOverlay();
@@ -368,10 +387,10 @@ div#ca-overlay {
       const start = performance.now();
       const modified = await Manager.processTile(coords, response);
       const time = performance.now() - start;
-      console.log("Processed on tile in " + time + "ms");
+      console.log("Processed tile" + coordsToString(coords) + " in " + time + "ms");
       return modified;
     }
     return response;
   };
-  console.log(Manager);
+  unsafeWindow.Manager = Manager;
 })();

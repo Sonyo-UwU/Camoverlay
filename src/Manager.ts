@@ -1,12 +1,15 @@
 import Template from './Template';
-import { Coords, FullCoords } from './types';
+import { Coords, FullCoords, TileInfo } from './types';
+import { coordsToIndex } from './utils';
 
 class ManagerClass {
-    templates: Template[];
     lastClickedCoords: FullCoords | null = null;
+    templates: Template[];
+    tilesInfo: Map<number, TileInfo>;
 
     constructor() {
         this.templates = [];
+        this.tilesInfo = new Map();
     }
 
     async createTemplate(file: File) {
@@ -18,13 +21,26 @@ class ManagerClass {
     }
 
     async processTile(coords: Coords, response: Response) {
-        const lastUpdated = new Date(response.headers.get('last-modified') ?? '');
+        const lastUpdated = new Date(response.headers.get('last-modified') ?? 0).getTime();
+
+        const tileIndex = coordsToIndex(coords);
+
+        let tileInfo: TileInfo;
+        if (this.tilesInfo.has(tileIndex)) {
+            tileInfo = this.tilesInfo.get(tileIndex)!;
+            if (tileInfo.lastUpdated <= lastUpdated)
+                return response;
+
+            tileInfo.lastUpdated = lastUpdated;
+        }
+        else {
+            tileInfo = {
+                lastUpdated: lastUpdated
+            };
+            this.tilesInfo.set(tileIndex, tileInfo);
+        }
 
         const blob = await response.blob();
-
-        lastUpdated;
-        coords;
-
         const modifiedBlob = await this.drawOnTile(blob);
 
         return new Response(modifiedBlob, {

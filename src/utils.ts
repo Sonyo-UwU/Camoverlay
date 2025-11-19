@@ -23,3 +23,11 @@ export function parseCoordsFromTileURL(url: string): Coords {
         y: parseInt(urlSplitted[urlSplitted.length - 1] ?? '')
     };
 }
+
+export function coordsToString(coords: Coords): string {
+    return `[${coords.x}, ${coords.y}]`;
+}
+
+export function coordsToIndex(coords: Coords): number {
+    return coords.x * 2048 + coords.y;
+}
