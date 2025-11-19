@@ -1,5 +1,6 @@
 import { displayStatus, displayUserData, importFont, injectOverlay } from './display';
-import { Coords, ScriptGetInfo, UserData } from './types';
+import { Manager } from './Manager';
+import type { Coords, ScriptGetInfo, UserData } from './types';
 
 declare const GM_info: ScriptGetInfo;
 declare const unsafeWindow: typeof window;
@@ -45,6 +46,11 @@ unsafeWindow.fetch = async function (input, init?) {
             y: parseInt(last.substring(last.indexOf('&') + 3))
         };
 
+        Manager.lastClickedCoords = {
+            tile: tilesCoords,
+            pixel: pixelCoords
+        };
+
         const textCoords = `Tile X: ${tilesCoords.x}, Tile Y: ${tilesCoords.y} ; Pixel X: ${pixelCoords.x}, Pixel Y: ${pixelCoords.y}`;
         const displayCoords = document.getElementById('ca-display-coords');
         if (displayCoords !== null) {
@@ -63,6 +69,28 @@ unsafeWindow.fetch = async function (input, init?) {
         }
     }
 
+    // Tiles
+    /*
+    else if (contentType.includes('image/') && endpoint.includes('/tiles/')) {
+        const lastUpdated = new Date(response.headers.get('last-modified') ?? '');
+
+        const blob = await response.blob();
+
+        const endpointSplitted = endpoint.split('/');
+        const tilesCoords: Coords = {
+            x: parseInt(endpointSplitted[endpointSplitted.length - 2] ?? ''),
+            y: parseInt(endpointSplitted[endpointSplitted.length - 1] ?? '')
+        };
+
+        console.log(tilesCoords, lastUpdated, blob);
+
+        return new Response(blob, {
+            headers: response.headers,
+            status: response.status,
+            statusText: response.statusText
+        });
+    }
+    */
 
     return response;
 };

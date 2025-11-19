@@ -226,6 +226,32 @@ div#ca-overlay {
     }
   }
 
+  // dist/Template.js
+  var Template = class {
+    name;
+    bitmap;
+    constructor(name, bitmap) {
+      this.name = name;
+      this.bitmap = bitmap;
+    }
+  };
+
+  // dist/Manager.js
+  var ManagerClass = class {
+    templates;
+    lastClickedCoords = null;
+    constructor() {
+      this.templates = [];
+    }
+    async createTemplate(file) {
+      const bitmap = await createImageBitmap(file);
+      const template = new Template(file.name, bitmap);
+      this.templates.push(template);
+      return template;
+    }
+  };
+  var Manager = new ManagerClass();
+
   // dist/app.js
   importFont();
   injectOverlay();
@@ -252,6 +278,10 @@ div#ca-overlay {
       const pixelCoords = {
         x: parseInt(last.substring(last.indexOf("?") + 3)),
         y: parseInt(last.substring(last.indexOf("&") + 3))
+      };
+      Manager.lastClickedCoords = {
+        tile: tilesCoords,
+        pixel: pixelCoords
       };
       const textCoords = `Tile X: ${tilesCoords.x}, Tile Y: ${tilesCoords.y} ; Pixel X: ${pixelCoords.x}, Pixel Y: ${pixelCoords.y}`;
       const displayCoords = document.getElementById("ca-display-coords");
