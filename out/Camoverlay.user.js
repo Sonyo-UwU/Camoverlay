@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.0.10
+// @version      0.0.11
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -74,6 +74,7 @@
     background-color: #5D1F18E6;
     border-radius: 8px;
     color: white;
+    max-width: 300px;
     padding: 10px;
     position: absolute;
     right: 75px;
@@ -142,7 +143,7 @@ div#ca-overlay {
 #ca-file-input {
     display: none !important;
 }
-#ca-file-input + button {
+#ca-select-button {
     width: 100%;
     white-space: nowrap;
     overflow: hidden;
@@ -246,13 +247,15 @@ div#ca-overlay {
   // dist/Template.js
   var Template = class {
     name;
+    coords;
     bitmap;
-    constructor(name, bitmap) {
+    constructor(name, coords, bitmap) {
       this.name = name;
+      this.coords = coords;
       this.bitmap = bitmap;
     }
-    drawOnTile(ctx) {
-      ctx.drawImage(this.bitmap, 0, 0);
+    drawOnTile(coords, ctx) {
+      ctx.drawImage(this.bitmap, this.coords.tile.x * 1e3 + this.coords.pixel.x - coords.x * 1e3, this.coords.tile.y * 1e3 + this.coords.pixel.y - coords.y * 1e3);
     }
   };
 
@@ -278,6 +281,9 @@ div#ca-overlay {
       y: parseInt(urlSplitted[urlSplitted.length - 1] ?? "")
     };
   }
+  function fullCoordsToString(coords) {
+    return `[${coords.tile.x}, ${coords.tile.y} ; ${coords.pixel.x}, ${coords.pixel.y}]`;
+  }
   function coordsToString(coords) {
     return `[${coords.x}, ${coords.y}]`;
   }
@@ -294,9 +300,9 @@ div#ca-overlay {
       this.templates = [];
       this.tilesInfo = /* @__PURE__ */ new Map();
     }
-    async createTemplate(file) {
+    async createTemplate(coords, file) {
       const bitmap = await createImageBitmap(file);
-      const template = new Template(file.name, bitmap);
+      const template = new Template(file.name, coords, bitmap);
       this.templates.push(template);
       return template;
     }
@@ -306,8 +312,6 @@ div#ca-overlay {
       let tileInfo;
       if (this.tilesInfo.has(tileIndex)) {
         tileInfo = this.tilesInfo.get(tileIndex);
-        if (tileInfo.lastUpdated <= lastUpdated)
-          return response;
         tileInfo.lastUpdated = lastUpdated;
       } else {
         tileInfo = {
@@ -316,20 +320,20 @@ div#ca-overlay {
         this.tilesInfo.set(tileIndex, tileInfo);
       }
       const blob = await response.blob();
-      const modifiedBlob = await this.drawOnTile(blob);
+      const modifiedBlob = await this.drawOnTile(coords, blob);
       return new Response(modifiedBlob, {
         headers: response.headers,
         status: response.status,
         statusText: response.statusText
       });
     }
-    async drawOnTile(blob) {
+    async drawOnTile(coords, blob) {
       const canvas = new OffscreenCanvas(1e3, 1e3);
       const ctx = canvas.getContext("2d");
       ctx.imageSmoothingEnabled = false;
-      ctx.drawImage(await createImageBitmap(blob), 0, 0);
+      ctx.drawImage(await createImageBitmap(blob), 0, 0, canvas.width, canvas.height);
       for (const template of this.templates) {
-        template.drawOnTile(ctx);
+        template.drawOnTile(coords, ctx);
       }
       return await canvas.convertToBlob();
     }
@@ -351,13 +355,37 @@ div#ca-overlay {
     document.getElementById("ca-select-button").addEventListener("click", () => {
       document.getElementById("ca-file-input").click();
     });
+    document.getElementById("ca-file-input").addEventListener("change", (e) => {
+      if (e.target.files.length > 0)
+        document.getElementById("ca-select-button").innerText = e.target.files[0].name;
+    });
     document.getElementById("ca-create-button").addEventListener("click", () => {
       const fileInput = document.getElementById("ca-file-input");
       if (fileInput.files.length < 1) {
         displayStatus("Select a file to upload");
         return;
       }
-      Manager.createTemplate(fileInput.files[0]);
+      const tx = parseInt(document.getElementById("ca-input-tx").value);
+      const ty = parseInt(document.getElementById("ca-input-ty").value);
+      const px = parseInt(document.getElementById("ca-input-px").value);
+      const py = parseInt(document.getElementById("ca-input-py").value);
+      if (isNaN(tx) || isNaN(ty) || isNaN(px) || isNaN(py)) {
+        displayStatus("Invalid coordonates");
+        return;
+      }
+      const coords = {
+        tile: {
+          x: tx,
+          y: ty
+        },
+        pixel: {
+          x: px,
+          y: py
+        }
+      };
+      Manager.templates = [];
+      Manager.createTemplate(coords, fileInput.files[0]);
+      displayStatus("Created template at " + fullCoordsToString(coords));
     });
   }
 

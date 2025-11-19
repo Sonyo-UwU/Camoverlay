@@ -1,4 +1,4 @@
-import { Coords, FullCoords } from './types';
+import { Coords, FullCoords, TileIndex } from './types';
 
 export function parseCoordsFromPixelURL(url: string): FullCoords {
     const urlSplitted = url.split('/');
@@ -24,10 +24,14 @@ export function parseCoordsFromTileURL(url: string): Coords {
     };
 }
 
+export function fullCoordsToString(coords: FullCoords): string {
+    return `[${coords.tile.x}, ${coords.tile.y} ; ${coords.pixel.x}, ${coords.pixel.y}]`;
+}
+
 export function coordsToString(coords: Coords): string {
     return `[${coords.x}, ${coords.y}]`;
 }
 
-export function coordsToIndex(coords: Coords): number {
+export function coordsToIndex(coords: Coords): TileIndex {
     return coords.x * 2048 + coords.y;
 }

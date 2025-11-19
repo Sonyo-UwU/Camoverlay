@@ -1,21 +1,21 @@
 import Template from './Template';
-import { Coords, FullCoords, TileInfo } from './types';
+import { Coords, FullCoords, TileIndex, TileInfo } from './types';
 import { coordsToIndex } from './utils';
 
 class ManagerClass {
     lastClickedCoords: FullCoords | null = null;
     templates: Template[];
-    tilesInfo: Map<number, TileInfo>;
+    tilesInfo: Map<TileIndex, TileInfo>;
 
     constructor() {
         this.templates = [];
         this.tilesInfo = new Map();
     }
 
-    async createTemplate(file: File) {
+    async createTemplate(coords: FullCoords, file: File) {
         const bitmap = await createImageBitmap(file);
 
-        const template = new Template(file.name, bitmap);
+        const template = new Template(file.name, coords, bitmap);
         this.templates.push(template);
         return template;
     }
@@ -28,8 +28,8 @@ class ManagerClass {
         let tileInfo: TileInfo;
         if (this.tilesInfo.has(tileIndex)) {
             tileInfo = this.tilesInfo.get(tileIndex)!;
-            if (tileInfo.lastUpdated <= lastUpdated)
-                return response;
+            //if (tileInfo.lastUpdated <= lastUpdated)
+            //    return response;
 
             tileInfo.lastUpdated = lastUpdated;
         }
@@ -41,7 +41,7 @@ class ManagerClass {
         }
 
         const blob = await response.blob();
-        const modifiedBlob = await this.drawOnTile(blob);
+        const modifiedBlob = await this.drawOnTile(coords, blob);
 
         return new Response(modifiedBlob, {
             headers: response.headers,
@@ -50,15 +50,15 @@ class ManagerClass {
         });
     }
 
-    async drawOnTile(blob: Blob) {
+    async drawOnTile(coords: Coords, blob: Blob) {
         const canvas = new OffscreenCanvas(1000, 1000);
         const ctx = canvas.getContext('2d')!;
         ctx.imageSmoothingEnabled = false;
 
-        ctx.drawImage(await createImageBitmap(blob), 0, 0);
+        ctx.drawImage(await createImageBitmap(blob), 0, 0, canvas.width, canvas.height);
 
         for (const template of this.templates) {
-            template.drawOnTile(ctx);
+            template.drawOnTile(coords, ctx);
         }
 
         return await canvas.convertToBlob();

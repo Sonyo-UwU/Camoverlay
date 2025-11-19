@@ -2,6 +2,7 @@
     background-color: #5D1F18E6;
     border-radius: 8px;
     color: white;
+    max-width: 300px;
     padding: 10px;
     position: absolute;
     right: 75px;
@@ -70,7 +71,7 @@ div#ca-overlay {
 #ca-file-input {
     display: none !important;
 }
-#ca-file-input + button {
+#ca-select-button {
     width: 100%;
     white-space: nowrap;
     overflow: hidden;
