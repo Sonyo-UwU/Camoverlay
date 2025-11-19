@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.0.1
+// @version      0.0.8
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -234,6 +234,9 @@ div#ca-overlay {
       this.name = name;
       this.bitmap = bitmap;
     }
+    drawOnTile(ctx) {
+      ctx.drawImage(this.bitmap, 0, 0);
+    }
   };
 
   // dist/Manager.js
@@ -248,6 +251,28 @@ div#ca-overlay {
       const template = new Template(file.name, bitmap);
       this.templates.push(template);
       return template;
+    }
+    async processTile(coords, response) {
+      const lastUpdated = new Date(response.headers.get("last-modified") ?? "");
+      const blob = await response.blob();
+      lastUpdated;
+      coords;
+      const modifiedBlob = await this.drawOnTile(blob);
+      return new Response(modifiedBlob, {
+        headers: response.headers,
+        status: response.status,
+        statusText: response.statusText
+      });
+    }
+    async drawOnTile(blob) {
+      const canvas = new OffscreenCanvas(1e3, 1e3);
+      const ctx = canvas.getContext("2d");
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(await createImageBitmap(blob), 0, 0);
+      for (const template of this.templates) {
+        template.drawOnTile(ctx);
+      }
+      return await canvas.convertToBlob();
     }
   };
   var Manager = new ManagerClass();
@@ -296,20 +321,20 @@ div#ca-overlay {
       }
     } else if (contentType.includes("application/json") && endpoint.includes("/pixel")) {
       const endpointSplitted = endpoint.split("/");
-      const tilesCoords = {
+      const last = endpointSplitted[endpointSplitted.length - 1];
+      const tileCoords = {
         x: parseInt(endpointSplitted[endpointSplitted.length - 2]),
         y: parseInt(endpointSplitted[endpointSplitted.length - 1])
       };
-      const last = endpointSplitted[endpointSplitted.length - 1];
       const pixelCoords = {
         x: parseInt(last.substring(last.indexOf("?") + 3)),
         y: parseInt(last.substring(last.indexOf("&") + 3))
       };
       Manager.lastClickedCoords = {
-        tile: tilesCoords,
+        tile: tileCoords,
         pixel: pixelCoords
       };
-      const textCoords = `Tile X: ${tilesCoords.x}, Tile Y: ${tilesCoords.y} ; Pixel X: ${pixelCoords.x}, Pixel Y: ${pixelCoords.y}`;
+      const textCoords = `Tile X: ${tileCoords.x}, Tile Y: ${tileCoords.y} ; Pixel X: ${pixelCoords.x}, Pixel Y: ${pixelCoords.y}`;
       const displayCoords = document.getElementById("ca-display-coords");
       if (displayCoords !== null) {
         displayCoords.textContent = textCoords;
@@ -324,6 +349,17 @@ div#ca-overlay {
           div.insertAdjacentElement("beforebegin", span);
         }
       }
+    } else if (contentType.includes("image/") && endpoint.includes("/tiles/")) {
+      const endpointSplitted = endpoint.split("/");
+      const coords = {
+        x: parseInt(endpointSplitted[endpointSplitted.length - 2] ?? ""),
+        y: parseInt(endpointSplitted[endpointSplitted.length - 1] ?? "")
+      };
+      const start = performance.now();
+      const modified = await Manager.processTile(coords, response);
+      const time = performance.now() - start;
+      console.log("Processed on tile in " + time + "ms");
+      return modified;
     }
     return response;
   };

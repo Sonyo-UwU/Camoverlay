@@ -37,7 +37,7 @@ unsafeWindow.fetch = async function (input, init?) {
     // Pixel
     else if (contentType.includes('application/json') && endpoint.includes('/pixel')) {
         const endpointSplitted = endpoint.split('/');
-        const tilesCoords: Coords = {
+        const tileCoords: Coords = {
             x: parseInt(endpointSplitted[endpointSplitted.length - 2]!),
             y: parseInt(endpointSplitted[endpointSplitted.length - 1]!)
         };
@@ -49,11 +49,11 @@ unsafeWindow.fetch = async function (input, init?) {
         };
 
         Manager.lastClickedCoords = {
-            tile: tilesCoords,
+            tile: tileCoords,
             pixel: pixelCoords
         };
 
-        const textCoords = `Tile X: ${tilesCoords.x}, Tile Y: ${tilesCoords.y} ; Pixel X: ${pixelCoords.x}, Pixel Y: ${pixelCoords.y}`;
+        const textCoords = `Tile X: ${tileCoords.x}, Tile Y: ${tileCoords.y} ; Pixel X: ${pixelCoords.x}, Pixel Y: ${pixelCoords.y}`;
         const displayCoords = document.getElementById('ca-display-coords');
         if (displayCoords !== null) {
             displayCoords.textContent = textCoords;
@@ -72,27 +72,21 @@ unsafeWindow.fetch = async function (input, init?) {
     }
 
     // Tiles
-    /*
     else if (contentType.includes('image/') && endpoint.includes('/tiles/')) {
-        const lastUpdated = new Date(response.headers.get('last-modified') ?? '');
-
-        const blob = await response.blob();
-
         const endpointSplitted = endpoint.split('/');
-        const tilesCoords: Coords = {
+        const coords = {
             x: parseInt(endpointSplitted[endpointSplitted.length - 2] ?? ''),
             y: parseInt(endpointSplitted[endpointSplitted.length - 1] ?? '')
         };
 
-        console.log(tilesCoords, lastUpdated, blob);
+        const start = performance.now();
+        const modified = await Manager.processTile(coords, response);
+        const time = performance.now() - start;
+        console.log('Processed on tile in ' + time + 'ms');
 
-        return new Response(blob, {
-            headers: response.headers,
-            status: response.status,
-            statusText: response.statusText
-        });
+        return modified;
     }
-    */
+    
 
     return response;
 };

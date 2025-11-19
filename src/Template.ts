@@ -7,4 +7,8 @@ export default class Template {
         this.name = name;
         this.bitmap = bitmap;
     }
+
+    drawOnTile(ctx: OffscreenCanvasRenderingContext2D) {
+        ctx.drawImage(this.bitmap, 0, 0);
+    }
 }
