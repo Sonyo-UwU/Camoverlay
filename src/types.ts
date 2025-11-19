@@ -1,3 +1,46 @@
+export type UserData = {
+    allianceId: number,
+    allianceRole: string,
+    banned: boolean,
+    charges: {
+        cooldownMs: number,
+        count: number,
+        max: number;
+    },
+    country: string,
+    discord: string,
+    discordId: string,
+    droplets: number,
+    equippedFlag: number,
+    experiments: {
+        "2025-09_discord_linking": {
+            enabled: boolean;
+        },
+        "2025-09_pawtect": {
+            variant: string;
+        };
+    },
+    extraColorsBitmap: number,
+    favoriteLocations: {
+        id: number,
+        name: string,
+        latitude: number,
+        longitude: number;
+    }[],
+    flagsBitmap: string,
+    id: number,
+    isCustomer: boolean,
+    level: number,
+    maxFavoriteLocations: number,
+    name: string,
+    needsPhoneVerification: boolean,
+    picture: string,
+    pixelsPainted: number,
+    showLastPixel: boolean,
+    status?: number,
+    timeoutUntil: string;
+};
+
 export type ScriptGetInfo = {
     container?: { // 5.3+ | Firefox only
         id: string,

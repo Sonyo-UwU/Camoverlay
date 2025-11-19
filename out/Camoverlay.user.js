@@ -216,9 +216,33 @@ div#ca-overlay {
     if (textArea !== null)
       textArea.value = message;
   }
+  function displayUserData(data) {
+    const nextLevelPixels = Math.ceil(Math.pow(Math.floor(data.level) * Math.pow(30, 0.65), 1 / 0.65) - data.pixelsPainted);
+    const username = document.getElementById("ca-user-name");
+    if (username !== null) {
+      username.innerText = data.name;
+      document.getElementById("ca-user-droplets").innerText = data.droplets.toLocaleString();
+      document.getElementById("ca-user-level").innerText = nextLevelPixels.toLocaleString();
+    }
+  }
 
   // dist/app.js
   importFont();
   injectOverlay();
   displayStatus("version " + GM_info.script.version);
+  var originalFetch = unsafeWindow.fetch;
+  unsafeWindow.fetch = async function(input, init) {
+    const response = await originalFetch(input, init);
+    const endpoint = input instanceof Request ? input.url : input;
+    const contentType = response.headers.get("content-type") ?? "";
+    if (contentType.includes("application/json") && endpoint.includes("/me")) {
+      const json = await response.clone().json();
+      if (json.status && json.status.toString()[0] !== "2") {
+        displayStatus("Could not fetch user data, are you logged in?");
+      } else {
+        displayUserData(json);
+      }
+    }
+    return response;
+  };
 })();
