@@ -1,0 +1,10 @@
+# Visual Studio
+.vs/
+Camoverlay.esproj
+Camoverlay.sln
+
+# Build
+node_modules/
+dist/
+package-lock.json
+tsconfig.tsbuildinfo
