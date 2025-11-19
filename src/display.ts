@@ -1,4 +1,4 @@
-import type { UserData } from './types';
+import type { FullCoords, UserData } from './types';
 
 declare function GM_addStyle(css: string): void;
 
@@ -38,5 +38,25 @@ export function displayUserData(data: UserData) {
         username.innerText = data.name;
         document.getElementById('ca-user-droplets')!.innerText = data.droplets.toLocaleString();
         document.getElementById('ca-user-level')!.innerText = nextLevelPixels.toLocaleString();
+    }
+}
+
+export function displayTileCoords(coords: FullCoords) {
+    const textCoords = `Tile X: ${coords.tile.x}, Tile Y: ${coords.tile.y} ; Pixel X: ${coords.pixel.x}, Pixel Y: ${coords.pixel.y}`;
+
+    const displayCoords = document.getElementById('ca-display-coords');
+    if (displayCoords !== null) {
+        displayCoords.textContent = textCoords;
+    }
+    else {
+        const div = document.getElementsByClassName('text-base-content/80 mt-1 px-3 text-sm')[0];
+        if (div !== undefined) {
+            const span = document.createElement('span');
+            span.id = 'ca-display-coords';
+            span.textContent = textCoords;
+            span.style.paddingInline = 'calc(var(--spacing)*3)';
+            span.style.fontSize = 'small';
+            div.insertAdjacentElement('beforebegin', span);
+        }
     }
 }

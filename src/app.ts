@@ -1,7 +1,8 @@
-import { displayStatus, displayUserData, importFont, injectOverlay } from './display';
+import { displayStatus, displayTileCoords, displayUserData, importFont, injectOverlay } from './display';
 import { addListeners } from './eventListeners';
 import { Manager } from './Manager';
-import type { Coords, ScriptGetInfo, UserData } from './types';
+import type { ScriptGetInfo, UserData } from './types';
+import { parseCoordsFromPixelURL, parseCoordsFromTileURL } from './utils';
 
 declare const GM_info: ScriptGetInfo;
 declare const unsafeWindow: typeof window;
@@ -19,11 +20,11 @@ const originalFetch = unsafeWindow.fetch;
 unsafeWindow.fetch = async function (input, init?) {
     const response = await originalFetch(input, init);
 
-    const endpoint = input instanceof Request ? input.url : input as string;
+    const url = input instanceof Request ? input.url : input as string;
     const contentType = response.headers.get('content-type') ?? '';
 
     // Me
-    if (contentType.includes('application/json') && endpoint.includes('/me')) {
+    if (contentType.includes('application/json') && url.includes('/me')) {
         const json = await response.clone().json() as UserData;
         if (json.status && json.status.toString()[0] !== '2') {
             // Not logged in / server down
@@ -35,49 +36,16 @@ unsafeWindow.fetch = async function (input, init?) {
     }
 
     // Pixel
-    else if (contentType.includes('application/json') && endpoint.includes('/pixel')) {
-        const endpointSplitted = endpoint.split('/');
-        const tileCoords: Coords = {
-            x: parseInt(endpointSplitted[endpointSplitted.length - 2]!),
-            y: parseInt(endpointSplitted[endpointSplitted.length - 1]!)
-        };
+    else if (contentType.includes('application/json') && url.includes('/pixel')) {
+        const coords = parseCoordsFromPixelURL(url);
 
-        const last = endpointSplitted[endpointSplitted.length - 1]!;
-        const pixelCoords: Coords = {
-            x: parseInt(last.substring(last.indexOf('?') + 3)),
-            y: parseInt(last.substring(last.indexOf('&') + 3))
-        };
-
-        Manager.lastClickedCoords = {
-            tile: tileCoords,
-            pixel: pixelCoords
-        };
-
-        const textCoords = `Tile X: ${tileCoords.x}, Tile Y: ${tileCoords.y} ; Pixel X: ${pixelCoords.x}, Pixel Y: ${pixelCoords.y}`;
-        const displayCoords = document.getElementById('ca-display-coords');
-        if (displayCoords !== null) {
-            displayCoords.textContent = textCoords;
-        }
-        else {
-            const div = document.getElementsByClassName('text-base-content/80 mt-1 px-3 text-sm')[0];
-            if (div !== undefined) {
-                const span = document.createElement('span');
-                span.id = 'ca-display-coords';
-                span.textContent = textCoords;
-                span.style.paddingInline = 'calc(var(--spacing)*3)';
-                span.style.fontSize = 'small';
-                div.insertAdjacentElement('beforebegin', span);
-            }
-        }
+        Manager.lastClickedCoords = coords;
+        displayTileCoords(coords);
     }
 
     // Tiles
-    else if (contentType.includes('image/') && endpoint.includes('/tiles/')) {
-        const endpointSplitted = endpoint.split('/');
-        const coords = {
-            x: parseInt(endpointSplitted[endpointSplitted.length - 2] ?? ''),
-            y: parseInt(endpointSplitted[endpointSplitted.length - 1] ?? '')
-        };
+    else if (contentType.includes('image/') && url.includes('/tiles/')) {
+        const coords = parseCoordsFromTileURL(url);
 
         const start = performance.now();
         const modified = await Manager.processTile(coords, response);
@@ -86,7 +54,7 @@ unsafeWindow.fetch = async function (input, init?) {
 
         return modified;
     }
-    
+
 
     return response;
 };

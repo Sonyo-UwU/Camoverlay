@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.0.8
+// @version      0.0.9
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -225,6 +225,23 @@ div#ca-overlay {
       document.getElementById("ca-user-level").innerText = nextLevelPixels.toLocaleString();
     }
   }
+  function displayTileCoords(coords) {
+    const textCoords = `Tile X: ${coords.tile.x}, Tile Y: ${coords.tile.y} ; Pixel X: ${coords.pixel.x}, Pixel Y: ${coords.pixel.y}`;
+    const displayCoords = document.getElementById("ca-display-coords");
+    if (displayCoords !== null) {
+      displayCoords.textContent = textCoords;
+    } else {
+      const div = document.getElementsByClassName("text-base-content/80 mt-1 px-3 text-sm")[0];
+      if (div !== void 0) {
+        const span = document.createElement("span");
+        span.id = "ca-display-coords";
+        span.textContent = textCoords;
+        span.style.paddingInline = "calc(var(--spacing)*3)";
+        span.style.fontSize = "small";
+        div.insertAdjacentElement("beforebegin", span);
+      }
+    }
+  }
 
   // dist/Template.js
   var Template = class {
@@ -302,6 +319,29 @@ div#ca-overlay {
     });
   }
 
+  // dist/utils.js
+  function parseCoordsFromPixelURL(url) {
+    const urlSplitted = url.split("/");
+    const last = urlSplitted[urlSplitted.length - 1];
+    return {
+      tile: {
+        x: parseInt(urlSplitted[urlSplitted.length - 2]),
+        y: parseInt(urlSplitted[urlSplitted.length - 1])
+      },
+      pixel: {
+        x: parseInt(last.substring(last.indexOf("?") + 3)),
+        y: parseInt(last.substring(last.indexOf("&") + 3))
+      }
+    };
+  }
+  function parseCoordsFromTileURL(url) {
+    const urlSplitted = url.split("/");
+    return {
+      x: parseInt(urlSplitted[urlSplitted.length - 2] ?? ""),
+      y: parseInt(urlSplitted[urlSplitted.length - 1] ?? "")
+    };
+  }
+
   // dist/app.js
   importFont();
   injectOverlay();
@@ -310,51 +350,21 @@ div#ca-overlay {
   var originalFetch = unsafeWindow.fetch;
   unsafeWindow.fetch = async function(input, init) {
     const response = await originalFetch(input, init);
-    const endpoint = input instanceof Request ? input.url : input;
+    const url = input instanceof Request ? input.url : input;
     const contentType = response.headers.get("content-type") ?? "";
-    if (contentType.includes("application/json") && endpoint.includes("/me")) {
+    if (contentType.includes("application/json") && url.includes("/me")) {
       const json = await response.clone().json();
       if (json.status && json.status.toString()[0] !== "2") {
         displayStatus("Could not fetch user data, are you logged in?");
       } else {
         displayUserData(json);
       }
-    } else if (contentType.includes("application/json") && endpoint.includes("/pixel")) {
-      const endpointSplitted = endpoint.split("/");
-      const last = endpointSplitted[endpointSplitted.length - 1];
-      const tileCoords = {
-        x: parseInt(endpointSplitted[endpointSplitted.length - 2]),
-        y: parseInt(endpointSplitted[endpointSplitted.length - 1])
-      };
-      const pixelCoords = {
-        x: parseInt(last.substring(last.indexOf("?") + 3)),
-        y: parseInt(last.substring(last.indexOf("&") + 3))
-      };
-      Manager.lastClickedCoords = {
-        tile: tileCoords,
-        pixel: pixelCoords
-      };
-      const textCoords = `Tile X: ${tileCoords.x}, Tile Y: ${tileCoords.y} ; Pixel X: ${pixelCoords.x}, Pixel Y: ${pixelCoords.y}`;
-      const displayCoords = document.getElementById("ca-display-coords");
-      if (displayCoords !== null) {
-        displayCoords.textContent = textCoords;
-      } else {
-        const div = document.getElementsByClassName("text-base-content/80 mt-1 px-3 text-sm")[0];
-        if (div !== void 0) {
-          const span = document.createElement("span");
-          span.id = "ca-display-coords";
-          span.textContent = textCoords;
-          span.style.paddingInline = "calc(var(--spacing)*3)";
-          span.style.fontSize = "small";
-          div.insertAdjacentElement("beforebegin", span);
-        }
-      }
-    } else if (contentType.includes("image/") && endpoint.includes("/tiles/")) {
-      const endpointSplitted = endpoint.split("/");
-      const coords = {
-        x: parseInt(endpointSplitted[endpointSplitted.length - 2] ?? ""),
-        y: parseInt(endpointSplitted[endpointSplitted.length - 1] ?? "")
-      };
+    } else if (contentType.includes("application/json") && url.includes("/pixel")) {
+      const coords = parseCoordsFromPixelURL(url);
+      Manager.lastClickedCoords = coords;
+      displayTileCoords(coords);
+    } else if (contentType.includes("image/") && url.includes("/tiles/")) {
+      const coords = parseCoordsFromTileURL(url);
       const start = performance.now();
       const modified = await Manager.processTile(coords, response);
       const time = performance.now() - start;
