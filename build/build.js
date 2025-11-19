@@ -23,10 +23,12 @@ await esbuild.build({
     }
 }).catch(() => process.exit(1));
 
-// Correct inconsistent end of lines
+// Correct inconsistent end of lines, and inject html and css
 fs.writeFileSync(
     'out/Camoverlay.user.js',
     fs.readFileSync('out/Camoverlay.user.js', 'utf8')
+        .replace('%overlay.html%', fs.readFileSync('src/overlay.html', 'utf8').replace(/<!--%%-->\s*/g, ''))
+        .replace('%overlay.css%', fs.readFileSync('src/overlay.css', 'utf8'))
         .replaceAll('\r\n', '\n').replaceAll('\n', '\r\n'),
     'utf8'
 );

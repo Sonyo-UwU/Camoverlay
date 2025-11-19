@@ -1,0 +1,53 @@
+<div id="ca-overlay">
+    <div id="ca-header">
+        <img src="https://cdn.bsky.app/img/avatar/plain/did:plc:kwmxodxbf5nshavpy5r5l3jj/bafkreiaddzuq5vgrpi3aeufp7gwkbameb426d4vb4zlxvc6c4vo23wkn5a@jpeg" />
+        <h1>Camoverlay</h1>
+    </div>
+    <hr />
+    <div>
+        <p>Username: <b id="ca-user-name"></b></p>
+        <p>Droplets: <b id="ca-user-droplets"></b></p>
+        <p>Next level in: <b id="ca-user-level">...</b> pixels</p>
+    </div>
+    <hr />
+    <div id="ca-automation">
+        <div id="ca-coords">
+            <button id="ca-coords-button" class="ca-icon-button">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 6">
+                    <circle cx="2" cy="2" r="2"></circle>
+                    <path d="M2 6 L3.7 3 L0.3 3 Z"></path>
+                    <circle cx="2" cy="2" r="0.7" fill="white"></circle>
+                </svg>
+            </button><!--%%-->
+            <input id="ca-input-tx" class="ca-coords-input" type="number" min="0" max="2047" step="1" placeholder="Tl X" /><!--%%-->
+            <input id="ca-input-ty" class="ca-coords-input" type="number" min="0" max="2047" step="1" placeholder="Tl Y" /><!--%%-->
+            <input id="ca-input-px" class="ca-coords-input" type="number" min="0" max="999" step="1" placeholder="Px X" /><!--%%-->
+            <input id="ca-input-py" class="ca-coords-input" type="number" min="0" max="999" step="1" placeholder="Px Y" />
+        </div>
+        <div id="ca-templates">
+            <div>
+                <input id="ca-file-input" type="file" accept="image/png, image/jpeg, image/webp, image/bmp, image/gif" />
+                <button id="ca-upload-button">Upload template</button>
+            </div>
+            <div id="ca-template-buttons">
+                <button id="ca-enable-button">Enable</button>
+                <button id="ca-create-button">Create</button>
+                <button id="ca-disable-button">Disable</button>
+            </div>
+        </div>
+        <textarea id="ca-output" readonly placeholder="Sleeping"></textarea>
+        <div id="ca-bottom">
+            <div>
+                <button class="ca-icon-button">🎨</button><!--%%-->
+                <button class="ca-icon-button">🌐</button>
+            </div>
+            <small>
+                Made by Sonyo
+                <br>
+                Original by SwingTheVine
+                <br>
+                Art by <a href="https://camomille1411en.carrd.co/" target="_blank">camomille1411</a>
+            </small>
+        </div>
+    </div>
+</div>

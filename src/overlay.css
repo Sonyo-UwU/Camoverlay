@@ -1,0 +1,132 @@
+#ca-overlay {
+    background-color: #5D1F18E6;
+    border-radius: 8px;
+    color: white;
+    padding: 10px;
+    position: absolute;
+    right: 75px;
+    top: 10px;
+    width: auto;
+    z-index: 29;
+}
+
+div#ca-overlay {
+    /* Font stack is as follows:
+   * Highest Priority (Roboto Mono)
+   * Windows fallback (Courier New)
+   * macOS fallback (Monaco)
+   * Linux fallback (DejaVu Sans Mono)
+   * Any possible monospace font (monospace)
+   * Last resort (Arial) */
+    font-family: 'Roboto Mono', 'Courier New', 'Monaco', 'DejaVu Sans Mono', monospace, 'Arial';
+    letter-spacing: 0.05em;
+}
+
+#ca-overlay h1 {
+    display: inline-block;
+    font-size: x-large;
+    font-weight: bold;
+    vertical-align: middle;
+}
+
+#ca-overlay hr {
+    margin: 0.5em 0;
+}
+
+#ca-overlay small {
+    font-size: x-small;
+    color: lightgray;
+    margin-top: 0;
+    text-align: right;
+}
+
+#ca-header img {
+    border-radius: 12px;
+    display: inline-block;
+    height: 2.5em;
+    margin-right: 1ch;
+    vertical-align: middle;
+}
+
+#ca-overlay button {
+    background-color: #cb4334;
+    border-radius: 1em;
+    padding: 0 0.75ch;
+}
+#ca-overlay button:hover, #ca-overlay button:focus-visible {
+    background-color: #d16458;
+}
+#ca-overlay button:active, #ca-overlay button:disabled {
+    background-color: #d68d85;
+}
+#ca-overlay button:disabled {
+    text-decoration: line-through;
+}
+
+#ca-templates > * {
+    margin-top: 0.5em;
+}
+
+#ca-file-input {
+    display: none !important;
+}
+#ca-file-input + button {
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#ca-template-buttons {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-content: center;
+    justify-content: center;
+    align-items: center;
+    gap: 1ch;
+}
+
+#ca-output {
+    font-size: small;
+    background-color: rgba(0, 0, 0, 0.2);
+    padding: 0 0.5ch;
+    margin-top: 0.5em;
+    height: 7.5em;
+    width: 100%;
+}
+
+#ca-bottom {
+    display: flex;
+    justify-content: space-between;
+}
+
+.ca-icon-button {
+    border: white 1px solid;
+    height: 1.5em;
+    width: 1.5em;
+    padding: 0 !important; /* Overrides the padding in "#ca-overlay button" */
+    line-height: 1em;
+    text-align: center;
+    vertical-align: middle;
+}
+.ca-icon-button svg {
+    width: 50%;
+    margin: 0 auto;
+    fill: #111;
+}
+
+.ca-coords-input {
+    appearance: auto;
+    -moz-appearance: textfield;
+    width: 5.5ch;
+    margin-left: 1ch;
+    background-color: rgba(0, 0, 0, 0.2);
+    padding: 0 0.5ch;
+    font-size: small;
+}
+.ca-coords-input::-webkit-outer-spin-button,
+.ca-coords-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
