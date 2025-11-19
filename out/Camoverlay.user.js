@@ -45,7 +45,7 @@
         <div id="ca-templates">
             <div>
                 <input id="ca-file-input" type="file" accept="image/png, image/jpeg, image/webp, image/bmp, image/gif" />
-                <button id="ca-upload-button">Upload template</button>
+                <button id="ca-select-button">Select file</button>
             </div>
             <div id="ca-template-buttons">
                 <button id="ca-enable-button">Enable</button>
@@ -252,9 +252,35 @@ div#ca-overlay {
   };
   var Manager = new ManagerClass();
 
+  // dist/eventListeners.js
+  function addListeners() {
+    document.getElementById("ca-coords-button").addEventListener("click", () => {
+      if (Manager.lastClickedCoords === null) {
+        displayStatus("Click on the canvas first to pick coordinates");
+        return;
+      }
+      document.getElementById("ca-input-tx").value = Manager.lastClickedCoords.tile.x.toString();
+      document.getElementById("ca-input-ty").value = Manager.lastClickedCoords.tile.y.toString();
+      document.getElementById("ca-input-px").value = Manager.lastClickedCoords.pixel.x.toString();
+      document.getElementById("ca-input-py").value = Manager.lastClickedCoords.pixel.y.toString();
+    });
+    document.getElementById("ca-select-button").addEventListener("click", () => {
+      document.getElementById("ca-file-input").click();
+    });
+    document.getElementById("ca-create-button").addEventListener("click", () => {
+      const fileInput = document.getElementById("ca-file-input");
+      if (fileInput.files.length < 1) {
+        displayStatus("Select a file to upload");
+        return;
+      }
+      Manager.createTemplate(fileInput.files[0]);
+    });
+  }
+
   // dist/app.js
   importFont();
   injectOverlay();
+  addListeners();
   displayStatus("version " + GM_info.script.version);
   var originalFetch = unsafeWindow.fetch;
   unsafeWindow.fetch = async function(input, init) {
@@ -301,4 +327,5 @@ div#ca-overlay {
     }
     return response;
   };
+  console.log(Manager);
 })();

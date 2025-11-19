@@ -1,4 +1,5 @@
 import { displayStatus, displayUserData, importFont, injectOverlay } from './display';
+import { addListeners } from './eventListeners';
 import { Manager } from './Manager';
 import type { Coords, ScriptGetInfo, UserData } from './types';
 
@@ -8,6 +9,7 @@ declare const unsafeWindow: typeof window;
 
 importFont();
 injectOverlay();
+addListeners();
 
 // Display version
 displayStatus('version ' + GM_info.script.version);
@@ -94,3 +96,5 @@ unsafeWindow.fetch = async function (input, init?) {
 
     return response;
 };
+
+console.log(Manager);
