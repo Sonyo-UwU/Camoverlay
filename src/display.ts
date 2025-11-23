@@ -1,4 +1,5 @@
-import type { FullCoords, UserData } from './types';
+import { PixelCoords } from './Coords';
+import type { UserData } from './types';
 
 declare function GM_addStyle(css: string): void;
 
@@ -41,8 +42,8 @@ export function displayUserData(data: UserData) {
     }
 }
 
-export function displayTileCoords(coords: FullCoords) {
-    const textCoords = `Tile X: ${coords.tile.x}, Tile Y: ${coords.tile.y} ; Pixel X: ${coords.pixel.x}, Pixel Y: ${coords.pixel.y}`;
+export function displayTileCoords(coords: PixelCoords) {
+    const textCoords = `Tile X: ${coords.tile.x}, Tile Y: ${coords.tile.y} ; Pixel X: ${coords.x}, Pixel Y: ${coords.y}`;
 
     const displayCoords = document.getElementById('ca-display-coords');
     if (displayCoords !== null) {

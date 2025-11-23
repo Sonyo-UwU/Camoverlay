@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.0.11
+// @version      0.0.12
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -227,7 +227,7 @@ div#ca-overlay {
     }
   }
   function displayTileCoords(coords) {
-    const textCoords = `Tile X: ${coords.tile.x}, Tile Y: ${coords.tile.y} ; Pixel X: ${coords.pixel.x}, Pixel Y: ${coords.pixel.y}`;
+    const textCoords = `Tile X: ${coords.tile.x}, Tile Y: ${coords.tile.y} ; Pixel X: ${coords.x}, Pixel Y: ${coords.y}`;
     const displayCoords = document.getElementById("ca-display-coords");
     if (displayCoords !== null) {
       displayCoords.textContent = textCoords;
@@ -244,6 +244,35 @@ div#ca-overlay {
     }
   }
 
+  // dist/Coords.js
+  var TileCoords = class {
+    x;
+    y;
+    constructor(x, y) {
+      this.x = x % 2048;
+      this.y = y % 2048;
+    }
+    toIndex() {
+      return this.x * 2048 + this.y;
+    }
+    toString() {
+      return `[${this.x}, ${this.y}]`;
+    }
+  };
+  var PixelCoords = class {
+    tile;
+    x;
+    y;
+    constructor(tile, x, y) {
+      this.tile = new TileCoords((tile.x + Math.floor(x / 1e3)) % 2048, (tile.y + Math.floor(y / 1e3)) % 2048);
+      this.x = x % 1e3;
+      this.y = y % 1e3;
+    }
+    toString() {
+      return `[${this.tile.x}, ${this.tile.y} ; ${this.x}, ${this.y}]`;
+    }
+  };
+
   // dist/Template.js
   var Template = class {
     name;
@@ -254,42 +283,10 @@ div#ca-overlay {
       this.coords = coords;
       this.bitmap = bitmap;
     }
-    drawOnTile(coords, ctx) {
-      ctx.drawImage(this.bitmap, this.coords.tile.x * 1e3 + this.coords.pixel.x - coords.x * 1e3, this.coords.tile.y * 1e3 + this.coords.pixel.y - coords.y * 1e3);
+    drawOnTile(tile, ctx) {
+      ctx.drawImage(this.bitmap, this.coords.tile.x * 1e3 + this.coords.x - tile.x * 1e3, this.coords.tile.y * 1e3 + this.coords.y - tile.y * 1e3);
     }
   };
-
-  // dist/utils.js
-  function parseCoordsFromPixelURL(url) {
-    const urlSplitted = url.split("/");
-    const last = urlSplitted[urlSplitted.length - 1];
-    return {
-      tile: {
-        x: parseInt(urlSplitted[urlSplitted.length - 2]),
-        y: parseInt(urlSplitted[urlSplitted.length - 1])
-      },
-      pixel: {
-        x: parseInt(last.substring(last.indexOf("?") + 3)),
-        y: parseInt(last.substring(last.indexOf("&") + 3))
-      }
-    };
-  }
-  function parseCoordsFromTileURL(url) {
-    const urlSplitted = url.split("/");
-    return {
-      x: parseInt(urlSplitted[urlSplitted.length - 2] ?? ""),
-      y: parseInt(urlSplitted[urlSplitted.length - 1] ?? "")
-    };
-  }
-  function fullCoordsToString(coords) {
-    return `[${coords.tile.x}, ${coords.tile.y} ; ${coords.pixel.x}, ${coords.pixel.y}]`;
-  }
-  function coordsToString(coords) {
-    return `[${coords.x}, ${coords.y}]`;
-  }
-  function coordsToIndex(coords) {
-    return coords.x * 2048 + coords.y;
-  }
 
   // dist/Manager.js
   var ManagerClass = class {
@@ -306,9 +303,9 @@ div#ca-overlay {
       this.templates.push(template);
       return template;
     }
-    async processTile(coords, response) {
+    async processTile(tile, response) {
       const lastUpdated = new Date(response.headers.get("last-modified") ?? 0).getTime();
-      const tileIndex = coordsToIndex(coords);
+      const tileIndex = tile.toIndex();
       let tileInfo;
       if (this.tilesInfo.has(tileIndex)) {
         tileInfo = this.tilesInfo.get(tileIndex);
@@ -320,20 +317,20 @@ div#ca-overlay {
         this.tilesInfo.set(tileIndex, tileInfo);
       }
       const blob = await response.blob();
-      const modifiedBlob = await this.drawOnTile(coords, blob);
+      const modifiedBlob = await this.drawOnTile(tile, blob);
       return new Response(modifiedBlob, {
         headers: response.headers,
         status: response.status,
         statusText: response.statusText
       });
     }
-    async drawOnTile(coords, blob) {
+    async drawOnTile(tile, blob) {
       const canvas = new OffscreenCanvas(1e3, 1e3);
       const ctx = canvas.getContext("2d");
       ctx.imageSmoothingEnabled = false;
       ctx.drawImage(await createImageBitmap(blob), 0, 0, canvas.width, canvas.height);
       for (const template of this.templates) {
-        template.drawOnTile(coords, ctx);
+        template.drawOnTile(tile, ctx);
       }
       return await canvas.convertToBlob();
     }
@@ -349,8 +346,8 @@ div#ca-overlay {
       }
       document.getElementById("ca-input-tx").value = Manager.lastClickedCoords.tile.x.toString();
       document.getElementById("ca-input-ty").value = Manager.lastClickedCoords.tile.y.toString();
-      document.getElementById("ca-input-px").value = Manager.lastClickedCoords.pixel.x.toString();
-      document.getElementById("ca-input-py").value = Manager.lastClickedCoords.pixel.y.toString();
+      document.getElementById("ca-input-px").value = Manager.lastClickedCoords.x.toString();
+      document.getElementById("ca-input-py").value = Manager.lastClickedCoords.y.toString();
     });
     document.getElementById("ca-select-button").addEventListener("click", () => {
       document.getElementById("ca-file-input").click();
@@ -373,20 +370,22 @@ div#ca-overlay {
         displayStatus("Invalid coordonates");
         return;
       }
-      const coords = {
-        tile: {
-          x: tx,
-          y: ty
-        },
-        pixel: {
-          x: px,
-          y: py
-        }
-      };
+      const coords = new PixelCoords(new TileCoords(tx, ty), px, py);
       Manager.templates = [];
       Manager.createTemplate(coords, fileInput.files[0]);
-      displayStatus("Created template at " + fullCoordsToString(coords));
+      displayStatus("Created template at " + coords.toString());
     });
+  }
+
+  // dist/utils.js
+  function parseCoordsFromPixelURL(url) {
+    const urlSplitted = url.split("/");
+    const last = urlSplitted[urlSplitted.length - 1];
+    return new PixelCoords(new TileCoords(parseInt(urlSplitted[urlSplitted.length - 2]), parseInt(urlSplitted[urlSplitted.length - 1])), parseInt(last.substring(last.indexOf("?") + 3)), parseInt(last.substring(last.indexOf("&") + 3)));
+  }
+  function parseCoordsFromTileURL(url) {
+    const urlSplitted = url.split("/");
+    return new TileCoords(parseInt(urlSplitted[urlSplitted.length - 2] ?? ""), parseInt(urlSplitted[urlSplitted.length - 1] ?? ""));
   }
 
   // dist/app.js
@@ -415,7 +414,7 @@ div#ca-overlay {
       const start = performance.now();
       const modified = await Manager.processTile(coords, response);
       const time = performance.now() - start;
-      console.log("Processed tile" + coordsToString(coords) + " in " + time + "ms");
+      console.log("Processed tile" + coords.toString() + " in " + time + "ms");
       return modified;
     }
     return response;

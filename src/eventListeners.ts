@@ -1,7 +1,6 @@
+import { PixelCoords, TileCoords } from './Coords';
 import { displayStatus } from './display';
 import { Manager } from './Manager';
-import { FullCoords } from './types';
-import { fullCoordsToString } from './utils';
 
 
 export function addListeners() {
@@ -13,8 +12,8 @@ export function addListeners() {
 
         (document.getElementById('ca-input-tx') as HTMLInputElement).value = Manager.lastClickedCoords.tile.x.toString();
         (document.getElementById('ca-input-ty') as HTMLInputElement).value = Manager.lastClickedCoords.tile.y.toString();
-        (document.getElementById('ca-input-px') as HTMLInputElement).value = Manager.lastClickedCoords.pixel.x.toString();
-        (document.getElementById('ca-input-py') as HTMLInputElement).value = Manager.lastClickedCoords.pixel.y.toString();
+        (document.getElementById('ca-input-px') as HTMLInputElement).value = Manager.lastClickedCoords.x.toString();
+        (document.getElementById('ca-input-py') as HTMLInputElement).value = Manager.lastClickedCoords.y.toString();
     });
 
     document.getElementById('ca-select-button')!.addEventListener('click', () => {
@@ -43,19 +42,10 @@ export function addListeners() {
             return;
         }
 
-        const coords: FullCoords = {
-            tile: {
-                x: tx,
-                y: ty
-            },
-            pixel: {
-                x: px,
-                y: py
-            }
-        };
+        const coords = new PixelCoords(new TileCoords(tx, ty), px, py);
 
         Manager.templates = [];
         Manager.createTemplate(coords, fileInput.files![0]!);
-        displayStatus('Created template at ' + fullCoordsToString(coords));
+        displayStatus('Created template at ' + coords.toString());
     });
 };
