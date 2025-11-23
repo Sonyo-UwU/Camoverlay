@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.0.15
+// @version      0.1.0
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -277,28 +277,46 @@ div#ca-overlay {
   };
 
   // dist/Template.js
-  var Template = class {
+  var Template = class _Template {
     name;
     coords;
     overlapedTiles;
     bitmap;
-    constructor(name, coords, bitmap) {
+    constructor(name, coords) {
       this.name = name;
       this.coords = coords;
       this.overlapedTiles = [];
-      this.bitmap = bitmap;
+      this.bitmap = null;
+    }
+    static async fromFile(name, coords, file) {
+      const template = new _Template(name, coords);
+      const bitmap = await createImageBitmap(file);
       const end = new PixelCoords(coords.tile, coords.x + bitmap.width, coords.y + bitmap.height);
-      for (let i = this.coords.tile.x; i <= end.tile.x; i++)
-        for (let j = this.coords.tile.y; j <= end.tile.y; j++)
-          this.overlapedTiles.push(TileCoords.toIndex(i, j));
+      for (let i = template.coords.tile.x; i <= end.tile.x; i++)
+        for (let j = template.coords.tile.y; j <= end.tile.y; j++)
+          template.overlapedTiles.push(TileCoords.toIndex(i, j));
+      const canvas = new OffscreenCanvas(Manager.patternSize * bitmap.width, Manager.patternSize * bitmap.height);
+      const ctx = canvas.getContext("2d");
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      for (let y = 0; y < imageData.height; y++)
+        for (let x = 0; x < imageData.width; x++) {
+          const pixelIndex = (y * imageData.width + x) * 4;
+          if (x % Manager.patternSize !== 1 || y % Manager.patternSize !== 1)
+            imageData.data[pixelIndex + 3] = 0;
+        }
+      ctx.putImageData(imageData, 0, 0);
+      template.bitmap = canvas.transferToImageBitmap();
+      return template;
     }
     overlaps(tile) {
       return this.overlapedTiles.includes(tile);
     }
     drawOnTile(tile, ctx) {
-      if (!this.overlaps(tile.toIndex()))
+      if (this.bitmap === null || !this.overlaps(tile.toIndex()))
         return;
-      ctx.drawImage(this.bitmap, this.coords.tile.x * 1e3 + this.coords.x - tile.x * 1e3, this.coords.tile.y * 1e3 + this.coords.y - tile.y * 1e3);
+      ctx.drawImage(this.bitmap, (this.coords.tile.x * 1e3 + this.coords.x - tile.x * 1e3) * Manager.patternSize, (this.coords.tile.y * 1e3 + this.coords.y - tile.y * 1e3) * Manager.patternSize);
     }
   };
 
@@ -307,13 +325,19 @@ div#ca-overlay {
     lastClickedCoords = null;
     templates;
     tilesInfo;
+    patternSize = 3;
     constructor() {
       this.templates = [];
       this.tilesInfo = /* @__PURE__ */ new Map();
     }
     async createTemplate(coords, file) {
-      const bitmap = await createImageBitmap(file);
-      const template = new Template(file.name, coords, bitmap);
+      const start = performance.now();
+      const template = await Template.fromFile(file.name, coords, file);
+      const time = performance.now() - start;
+      console.log("Created template in " + time + "ms");
+      for (const index of template.overlapedTiles) {
+        this.tilesInfo.delete(index);
+      }
       this.templates.push(template);
       return template;
     }
@@ -352,7 +376,7 @@ div#ca-overlay {
       });
     }
     async drawOnTile(tile, blob) {
-      const canvas = new OffscreenCanvas(1e3, 1e3);
+      const canvas = new OffscreenCanvas(this.patternSize * 1e3, this.patternSize * 1e3);
       const ctx = canvas.getContext("2d");
       ctx.imageSmoothingEnabled = false;
       ctx.drawImage(await createImageBitmap(blob), 0, 0, canvas.width, canvas.height);

@@ -6,6 +6,7 @@ class ManagerClass {
     lastClickedCoords: PixelCoords | null = null;
     templates: Template[];
     tilesInfo: Map<TileIndex, TileInfo>;
+    readonly patternSize: number = 3;
 
     constructor() {
         this.templates = [];
@@ -13,9 +14,15 @@ class ManagerClass {
     }
 
     async createTemplate(coords: PixelCoords, file: File): Promise<Template> {
-        const bitmap = await createImageBitmap(file);
+        const start = performance.now();
+        const template = await Template.fromFile(file.name, coords, file);
+        const time = performance.now() - start;
+        console.log('Created template in ' + time + 'ms');
 
-        const template = new Template(file.name, coords, bitmap);
+        for (const index of template.overlapedTiles) {
+            this.tilesInfo.delete(index);
+        }
+
         this.templates.push(template);
         return template;
     }
@@ -69,7 +76,7 @@ class ManagerClass {
     }
 
     async drawOnTile(tile: TileCoords, blob: Blob): Promise<Blob> {
-        const canvas = new OffscreenCanvas(1000, 1000);
+        const canvas = new OffscreenCanvas(this.patternSize * 1000, this.patternSize * 1000);
         const ctx = canvas.getContext('2d')!;
         ctx.imageSmoothingEnabled = false;
 
