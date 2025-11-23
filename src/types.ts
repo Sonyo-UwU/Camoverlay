@@ -1,7 +1,8 @@
 export type TileIndex = number;
 
 export type TileInfo = {
-    lastUpdated: EpochTimeStamp;
+    lastModified: EpochTimeStamp;
+    blob: Blob | null;
 };
 
 export type UserData = {

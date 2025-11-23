@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.0.13
+// @version      0.0.14
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -287,7 +287,6 @@ div#ca-overlay {
       this.coords = coords;
       this.affectedTiles = [];
       this.bitmap = bitmap;
-      debugger;
       const end = new PixelCoords(coords.tile, coords.x + bitmap.width, coords.y + bitmap.height);
       for (let i = this.coords.tile.x; i <= end.tile.x; i++)
         for (let j = this.coords.tile.y; j <= end.tile.y; j++)
@@ -314,7 +313,7 @@ div#ca-overlay {
       return template;
     }
     async processTile(tile, response) {
-      const lastUpdated = new Date(response.headers.get("last-modified") ?? 0).getTime();
+      const lastModified = new Date(response.headers.get("last-modified") ?? 0).getTime();
       const tileIndex = tile.toIndex();
       let overlap = false;
       for (const template of this.templates) {
@@ -323,22 +322,25 @@ div#ca-overlay {
           break;
         }
       }
-      if (!overlap) {
+      if (!overlap)
         return response;
-      }
       let tileInfo;
       if (this.tilesInfo.has(tileIndex)) {
         tileInfo = this.tilesInfo.get(tileIndex);
-        tileInfo.lastUpdated = lastUpdated;
       } else {
         tileInfo = {
-          lastUpdated
+          lastModified: 0,
+          blob: null
         };
         this.tilesInfo.set(tileIndex, tileInfo);
       }
-      const blob = await response.blob();
-      const modifiedBlob = await this.drawOnTile(tile, blob);
-      return new Response(modifiedBlob, {
+      if (tileInfo.blob === null || tileInfo.lastModified < lastModified) {
+        const blob = await response.blob();
+        const modifiedBlob = await this.drawOnTile(tile, blob);
+        tileInfo.blob = modifiedBlob;
+        tileInfo.lastModified = lastModified;
+      }
+      return new Response(tileInfo.blob, {
         headers: response.headers,
         status: response.status,
         statusText: response.statusText

@@ -21,7 +21,7 @@ class ManagerClass {
     }
 
     async processTile(tile: TileCoords, response: Response): Promise<Response> {
-        const lastUpdated = new Date(response.headers.get('last-modified') ?? 0).getTime();
+        const lastModified = new Date(response.headers.get('last-modified') ?? 0).getTime();
 
         const tileIndex = tile.toIndex();
 
@@ -33,31 +33,35 @@ class ManagerClass {
                 break;
             }
         }
-
-        if (!overlap) {
+        if (!overlap)
             return response;
-        }
 
 
+        // Get or create TileInfo
         let tileInfo: TileInfo;
         if (this.tilesInfo.has(tileIndex)) {
             tileInfo = this.tilesInfo.get(tileIndex)!;
-            //if (tileInfo.lastUpdated <= lastUpdated)
-            //    return response;
-
-            tileInfo.lastUpdated = lastUpdated;
         }
         else {
             tileInfo = {
-                lastUpdated: lastUpdated
+                lastModified: 0,
+                blob: null
             };
             this.tilesInfo.set(tileIndex, tileInfo);
         }
 
-        const blob = await response.blob();
-        const modifiedBlob = await this.drawOnTile(tile, blob);
 
-        return new Response(modifiedBlob, {
+        // Update if necessary
+        if (tileInfo.blob === null || tileInfo.lastModified < lastModified) {
+            const blob = await response.blob();
+            const modifiedBlob = await this.drawOnTile(tile, blob);
+            tileInfo.blob = modifiedBlob;
+            tileInfo.lastModified = lastModified;
+        }
+
+
+        // Return the result
+        return new Response(tileInfo.blob, {
             headers: response.headers,
             status: response.status,
             statusText: response.statusText

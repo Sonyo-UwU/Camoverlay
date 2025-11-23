@@ -14,7 +14,6 @@ export default class Template {
         this.affectedTiles = [];
         this.bitmap = bitmap;
 
-        debugger;
         const end = new PixelCoords(coords.tile, coords.x + bitmap.width, coords.y + bitmap.height);
 
         for (let i = this.coords.tile.x; i <= end.tile.x; i++)
