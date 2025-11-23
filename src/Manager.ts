@@ -20,10 +20,24 @@ class ManagerClass {
         return template;
     }
 
-    async processTile(tile: TileCoords, response: Response) {
+    async processTile(tile: TileCoords, response: Response): Promise<Response> {
         const lastUpdated = new Date(response.headers.get('last-modified') ?? 0).getTime();
 
         const tileIndex = tile.toIndex();
+
+        // Check if any template overlaps
+        let overlap = false;
+        for (const template of this.templates) {
+            if (template.affectedTiles.includes(tileIndex)) {
+                overlap = true;
+                break;
+            }
+        }
+
+        if (!overlap) {
+            return response;
+        }
+
 
         let tileInfo: TileInfo;
         if (this.tilesInfo.has(tileIndex)) {

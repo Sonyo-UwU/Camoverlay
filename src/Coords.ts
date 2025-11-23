@@ -9,8 +9,12 @@ export class TileCoords {
         this.y = y % 2048;
     }
 
+    static toIndex(x: number, y: number): TileIndex {
+        return x * 10000 + y;
+    }
+
     toIndex(): TileIndex {
-        return this.x * 2048 + this.y;
+        return TileCoords.toIndex(this.x, this.y);
     }
 
     toString() {
@@ -24,8 +28,8 @@ export class PixelCoords {
     readonly y: number;
 
     constructor(tile: TileCoords, x: number, y: number) {
-        this.tile = new TileCoords((tile.x + Math.floor(x / 1000)) % 2048,
-                                   (tile.y + Math.floor(y / 1000)) % 2048);
+        this.tile = new TileCoords(tile.x + Math.floor(x / 1000),
+                                   tile.y + Math.floor(y / 1000));
 
         this.x = x % 1000;
         this.y = y % 1000;

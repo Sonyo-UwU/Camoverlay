@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.0.12
+// @version      0.0.13
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -245,15 +245,18 @@ div#ca-overlay {
   }
 
   // dist/Coords.js
-  var TileCoords = class {
+  var TileCoords = class _TileCoords {
     x;
     y;
     constructor(x, y) {
       this.x = x % 2048;
       this.y = y % 2048;
     }
+    static toIndex(x, y) {
+      return x * 1e4 + y;
+    }
     toIndex() {
-      return this.x * 2048 + this.y;
+      return _TileCoords.toIndex(this.x, this.y);
     }
     toString() {
       return `[${this.x}, ${this.y}]`;
@@ -264,7 +267,7 @@ div#ca-overlay {
     x;
     y;
     constructor(tile, x, y) {
-      this.tile = new TileCoords((tile.x + Math.floor(x / 1e3)) % 2048, (tile.y + Math.floor(y / 1e3)) % 2048);
+      this.tile = new TileCoords(tile.x + Math.floor(x / 1e3), tile.y + Math.floor(y / 1e3));
       this.x = x % 1e3;
       this.y = y % 1e3;
     }
@@ -277,11 +280,18 @@ div#ca-overlay {
   var Template = class {
     name;
     coords;
+    affectedTiles;
     bitmap;
     constructor(name, coords, bitmap) {
       this.name = name;
       this.coords = coords;
+      this.affectedTiles = [];
       this.bitmap = bitmap;
+      debugger;
+      const end = new PixelCoords(coords.tile, coords.x + bitmap.width, coords.y + bitmap.height);
+      for (let i = this.coords.tile.x; i <= end.tile.x; i++)
+        for (let j = this.coords.tile.y; j <= end.tile.y; j++)
+          this.affectedTiles.push(TileCoords.toIndex(i, j));
     }
     drawOnTile(tile, ctx) {
       ctx.drawImage(this.bitmap, this.coords.tile.x * 1e3 + this.coords.x - tile.x * 1e3, this.coords.tile.y * 1e3 + this.coords.y - tile.y * 1e3);
@@ -306,6 +316,16 @@ div#ca-overlay {
     async processTile(tile, response) {
       const lastUpdated = new Date(response.headers.get("last-modified") ?? 0).getTime();
       const tileIndex = tile.toIndex();
+      let overlap = false;
+      for (const template of this.templates) {
+        if (template.affectedTiles.includes(tileIndex)) {
+          overlap = true;
+          break;
+        }
+      }
+      if (!overlap) {
+        return response;
+      }
       let tileInfo;
       if (this.tilesInfo.has(tileIndex)) {
         tileInfo = this.tilesInfo.get(tileIndex);
