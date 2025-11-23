@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.0.14
+// @version      0.0.15
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -280,19 +280,24 @@ div#ca-overlay {
   var Template = class {
     name;
     coords;
-    affectedTiles;
+    overlapedTiles;
     bitmap;
     constructor(name, coords, bitmap) {
       this.name = name;
       this.coords = coords;
-      this.affectedTiles = [];
+      this.overlapedTiles = [];
       this.bitmap = bitmap;
       const end = new PixelCoords(coords.tile, coords.x + bitmap.width, coords.y + bitmap.height);
       for (let i = this.coords.tile.x; i <= end.tile.x; i++)
         for (let j = this.coords.tile.y; j <= end.tile.y; j++)
-          this.affectedTiles.push(TileCoords.toIndex(i, j));
+          this.overlapedTiles.push(TileCoords.toIndex(i, j));
+    }
+    overlaps(tile) {
+      return this.overlapedTiles.includes(tile);
     }
     drawOnTile(tile, ctx) {
+      if (!this.overlaps(tile.toIndex()))
+        return;
       ctx.drawImage(this.bitmap, this.coords.tile.x * 1e3 + this.coords.x - tile.x * 1e3, this.coords.tile.y * 1e3 + this.coords.y - tile.y * 1e3);
     }
   };
@@ -317,7 +322,7 @@ div#ca-overlay {
       const tileIndex = tile.toIndex();
       let overlap = false;
       for (const template of this.templates) {
-        if (template.affectedTiles.includes(tileIndex)) {
+        if (template.overlaps(tileIndex)) {
           overlap = true;
           break;
         }

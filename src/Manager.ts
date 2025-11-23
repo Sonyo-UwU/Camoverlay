@@ -12,7 +12,7 @@ class ManagerClass {
         this.tilesInfo = new Map();
     }
 
-    async createTemplate(coords: PixelCoords, file: File) {
+    async createTemplate(coords: PixelCoords, file: File): Promise<Template> {
         const bitmap = await createImageBitmap(file);
 
         const template = new Template(file.name, coords, bitmap);
@@ -28,7 +28,7 @@ class ManagerClass {
         // Check if any template overlaps
         let overlap = false;
         for (const template of this.templates) {
-            if (template.affectedTiles.includes(tileIndex)) {
+            if (template.overlaps(tileIndex)) {
                 overlap = true;
                 break;
             }
@@ -68,7 +68,7 @@ class ManagerClass {
         });
     }
 
-    async drawOnTile(tile: TileCoords, blob: Blob) {
+    async drawOnTile(tile: TileCoords, blob: Blob): Promise<Blob> {
         const canvas = new OffscreenCanvas(1000, 1000);
         const ctx = canvas.getContext('2d')!;
         ctx.imageSmoothingEnabled = false;
