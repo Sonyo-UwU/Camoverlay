@@ -1,6 +1,6 @@
 import { PixelCoords, TileCoords } from './Coords';
 
-export function parseCoordsFromPixelURL(url: string): PixelCoords {
+export function parsePixelCoordsFromURL(url: string): PixelCoords {
     const urlSplitted = url.split('/');
     const last = urlSplitted[urlSplitted.length - 1]!;
 
@@ -14,7 +14,7 @@ export function parseCoordsFromPixelURL(url: string): PixelCoords {
     );
 }
 
-export function parseCoordsFromTileURL(url: string): TileCoords {
+export function parseTileCoordsFromURL(url: string): TileCoords {
     const urlSplitted = url.split('/');
     return new TileCoords(
         parseInt(urlSplitted[urlSplitted.length - 2] ?? ''),

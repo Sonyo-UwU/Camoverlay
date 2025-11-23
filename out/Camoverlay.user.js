@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.1.0
+// @version      0.1.1
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -429,12 +429,12 @@ div#ca-overlay {
   }
 
   // dist/utils.js
-  function parseCoordsFromPixelURL(url) {
+  function parsePixelCoordsFromURL(url) {
     const urlSplitted = url.split("/");
     const last = urlSplitted[urlSplitted.length - 1];
     return new PixelCoords(new TileCoords(parseInt(urlSplitted[urlSplitted.length - 2]), parseInt(urlSplitted[urlSplitted.length - 1])), parseInt(last.substring(last.indexOf("?") + 3)), parseInt(last.substring(last.indexOf("&") + 3)));
   }
-  function parseCoordsFromTileURL(url) {
+  function parseTileCoordsFromURL(url) {
     const urlSplitted = url.split("/");
     return new TileCoords(parseInt(urlSplitted[urlSplitted.length - 2] ?? ""), parseInt(urlSplitted[urlSplitted.length - 1] ?? ""));
   }
@@ -449,7 +449,8 @@ div#ca-overlay {
     const response = await originalFetch(input, init);
     const url = input instanceof Request ? input.url : input;
     const contentType = response.headers.get("content-type") ?? "";
-    if (contentType.includes("application/json") && url.includes("/me")) {
+    const method = init?.method ?? "GET";
+    if (contentType.includes("application/json") && url.includes("/me") && method === "GET") {
       const json = await response.clone().json();
       if (json.status && json.status.toString()[0] !== "2") {
         displayStatus("Could not fetch user data, are you logged in?");
@@ -457,11 +458,17 @@ div#ca-overlay {
         displayUserData(json);
       }
     } else if (contentType.includes("application/json") && url.includes("/pixel")) {
-      const coords = parseCoordsFromPixelURL(url);
-      Manager.lastClickedCoords = coords;
-      displayTileCoords(coords);
-    } else if (contentType.includes("image/") && url.includes("/tiles/")) {
-      const coords = parseCoordsFromTileURL(url);
+      if (method === "GET") {
+        const coords = parsePixelCoordsFromURL(url);
+        Manager.lastClickedCoords = coords;
+        displayTileCoords(coords);
+      } else if (method === "POST") {
+        debugger;
+        const coords = parseTileCoordsFromURL(url);
+        Manager.tilesInfo.delete(coords.toIndex());
+      }
+    } else if (contentType.includes("image/") && url.includes("/tiles/") && method === "GET") {
+      const coords = parseTileCoordsFromURL(url);
       const start = performance.now();
       const modified = await Manager.processTile(coords, response);
       const time = performance.now() - start;

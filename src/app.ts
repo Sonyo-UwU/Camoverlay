@@ -2,7 +2,7 @@ import { displayStatus, displayTileCoords, displayUserData, importFont, injectOv
 import { addListeners } from './eventListeners';
 import { Manager } from './Manager';
 import type { ScriptGetInfo, UserData } from './types';
-import { parseCoordsFromPixelURL, parseCoordsFromTileURL } from './utils';
+import { parsePixelCoordsFromURL, parseTileCoordsFromURL } from './utils';
 
 declare const GM_info: ScriptGetInfo;
 declare const unsafeWindow: typeof window;
@@ -22,9 +22,10 @@ unsafeWindow.fetch = async function (input: Parameters<typeof window.fetch>[0], 
 
     const url = input instanceof Request ? input.url : input as string;
     const contentType = response.headers.get('content-type') ?? '';
+    const method = init?.method ?? 'GET';
 
     // Me
-    if (contentType.includes('application/json') && url.includes('/me')) {
+    if (contentType.includes('application/json') && url.includes('/me') && method === 'GET') {
         const json = await response.clone().json() as UserData;
         if (json.status && json.status.toString()[0] !== '2') {
             // Not logged in / server down
@@ -35,17 +36,26 @@ unsafeWindow.fetch = async function (input: Parameters<typeof window.fetch>[0], 
         }
     }
 
-    // Pixel
     else if (contentType.includes('application/json') && url.includes('/pixel')) {
-        const coords = parseCoordsFromPixelURL(url);
+        // Pixel
+        if (method === 'GET') {
+            const coords = parsePixelCoordsFromURL(url);
 
-        Manager.lastClickedCoords = coords;
-        displayTileCoords(coords);
+            Manager.lastClickedCoords = coords;
+            displayTileCoords(coords);
+        }
+
+        // Painted
+        else if (method === 'POST') {
+            debugger;
+            const coords = parseTileCoordsFromURL(url);
+            Manager.tilesInfo.delete(coords.toIndex());
+        }
     }
 
     // Tiles
-    else if (contentType.includes('image/') && url.includes('/tiles/')) {
-        const coords = parseCoordsFromTileURL(url);
+    else if (contentType.includes('image/') && url.includes('/tiles/') && method === 'GET') {
+        const coords = parseTileCoordsFromURL(url);
 
         const start = performance.now();
         const modified = await Manager.processTile(coords, response);
