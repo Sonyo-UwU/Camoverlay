@@ -1,16 +1,18 @@
 {
   "name": "camoverlay",
-  "version": "1.0.0",
+  "version": "0.0.12",
   "description": "",
   "main": "app.js",
   "type": "module",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc --build && node build/build.js",
-    "clean": "tsc --build --clean"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Sonyo-UwU/Camoverlay.git"
   },
-  "keywords": [],
-  "author": "",
+  "scripts": {
+    "build": "tsc --build && node build/build.js",
+    "clean": "tsc --build && node build/build.js && rmdir /s /q dist"
+  },
+  "author": "Sonyo",
   "license": "ISC",
   "devDependencies": {
     "@types/node": "^24.10.1",

@@ -2,10 +2,21 @@ import esbuild from 'esbuild';
 import fs from 'fs';
 import { consoleStyle } from './console-styles.js';
 
+const versionRegex = /@version(\s+)([\d.]+)/;
+
 console.log(`${consoleStyle.BLUE}Starting bundling...${consoleStyle.RESET}`);
 
 
-const metaContent = fs.readFileSync('src/header.meta.js', 'utf8');
+let meta = fs.readFileSync('src/header.meta.js', 'utf8');
+
+const version = JSON.parse(fs.readFileSync('package.json', 'utf-8')).version.toString();
+const current = meta.match(versionRegex)[2];
+if (version !== current) {
+    meta = meta.replace(versionRegex, `@version$1${version}`);
+
+    fs.writeFileSync('src/header.meta.js', meta);
+    console.log(`${consoleStyle.GREEN}Updated${consoleStyle.RESET} userscript version to ${consoleStyle.MAGENTA}${version}${consoleStyle.RESET}`);
+}
 
 // Compile the JS files
 await esbuild.build({
@@ -19,7 +30,7 @@ await esbuild.build({
     minify: false, // Should the code be minified?
     write: true, // Should we write the outfile to the disk?
     banner: { // Userscript banner
-        js: metaContent
+        js: meta
     }
 }).catch(() => process.exit(1));
 
