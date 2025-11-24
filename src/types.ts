@@ -1,9 +1,19 @@
 export type TileIndex = number;
 
 export type TileInfo = {
-    lastModified: EpochTimeStamp;
+    lastModified: EpochTimeStamp,
     blob: Blob | null;
 };
+
+type JsonifiedObject<T> = {
+    [Key in keyof T as[JsonifiedValue<T[Key]>] extends [never] ? never : Key]: JsonifiedValue<T[Key]>
+};
+export type JsonifiedValue<T> = T extends string | number | null | boolean
+    ? T
+    : T extends { toJSON(): infer R; } ? R
+    : T extends undefined | Function ? never
+    : T extends object ? JsonifiedObject<T>
+    : never;
 
 export type UserData = {
     allianceId: number,

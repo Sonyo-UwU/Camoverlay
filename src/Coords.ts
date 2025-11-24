@@ -1,4 +1,4 @@
-import { TileIndex } from './types';
+import { JsonifiedValue, TileIndex } from './types';
 
 export class TileCoords {
     readonly x: number;
@@ -23,19 +23,24 @@ export class TileCoords {
 };
 
 export class PixelCoords {
-    readonly tile: TileCoords;
-    readonly x: number;
-    readonly y: number;
+    readonly tx: number;
+    readonly ty: number
+    readonly px: number;
+    readonly py: number;
 
-    constructor(tile: TileCoords, x: number, y: number) {
-        this.tile = new TileCoords(tile.x + Math.floor(x / 1000),
-                                   tile.y + Math.floor(y / 1000));
+    constructor(tx: number, ty: number, px: number, py: number) {
+        this.tx = (tx + Math.floor(px / 1000)) % 2048;
+        this.ty = (ty + Math.floor(py / 1000)) % 2048;
 
-        this.x = x % 1000;
-        this.y = y % 1000;
+        this.px = px % 1000;
+        this.py = py % 1000;
+    }
+
+    static copy(o: JsonifiedValue<PixelCoords>): PixelCoords {
+        return new PixelCoords(o.tx, o.ty, o.px, o.py);
     }
 
     toString() {
-        return `[${this.tile.x}, ${this.tile.y} ; ${this.x}, ${this.y}]`;
+        return `[${this.tx}, ${this.ty} ; ${this.px}, ${this.py}]`;
     }
 }

@@ -43,7 +43,7 @@ export function displayUserData(data: UserData) {
 }
 
 export function displayTileCoords(coords: PixelCoords) {
-    const textCoords = `Tile X: ${coords.tile.x}, Tile Y: ${coords.tile.y} ; Pixel X: ${coords.x}, Pixel Y: ${coords.y}`;
+    const textCoords = `Tile X: ${coords.tx}, Tile Y: ${coords.ty} ; Pixel X: ${coords.px}, Pixel Y: ${coords.py}`;
 
     const displayCoords = document.getElementById('ca-display-coords');
     if (displayCoords !== null) {
@@ -60,4 +60,11 @@ export function displayTileCoords(coords: PixelCoords) {
             div.insertAdjacentElement('beforebegin', span);
         }
     }
+}
+
+export function setPixelCoords(coords: PixelCoords) {
+    (document.getElementById('ca-input-tx') as HTMLInputElement).value = coords.tx.toString();
+    (document.getElementById('ca-input-ty') as HTMLInputElement).value = coords.ty.toString();
+    (document.getElementById('ca-input-px') as HTMLInputElement).value = coords.px.toString();
+    (document.getElementById('ca-input-py') as HTMLInputElement).value = coords.py.toString();
 }

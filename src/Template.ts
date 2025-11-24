@@ -5,14 +5,14 @@ import { TileIndex } from './types';
 export default class Template {
     name: string;
     coords: PixelCoords;
-    overlapedTiles: TileIndex[];
+    overlappedTiles: TileIndex[];
     bitmap: ImageBitmap | null;
 
 
     constructor(name: string, coords: PixelCoords) {
         this.name = name;
         this.coords = coords;
-        this.overlapedTiles = [];
+        this.overlappedTiles = [];
         this.bitmap = null;
     }
 
@@ -23,11 +23,11 @@ export default class Template {
 
 
         // Compute overlapped tiles
-        const end = new PixelCoords(coords.tile, coords.x + bitmap.width, coords.y + bitmap.height);
+        const end = new PixelCoords(coords.tx, coords.ty, coords.px + bitmap.width, coords.py + bitmap.height);
 
-        for (let i = template.coords.tile.x; i <= end.tile.x; i++)
-            for (let j = template.coords.tile.y; j <= end.tile.y; j++)
-                template.overlapedTiles.push(TileCoords.toIndex(i, j));
+        for (let i = template.coords.tx; i <= end.tx; i++)
+            for (let j = template.coords.ty; j <= end.ty; j++)
+                template.overlappedTiles.push(TileCoords.toIndex(i, j));
 
 
         // Compute bitmap
@@ -35,6 +35,7 @@ export default class Template {
         const ctx = canvas.getContext('2d')!;
         ctx.imageSmoothingEnabled = false;
         ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+        bitmap.close();
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
         for (let y = 0; y < imageData.height; y++)
@@ -54,7 +55,7 @@ export default class Template {
     }
 
     overlaps(tile: TileIndex): boolean {
-        return this.overlapedTiles.includes(tile);
+        return this.overlappedTiles.includes(tile);
     }
 
     drawOnTile(tile: TileCoords, ctx: OffscreenCanvasRenderingContext2D): void {
@@ -62,7 +63,7 @@ export default class Template {
             return;
 
         ctx.drawImage(this.bitmap,
-            (this.coords.tile.x * 1000 + this.coords.x - tile.x * 1000) * Manager.patternSize,
-            (this.coords.tile.y * 1000 + this.coords.y - tile.y * 1000) * Manager.patternSize);
+            (this.coords.tx * 1000 + this.coords.px - tile.x * 1000) * Manager.patternSize,
+            (this.coords.ty * 1000 + this.coords.py - tile.y * 1000) * Manager.patternSize);
     }
 }

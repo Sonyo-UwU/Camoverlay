@@ -12,6 +12,8 @@ importFont();
 injectOverlay();
 addListeners();
 
+Manager.loadGlobals();
+
 // Display version
 displayStatus('version ' + GM_info.script.version);
 
@@ -47,7 +49,6 @@ unsafeWindow.fetch = async function (input: Parameters<typeof window.fetch>[0], 
 
         // Painted
         else if (method === 'POST') {
-            debugger;
             const coords = parseTileCoordsFromURL(url);
             Manager.tilesInfo.delete(coords.toIndex());
         }

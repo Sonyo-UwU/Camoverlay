@@ -5,10 +5,8 @@ export function parsePixelCoordsFromURL(url: string): PixelCoords {
     const last = urlSplitted[urlSplitted.length - 1]!;
 
     return new PixelCoords(
-        new TileCoords(
-            parseInt(urlSplitted[urlSplitted.length - 2]!),
-            parseInt(urlSplitted[urlSplitted.length - 1]!)
-        ),
+        parseInt(urlSplitted[urlSplitted.length - 2]!),
+        parseInt(urlSplitted[urlSplitted.length - 1]!),
         parseInt(last.substring(last.indexOf('?') + 3)),
         parseInt(last.substring(last.indexOf('&') + 3))
     );

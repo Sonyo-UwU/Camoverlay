@@ -1,5 +1,5 @@
-import { PixelCoords, TileCoords } from './Coords';
-import { displayStatus } from './display';
+import { PixelCoords } from './Coords';
+import { displayStatus, setPixelCoords } from './display';
 import { Manager } from './Manager';
 
 
@@ -10,10 +10,9 @@ export function addListeners() {
             return;
         }
 
-        (document.getElementById('ca-input-tx') as HTMLInputElement).value = Manager.lastClickedCoords.tile.x.toString();
-        (document.getElementById('ca-input-ty') as HTMLInputElement).value = Manager.lastClickedCoords.tile.y.toString();
-        (document.getElementById('ca-input-px') as HTMLInputElement).value = Manager.lastClickedCoords.x.toString();
-        (document.getElementById('ca-input-py') as HTMLInputElement).value = Manager.lastClickedCoords.y.toString();
+        setPixelCoords(Manager.lastClickedCoords);
+
+        Manager.inputCoords = Manager.lastClickedCoords;
     });
 
     document.getElementById('ca-select-button')!.addEventListener('click', () => {
@@ -42,9 +41,8 @@ export function addListeners() {
             return;
         }
 
-        const coords = new PixelCoords(new TileCoords(tx, ty), px, py);
+        const coords = new PixelCoords(tx, ty, px, py);
 
-        Manager.templates = [];
         Manager.createTemplate(coords, fileInput.files![0]!);
         displayStatus('Created template at ' + coords.toString());
     });

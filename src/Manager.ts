@@ -1,9 +1,26 @@
 import { PixelCoords, TileCoords } from './Coords';
+import { setPixelCoords } from './display';
 import Template from './Template';
-import { TileIndex, TileInfo } from './types';
+import { JsonifiedValue, TileIndex, TileInfo } from './types';
+
+declare type StorageValues = {
+    'global': Pick<ManagerClass, 'inputCoords'>;
+};
+
+declare function GM_getValue(key: keyof StorageValues, defaultValue?: null): string | null;
+declare function GM_setValue(key: keyof StorageValues, value: string): void;
 
 class ManagerClass {
     lastClickedCoords: PixelCoords | null = null;
+    #inputCoords: PixelCoords | null = null;
+    set inputCoords(value: PixelCoords | null) {
+        this.#inputCoords = value;
+        this.storeGlobal();
+    };
+    get inputCoords() {
+        return this.#inputCoords;
+    };
+
     templates: Template[];
     tilesInfo: Map<TileIndex, TileInfo>;
     readonly patternSize: number = 3;
@@ -13,17 +30,41 @@ class ManagerClass {
         this.tilesInfo = new Map();
     }
 
+    static #loadValue<K extends keyof StorageValues>(key: K): JsonifiedValue<StorageValues[K]> | null {
+        return JSON.parse(GM_getValue(key, null)!);
+    }
+
+    static #storeValue<K extends keyof StorageValues>(key: K, value: StorageValues[K]): void {
+        GM_setValue(key, JSON.stringify(value));
+    }
+
+    loadGlobals(): void {
+        const stored = ManagerClass.#loadValue('global');
+        if (stored && stored.inputCoords) {
+            this.#inputCoords = PixelCoords.copy(stored.inputCoords);
+            this.lastClickedCoords = this.#inputCoords;
+            setPixelCoords(this.lastClickedCoords);
+        }
+    }
+
+    storeGlobal(): void {
+        ManagerClass.#storeValue('global', {
+            inputCoords: this.inputCoords
+        });
+    }
+
     async createTemplate(coords: PixelCoords, file: File): Promise<Template> {
         const start = performance.now();
         const template = await Template.fromFile(file.name, coords, file);
         const time = performance.now() - start;
         console.log('Created template in ' + time + 'ms');
 
-        for (const index of template.overlapedTiles) {
+        for (const index of template.overlappedTiles) {
             this.tilesInfo.delete(index);
         }
 
-        this.templates.push(template);
+        //this.templates.push(template);
+        this.templates = [template];
         return template;
     }
 

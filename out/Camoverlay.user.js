@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.1.1
+// @version      0.2.0
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -12,6 +12,8 @@
 // @match        https://wplace.live/*
 // @run-at       document-body
 // @grant        GM_addStyle
+// @grant        GM_getValue
+// @grant        GM_setValue
 // @grant        unsafeWindow
 // ==/UserScript==
 
@@ -227,7 +229,7 @@ div#ca-overlay {
     }
   }
   function displayTileCoords(coords) {
-    const textCoords = `Tile X: ${coords.tile.x}, Tile Y: ${coords.tile.y} ; Pixel X: ${coords.x}, Pixel Y: ${coords.y}`;
+    const textCoords = `Tile X: ${coords.tx}, Tile Y: ${coords.ty} ; Pixel X: ${coords.px}, Pixel Y: ${coords.py}`;
     const displayCoords = document.getElementById("ca-display-coords");
     if (displayCoords !== null) {
       displayCoords.textContent = textCoords;
@@ -242,6 +244,12 @@ div#ca-overlay {
         div.insertAdjacentElement("beforebegin", span);
       }
     }
+  }
+  function setPixelCoords(coords) {
+    document.getElementById("ca-input-tx").value = coords.tx.toString();
+    document.getElementById("ca-input-ty").value = coords.ty.toString();
+    document.getElementById("ca-input-px").value = coords.px.toString();
+    document.getElementById("ca-input-py").value = coords.py.toString();
   }
 
   // dist/Coords.js
@@ -262,17 +270,22 @@ div#ca-overlay {
       return `[${this.x}, ${this.y}]`;
     }
   };
-  var PixelCoords = class {
-    tile;
-    x;
-    y;
-    constructor(tile, x, y) {
-      this.tile = new TileCoords(tile.x + Math.floor(x / 1e3), tile.y + Math.floor(y / 1e3));
-      this.x = x % 1e3;
-      this.y = y % 1e3;
+  var PixelCoords = class _PixelCoords {
+    tx;
+    ty;
+    px;
+    py;
+    constructor(tx, ty, px, py) {
+      this.tx = (tx + Math.floor(px / 1e3)) % 2048;
+      this.ty = (ty + Math.floor(py / 1e3)) % 2048;
+      this.px = px % 1e3;
+      this.py = py % 1e3;
+    }
+    static copy(o) {
+      return new _PixelCoords(o.tx, o.ty, o.px, o.py);
     }
     toString() {
-      return `[${this.tile.x}, ${this.tile.y} ; ${this.x}, ${this.y}]`;
+      return `[${this.tx}, ${this.ty} ; ${this.px}, ${this.py}]`;
     }
   };
 
@@ -280,25 +293,26 @@ div#ca-overlay {
   var Template = class _Template {
     name;
     coords;
-    overlapedTiles;
+    overlappedTiles;
     bitmap;
     constructor(name, coords) {
       this.name = name;
       this.coords = coords;
-      this.overlapedTiles = [];
+      this.overlappedTiles = [];
       this.bitmap = null;
     }
     static async fromFile(name, coords, file) {
       const template = new _Template(name, coords);
       const bitmap = await createImageBitmap(file);
-      const end = new PixelCoords(coords.tile, coords.x + bitmap.width, coords.y + bitmap.height);
-      for (let i = template.coords.tile.x; i <= end.tile.x; i++)
-        for (let j = template.coords.tile.y; j <= end.tile.y; j++)
-          template.overlapedTiles.push(TileCoords.toIndex(i, j));
+      const end = new PixelCoords(coords.tx, coords.ty, coords.px + bitmap.width, coords.py + bitmap.height);
+      for (let i = template.coords.tx; i <= end.tx; i++)
+        for (let j = template.coords.ty; j <= end.ty; j++)
+          template.overlappedTiles.push(TileCoords.toIndex(i, j));
       const canvas = new OffscreenCanvas(Manager.patternSize * bitmap.width, Manager.patternSize * bitmap.height);
       const ctx = canvas.getContext("2d");
       ctx.imageSmoothingEnabled = false;
       ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      bitmap.close();
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       for (let y = 0; y < imageData.height; y++)
         for (let x = 0; x < imageData.width; x++) {
@@ -311,18 +325,26 @@ div#ca-overlay {
       return template;
     }
     overlaps(tile) {
-      return this.overlapedTiles.includes(tile);
+      return this.overlappedTiles.includes(tile);
     }
     drawOnTile(tile, ctx) {
       if (this.bitmap === null || !this.overlaps(tile.toIndex()))
         return;
-      ctx.drawImage(this.bitmap, (this.coords.tile.x * 1e3 + this.coords.x - tile.x * 1e3) * Manager.patternSize, (this.coords.tile.y * 1e3 + this.coords.y - tile.y * 1e3) * Manager.patternSize);
+      ctx.drawImage(this.bitmap, (this.coords.tx * 1e3 + this.coords.px - tile.x * 1e3) * Manager.patternSize, (this.coords.ty * 1e3 + this.coords.py - tile.y * 1e3) * Manager.patternSize);
     }
   };
 
   // dist/Manager.js
-  var ManagerClass = class {
+  var ManagerClass = class _ManagerClass {
     lastClickedCoords = null;
+    #inputCoords = null;
+    set inputCoords(value) {
+      this.#inputCoords = value;
+      this.storeGlobal();
+    }
+    get inputCoords() {
+      return this.#inputCoords;
+    }
     templates;
     tilesInfo;
     patternSize = 3;
@@ -330,15 +352,34 @@ div#ca-overlay {
       this.templates = [];
       this.tilesInfo = /* @__PURE__ */ new Map();
     }
+    static #loadValue(key) {
+      return JSON.parse(GM_getValue(key, null));
+    }
+    static #storeValue(key, value) {
+      GM_setValue(key, JSON.stringify(value));
+    }
+    loadGlobals() {
+      const stored = _ManagerClass.#loadValue("global");
+      if (stored && stored.inputCoords) {
+        this.#inputCoords = PixelCoords.copy(stored.inputCoords);
+        this.lastClickedCoords = this.#inputCoords;
+        setPixelCoords(this.lastClickedCoords);
+      }
+    }
+    storeGlobal() {
+      _ManagerClass.#storeValue("global", {
+        inputCoords: this.inputCoords
+      });
+    }
     async createTemplate(coords, file) {
       const start = performance.now();
       const template = await Template.fromFile(file.name, coords, file);
       const time = performance.now() - start;
       console.log("Created template in " + time + "ms");
-      for (const index of template.overlapedTiles) {
+      for (const index of template.overlappedTiles) {
         this.tilesInfo.delete(index);
       }
-      this.templates.push(template);
+      this.templates = [template];
       return template;
     }
     async processTile(tile, response) {
@@ -395,10 +436,8 @@ div#ca-overlay {
         displayStatus("Click on the canvas first to pick coordinates");
         return;
       }
-      document.getElementById("ca-input-tx").value = Manager.lastClickedCoords.tile.x.toString();
-      document.getElementById("ca-input-ty").value = Manager.lastClickedCoords.tile.y.toString();
-      document.getElementById("ca-input-px").value = Manager.lastClickedCoords.x.toString();
-      document.getElementById("ca-input-py").value = Manager.lastClickedCoords.y.toString();
+      setPixelCoords(Manager.lastClickedCoords);
+      Manager.inputCoords = Manager.lastClickedCoords;
     });
     document.getElementById("ca-select-button").addEventListener("click", () => {
       document.getElementById("ca-file-input").click();
@@ -421,8 +460,7 @@ div#ca-overlay {
         displayStatus("Invalid coordonates");
         return;
       }
-      const coords = new PixelCoords(new TileCoords(tx, ty), px, py);
-      Manager.templates = [];
+      const coords = new PixelCoords(tx, ty, px, py);
       Manager.createTemplate(coords, fileInput.files[0]);
       displayStatus("Created template at " + coords.toString());
     });
@@ -432,7 +470,7 @@ div#ca-overlay {
   function parsePixelCoordsFromURL(url) {
     const urlSplitted = url.split("/");
     const last = urlSplitted[urlSplitted.length - 1];
-    return new PixelCoords(new TileCoords(parseInt(urlSplitted[urlSplitted.length - 2]), parseInt(urlSplitted[urlSplitted.length - 1])), parseInt(last.substring(last.indexOf("?") + 3)), parseInt(last.substring(last.indexOf("&") + 3)));
+    return new PixelCoords(parseInt(urlSplitted[urlSplitted.length - 2]), parseInt(urlSplitted[urlSplitted.length - 1]), parseInt(last.substring(last.indexOf("?") + 3)), parseInt(last.substring(last.indexOf("&") + 3)));
   }
   function parseTileCoordsFromURL(url) {
     const urlSplitted = url.split("/");
@@ -443,6 +481,7 @@ div#ca-overlay {
   importFont();
   injectOverlay();
   addListeners();
+  Manager.loadGlobals();
   displayStatus("version " + GM_info.script.version);
   var originalFetch = unsafeWindow.fetch;
   unsafeWindow.fetch = async function(input, init) {
@@ -463,7 +502,6 @@ div#ca-overlay {
         Manager.lastClickedCoords = coords;
         displayTileCoords(coords);
       } else if (method === "POST") {
-        debugger;
         const coords = parseTileCoordsFromURL(url);
         Manager.tilesInfo.delete(coords.toIndex());
       }
