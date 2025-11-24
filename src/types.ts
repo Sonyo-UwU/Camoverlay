@@ -10,10 +10,15 @@ type JsonifiedObject<T> = {
 };
 export type JsonifiedValue<T> = T extends string | number | null | boolean
     ? T
-    : T extends { toJSON(): infer R; } ? R
+    : T extends { toJSON(key: string | number): infer R; } ? R
     : T extends undefined | Function ? never
+    : T extends Array<infer A> ? JsonifiedValue<A>[]
     : T extends object ? JsonifiedObject<T>
     : never;
+
+export type NonFunctionKeys<T> = {
+    [P in { [K in keyof T]: T[K] extends Function ? never : K; }[keyof T]]: T[P];
+};
 
 export type UserData = {
     allianceId: number,

@@ -23,7 +23,7 @@ await esbuild.build({
     entryPoints: ['dist/app.js'], // "Infect" the files from this point (it spreads from this "patient 0")
     bundle: true, // Should the code be bundled?
     outfile: 'out/Camoverlay.user.js', // The file the bundled code is exported to
-    format: 'iife', // What format the bundler bundles the code into
+    format: 'esm', // What format the bundler bundles the code into
     target: 'esnext', // What is the minimum version/year that should be supported?
     platform: 'browser', // The platform the bundled code will be operating on
     legalComments: 'inline', // What level of legal comments are preserved? (Hard: none, Soft: inline)

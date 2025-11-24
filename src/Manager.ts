@@ -4,7 +4,8 @@ import Template from './Template';
 import { JsonifiedValue, TileIndex, TileInfo } from './types';
 
 declare type StorageValues = {
-    'global': Pick<ManagerClass, 'inputCoords'>;
+    'global': Pick<ManagerClass, 'inputCoords'>,
+    'templates': Template[];
 };
 
 declare function GM_getValue(key: keyof StorageValues, defaultValue?: null): string | null;
@@ -53,6 +54,28 @@ class ManagerClass {
         });
     }
 
+    async loadTemplates(): Promise<void> {
+        const stored = ManagerClass.#loadValue('templates');
+        if (!stored)
+            return;
+
+        debugger;
+        for (let i = 0; i < this.templates.length; i++)
+            this.templates[0]!.bitmap?.close();
+        this.templates = [];
+
+        for (const storedTemplate of stored) {
+            const template = await Template.fromBase64(storedTemplate.name, PixelCoords.copy(storedTemplate.coords), storedTemplate.base64Data);
+            this.templates.push(template);
+        }
+
+        this.storeTemplates();
+    }
+
+    storeTemplates(): void {
+        ManagerClass.#storeValue('templates', this.templates);
+    }
+
     async createTemplate(coords: PixelCoords, file: File): Promise<Template> {
         const start = performance.now();
         const template = await Template.fromFile(file.name, coords, file);
@@ -65,6 +88,7 @@ class ManagerClass {
 
         //this.templates.push(template);
         this.templates = [template];
+        this.storeTemplates();
         return template;
     }
 

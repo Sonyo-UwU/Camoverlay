@@ -13,6 +13,7 @@ injectOverlay();
 addListeners();
 
 Manager.loadGlobals();
+await Manager.loadTemplates();
 
 // Display version
 displayStatus('version ' + GM_info.script.version);
