@@ -1,10 +1,10 @@
 import { PixelCoords, TileCoords } from './Coords';
-import { setPixelCoords } from './display';
+import { setInputCoords } from './display';
 import Template from './Template';
 import { JsonifiedValue, TileIndex, TileInfo } from './types';
 
 declare type StorageValues = {
-    'global': Pick<ManagerClass, 'inputCoords'>,
+    'global': { inputCoords: PixelCoords | null },
     'templates': Template[];
 };
 
@@ -12,23 +12,35 @@ declare function GM_getValue(key: keyof StorageValues, defaultValue?: null): str
 declare function GM_setValue(key: keyof StorageValues, value: string): void;
 
 class ManagerClass {
-    lastClickedCoords: PixelCoords | null = null;
-    #inputCoords: PixelCoords | null = null;
-    set inputCoords(value: PixelCoords | null) {
-        this.#inputCoords = value;
-        this.storeGlobal();
-    };
-    get inputCoords() {
-        return this.#inputCoords;
-    };
-
+    readonly patternSize: number = 3;
     templates: Template[];
     tilesInfo: Map<TileIndex, TileInfo>;
-    readonly patternSize: number = 3;
+    disabled: boolean;
+    lastClickedCoords: PixelCoords | null = null;
+
+    setInputCoords(value: PixelCoords | null) {
+        if (value !== null)
+            setInputCoords(value);
+        this.storeGlobal({ inputCoords: value });
+    };
+    getInputCoords(): PixelCoords | null {
+        const tx = parseInt((document.getElementById('ca-input-tx') as HTMLInputElement).value);
+        const ty = parseInt((document.getElementById('ca-input-ty') as HTMLInputElement).value);
+        const px = parseInt((document.getElementById('ca-input-px') as HTMLInputElement).value);
+        const py = parseInt((document.getElementById('ca-input-py') as HTMLInputElement).value);
+
+        if (isNaN(tx) || isNaN(ty) || isNaN(px) || isNaN(py)) {
+            return null;
+        }
+
+        return new PixelCoords(tx, ty, px, py);
+    };
+
 
     constructor() {
         this.templates = [];
         this.tilesInfo = new Map();
+        this.disabled = false;
     }
 
     static #loadValue<K extends keyof StorageValues>(key: K): JsonifiedValue<StorageValues[K]> | null {
@@ -42,15 +54,14 @@ class ManagerClass {
     loadGlobals(): void {
         const stored = ManagerClass.#loadValue('global');
         if (stored && stored.inputCoords) {
-            this.#inputCoords = PixelCoords.copy(stored.inputCoords);
-            this.lastClickedCoords = this.#inputCoords;
-            setPixelCoords(this.lastClickedCoords);
+            this.lastClickedCoords = PixelCoords.copy(stored.inputCoords);
+            this.setInputCoords(this.lastClickedCoords);
         }
     }
 
-    storeGlobal(): void {
+    storeGlobal(overrides?: Partial<StorageValues['global']>): void {
         ManagerClass.#storeValue('global', {
-            inputCoords: this.inputCoords
+            inputCoords: overrides?.inputCoords ?? this.getInputCoords()
         });
     }
 
@@ -59,7 +70,6 @@ class ManagerClass {
         if (!stored)
             return;
 
-        debugger;
         for (let i = 0; i < this.templates.length; i++)
             this.templates[0]!.bitmap?.close();
         this.templates = [];
@@ -93,6 +103,10 @@ class ManagerClass {
     }
 
     async processTile(tile: TileCoords, response: Response): Promise<Response> {
+        // Exit early if disabled
+        if (this.disabled)
+            return response;
+
         const lastModified = new Date(response.headers.get('last-modified') ?? 0).getTime();
 
         const tileIndex = tile.toIndex();

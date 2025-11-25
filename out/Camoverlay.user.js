@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.2.1
+// @version      0.2.2
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -45,7 +45,7 @@ function injectOverlay() {
         </div>
         <div id="ca-templates">
             <div>
-                <input id="ca-file-input" type="file" accept="image/png, image/jpeg, image/webp, image/bmp, image/gif" />
+                <input id="ca-file-input" type="file" accept="image/png" />
                 <button id="ca-select-button">Select file</button>
             </div>
             <div id="ca-template-buttons">
@@ -57,7 +57,7 @@ function injectOverlay() {
         <textarea id="ca-output" readonly placeholder="Sleeping"></textarea>
         <div id="ca-bottom">
             <div>
-                <button class="ca-icon-button">🎨</button><button class="ca-icon-button">🌐</button>
+                <button id="ca-converter-button" class="ca-icon-button">🎨</button>
             </div>
             <small>
                 Made by Sonyo
@@ -244,7 +244,7 @@ function displayTileCoords(coords) {
     }
   }
 }
-function setPixelCoords(coords) {
+function setInputCoords(coords) {
   document.getElementById("ca-input-tx").value = coords.tx.toString();
   document.getElementById("ca-input-ty").value = coords.ty.toString();
   document.getElementById("ca-input-px").value = coords.px.toString();
@@ -369,21 +369,30 @@ var Template = class _Template {
 
 // dist/Manager.js
 var ManagerClass = class _ManagerClass {
-  lastClickedCoords = null;
-  #inputCoords = null;
-  set inputCoords(value) {
-    this.#inputCoords = value;
-    this.storeGlobal();
-  }
-  get inputCoords() {
-    return this.#inputCoords;
-  }
+  patternSize = 3;
   templates;
   tilesInfo;
-  patternSize = 3;
+  disabled;
+  lastClickedCoords = null;
+  setInputCoords(value) {
+    if (value !== null)
+      setInputCoords(value);
+    this.storeGlobal({ inputCoords: value });
+  }
+  getInputCoords() {
+    const tx = parseInt(document.getElementById("ca-input-tx").value);
+    const ty = parseInt(document.getElementById("ca-input-ty").value);
+    const px = parseInt(document.getElementById("ca-input-px").value);
+    const py = parseInt(document.getElementById("ca-input-py").value);
+    if (isNaN(tx) || isNaN(ty) || isNaN(px) || isNaN(py)) {
+      return null;
+    }
+    return new PixelCoords(tx, ty, px, py);
+  }
   constructor() {
     this.templates = [];
     this.tilesInfo = /* @__PURE__ */ new Map();
+    this.disabled = false;
   }
   static #loadValue(key) {
     return JSON.parse(GM_getValue(key, null));
@@ -394,21 +403,19 @@ var ManagerClass = class _ManagerClass {
   loadGlobals() {
     const stored = _ManagerClass.#loadValue("global");
     if (stored && stored.inputCoords) {
-      this.#inputCoords = PixelCoords.copy(stored.inputCoords);
-      this.lastClickedCoords = this.#inputCoords;
-      setPixelCoords(this.lastClickedCoords);
+      this.lastClickedCoords = PixelCoords.copy(stored.inputCoords);
+      this.setInputCoords(this.lastClickedCoords);
     }
   }
-  storeGlobal() {
+  storeGlobal(overrides) {
     _ManagerClass.#storeValue("global", {
-      inputCoords: this.inputCoords
+      inputCoords: overrides?.inputCoords ?? this.getInputCoords()
     });
   }
   async loadTemplates() {
     const stored = _ManagerClass.#loadValue("templates");
     if (!stored)
       return;
-    debugger;
     for (let i = 0; i < this.templates.length; i++)
       this.templates[0].bitmap?.close();
     this.templates = [];
@@ -434,6 +441,8 @@ var ManagerClass = class _ManagerClass {
     return template;
   }
   async processTile(tile, response) {
+    if (this.disabled)
+      return response;
     const lastModified = new Date(response.headers.get("last-modified") ?? 0).getTime();
     const tileIndex = tile.toIndex();
     let overlap = false;
@@ -482,13 +491,23 @@ var Manager = new ManagerClass();
 
 // dist/eventListeners.js
 function addListeners() {
+  function pasted(e) {
+    const values = e.clipboardData?.getData("text").split(" ").filter((n) => n).map(Number).filter((n) => !isNaN(n));
+    if (values === void 0 || values.length !== 4)
+      return;
+    e.preventDefault();
+    Manager.setInputCoords(new PixelCoords(values[0], values[1], values[2], values[3]));
+  }
+  document.getElementById("ca-input-tx").addEventListener("paste", pasted);
+  document.getElementById("ca-input-ty").addEventListener("paste", pasted);
+  document.getElementById("ca-input-px").addEventListener("paste", pasted);
+  document.getElementById("ca-input-py").addEventListener("paste", pasted);
   document.getElementById("ca-coords-button").addEventListener("click", () => {
     if (Manager.lastClickedCoords === null) {
       displayStatus("Click on the canvas first to pick coordinates");
       return;
     }
-    setPixelCoords(Manager.lastClickedCoords);
-    Manager.inputCoords = Manager.lastClickedCoords;
+    Manager.setInputCoords(Manager.lastClickedCoords);
   });
   document.getElementById("ca-select-button").addEventListener("click", () => {
     document.getElementById("ca-file-input").click();
@@ -497,23 +516,29 @@ function addListeners() {
     if (e.target.files.length > 0)
       document.getElementById("ca-select-button").innerText = e.target.files[0].name;
   });
+  document.getElementById("ca-enable-button").addEventListener("click", () => {
+    Manager.disabled = false;
+  });
+  document.getElementById("ca-disable-button").addEventListener("click", () => {
+    Manager.disabled = true;
+  });
   document.getElementById("ca-create-button").addEventListener("click", () => {
     const fileInput = document.getElementById("ca-file-input");
     if (fileInput.files.length < 1) {
       displayStatus("Select a file to upload");
       return;
     }
-    const tx = parseInt(document.getElementById("ca-input-tx").value);
-    const ty = parseInt(document.getElementById("ca-input-ty").value);
-    const px = parseInt(document.getElementById("ca-input-px").value);
-    const py = parseInt(document.getElementById("ca-input-py").value);
-    if (isNaN(tx) || isNaN(ty) || isNaN(px) || isNaN(py)) {
+    const coords = Manager.getInputCoords();
+    if (coords === null) {
       displayStatus("Invalid coordonates");
       return;
     }
-    const coords = new PixelCoords(tx, ty, px, py);
+    Manager.disabled = false;
     Manager.createTemplate(coords, fileInput.files[0]);
     displayStatus("Created template at " + coords.toString());
+  });
+  document.getElementById("ca-converter-button").addEventListener("click", () => {
+    window.open("https://pepoafonso.github.io/color_converter_wplace/", "_blank", "noopener noreferrer");
   });
 }
 

@@ -62,7 +62,7 @@ export function displayTileCoords(coords: PixelCoords) {
     }
 }
 
-export function setPixelCoords(coords: PixelCoords) {
+export function setInputCoords(coords: PixelCoords) {
     (document.getElementById('ca-input-tx') as HTMLInputElement).value = coords.tx.toString();
     (document.getElementById('ca-input-ty') as HTMLInputElement).value = coords.ty.toString();
     (document.getElementById('ca-input-px') as HTMLInputElement).value = coords.px.toString();
