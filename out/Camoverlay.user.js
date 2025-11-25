@@ -431,7 +431,7 @@ var Template = class _Template {
         const color = getClosestColor(imageData.data[pixelIndex + 0], imageData.data[pixelIndex + 1], imageData.data[pixelIndex + 2]);
         template.colorsInfo.set(color.id, (template.colorsInfo.get(color.id) ?? 0) + 1);
         template.totalPixelCount++;
-        if (color.name !== "Other") {
+        if (color !== otherColor) {
           imageData.data[pixelIndex + 0] = color.rgb[0];
           imageData.data[pixelIndex + 1] = color.rgb[1];
           imageData.data[pixelIndex + 2] = color.rgb[2];
@@ -647,7 +647,7 @@ function addListeners() {
   document.getElementById("ca-disable-button").addEventListener("click", () => {
     Manager.disabled = true;
   });
-  document.getElementById("ca-create-button").addEventListener("click", async () => {
+  document.getElementById("ca-create-button").addEventListener("click", () => {
     const fileInput = document.getElementById("ca-file-input");
     if (fileInput.files.length < 1) {
       displayStatus("Select a file to upload");
@@ -659,7 +659,7 @@ function addListeners() {
       return;
     }
     Manager.disabled = false;
-    await Manager.createTemplate(coords, fileInput.files[0]);
+    Manager.createTemplate(coords, fileInput.files[0]);
   });
   document.getElementById("ca-converter-button").addEventListener("click", () => {
     window.open("https://pepoafonso.github.io/color_converter_wplace/", "_blank", "noopener noreferrer");
