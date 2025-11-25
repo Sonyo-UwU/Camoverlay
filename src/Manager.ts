@@ -1,5 +1,5 @@
 import { PixelCoords, TileCoords } from './Coords';
-import { setInputCoords } from './display';
+import { displayStatus, setInputCoords } from './display';
 import Template from './Template';
 import { JsonifiedValue, TileIndex, TileInfo } from './types';
 
@@ -75,11 +75,10 @@ class ManagerClass {
         this.templates = [];
 
         for (const storedTemplate of stored) {
-            const template = await Template.fromBase64(storedTemplate.name, PixelCoords.copy(storedTemplate.coords), storedTemplate.base64Data);
+            const template = await Template.fromStorage(storedTemplate);
             this.templates.push(template);
+            displayStatus('Loaded template at ' + template.coords.toString() + ': ' + template.totalPixelCount + ' pixels');
         }
-
-        this.storeTemplates();
     }
 
     storeTemplates(): void {
@@ -99,6 +98,7 @@ class ManagerClass {
         //this.templates.push(template);
         this.templates = [template];
         this.storeTemplates();
+        displayStatus('Created template at ' + template.coords.toString() + ': ' + template.totalPixelCount + ' pixels');
         return template;
     }
 

@@ -59,7 +59,6 @@ export function addListeners() {
 
         Manager.disabled = false;
         Manager.createTemplate(coords, fileInput.files![0]!);
-        displayStatus('Created template at ' + coords.toString());
     });
 
     document.getElementById('ca-converter-button')!.addEventListener('click', () => {

@@ -5,20 +5,31 @@ export type TileInfo = {
     blob: Blob | null;
 };
 
+export type WplaceColorId = number;
+export type WplaceColor = {
+    id: WplaceColorId,
+    name: string,
+    rgb: [number, number, number];
+};
+
 type JsonifiedObject<T> = {
     [Key in keyof T as[JsonifiedValue<T[Key]>] extends [never] ? never : Key]: JsonifiedValue<T[Key]>
 };
+type JsonifiedArray<T> = T extends [infer Head, ...infer Tail] ? [JsonifiedValue<Head>, ...JsonifiedArray<Tail>] : [];
 export type JsonifiedValue<T> = T extends string | number | null | boolean
     ? T
-    : T extends { toJSON(key: string | number): infer R; } ? R
+    : T extends { toJSON(key: string | number): infer R; } ? JsonifiedValue<R>
     : T extends undefined | Function ? never
+    : T extends [any, ...any] ? JsonifiedArray<T>
     : T extends Array<infer A> ? JsonifiedValue<A>[]
     : T extends object ? JsonifiedObject<T>
     : never;
 
+/*
 export type NonFunctionKeys<T> = {
     [P in { [K in keyof T]: T[K] extends Function ? never : K; }[keyof T]]: T[P];
 };
+*/
 
 export type UserData = {
     allianceId: number,

@@ -1,6 +1,11 @@
 import { PixelCoords, TileCoords } from './Coords';
 import { Manager } from './Manager';
-import { NonFunctionKeys, TileIndex } from './types';
+import { JsonifiedValue, TileIndex, WplaceColorId } from './types';
+import { getClosestColor, otherColor } from './utils';
+
+type StoredTemplate = Omit<JsonifiedValue<Omit<Template, 'toJSON'>>, 'overlappedTiles' | 'bitmap' | 'colorsInfo'> & {
+    colorsInfo: [WplaceColorId, number][]
+};
 
 export default class Template {
     name: string;
@@ -8,6 +13,8 @@ export default class Template {
     overlappedTiles: TileIndex[];
     bitmap: ImageBitmap | null;
     base64Data: string;
+    colorsInfo: Map<WplaceColorId, number>;
+    totalPixelCount: number;
 
 
     constructor(name: string, coords: PixelCoords) {
@@ -16,6 +23,8 @@ export default class Template {
         this.overlappedTiles = [];
         this.bitmap = null;
         this.base64Data = '';
+        this.colorsInfo = new Map();
+        this.totalPixelCount = 0;
     }
 
     static async fromFile(name: string, coords: PixelCoords, file: File): Promise<Template> {
@@ -31,11 +40,28 @@ export default class Template {
         bitmap.close();
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
+        // Create pattern and count pixels
         for (let y = 0; y < imageData.height; y++)
             for (let x = 0; x < imageData.width; x++) {
                 const pixelIndex = (y * imageData.width + x) * 4;
-                if (x % Manager.patternSize !== 1 || y % Manager.patternSize !== 1)
+                if (x % Manager.patternSize !== 1 || y % Manager.patternSize !== 1) {
                     imageData.data[pixelIndex + 3] = 0;
+                    continue;
+                }
+
+                // Ignore transparent pixels
+                if (imageData.data[pixelIndex + 3]! < 128)
+                    continue;
+
+                const color = getClosestColor(imageData.data[pixelIndex + 0]!, imageData.data[pixelIndex + 1]!, imageData.data[pixelIndex + 2]!);
+                template.colorsInfo.set(color.id, (template.colorsInfo.get(color.id) ?? 0) + 1);
+                template.totalPixelCount++;
+
+                if (color !== otherColor) {
+                    imageData.data[pixelIndex + 0] = color.rgb[0];
+                    imageData.data[pixelIndex + 1] = color.rgb[1];
+                    imageData.data[pixelIndex + 2] = color.rgb[2];
+                }
             }
         
         ctx.putImageData(imageData, 0, 0);
@@ -55,17 +81,19 @@ export default class Template {
         return template;
     }
 
-    static async fromBase64(name: string, coords: PixelCoords, base64Data: string): Promise<Template> {
-        const template = new Template(name, coords);
+    static async fromStorage(stored: StoredTemplate): Promise<Template> {
+        const template = new Template(stored.name, PixelCoords.copy(stored.coords));
 
-        const binary = atob(base64Data); // ASCII to Binary
+        const binary = atob(stored.base64Data); // ASCII to Binary
         const array = new Uint8Array(binary.length);
         for (let i = 0; i < binary.length; i++) {
             array[i] = binary.charCodeAt(i);
         }
         const blob = new Blob([array], { type: "image/png" });
         template.bitmap = await createImageBitmap(blob);
-        template.base64Data = base64Data;
+        template.base64Data = stored.base64Data;
+        template.totalPixelCount = stored.totalPixelCount;
+        template.colorsInfo = new Map(stored.colorsInfo);
         template.#computeOverlappedTiles();
 
         return template;
@@ -84,10 +112,12 @@ export default class Template {
             (this.coords.ty * 1000 + this.coords.py - tile.y * 1000) * Manager.patternSize);
     }
 
-    toJSON(_: string | number): Omit<NonFunctionKeys<Template>, "overlappedTiles" | "bitmap"> {
+    toJSON(_: string | number): StoredTemplate {
         return {
             name: this.name,
             coords: this.coords,
+            totalPixelCount: this.totalPixelCount,
+            colorsInfo: this.colorsInfo.entries().toArray(),
             base64Data: this.base64Data
         };
     }

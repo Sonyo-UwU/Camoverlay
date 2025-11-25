@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.2.2
+// @version      0.3.0
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -65,6 +65,8 @@ function injectOverlay() {
                 Original by SwingTheVine
                 <br>
                 Art by <a href="https://camomille1411en.carrd.co/" target="_blank">camomille1411</a>
+                <br>
+                <span id="ca-version"></span>
             </small>
         </div>
     </div>
@@ -288,6 +290,108 @@ var PixelCoords = class _PixelCoords {
   }
 };
 
+// dist/utils.js
+function parsePixelCoordsFromURL(url) {
+  const urlSplitted = url.split("/");
+  const last = urlSplitted[urlSplitted.length - 1];
+  return new PixelCoords(parseInt(urlSplitted[urlSplitted.length - 2]), parseInt(urlSplitted[urlSplitted.length - 1]), parseInt(last.substring(last.indexOf("?") + 3)), parseInt(last.substring(last.indexOf("&") + 3)));
+}
+function parseTileCoordsFromURL(url) {
+  const urlSplitted = url.split("/");
+  return new TileCoords(parseInt(urlSplitted[urlSplitted.length - 2] ?? ""), parseInt(urlSplitted[urlSplitted.length - 1] ?? ""));
+}
+function closeEnough(r1, g1, b1, r2, g2, b2) {
+  const dr = r1 - r2;
+  const dg = g1 - g2;
+  const db = b1 - b2;
+  return dr * dr + dg * dg + db * db <= 100;
+}
+function rgbToId(r, g, b) {
+  return r * 1e3 * 1e3 + g * 1e3 + b;
+}
+var otherColor = { id: rgbToId(136, 136, 136), name: "Other", rgb: [136, 136, 136] };
+function getClosestColor(r, g, b) {
+  const id = rgbToId(r, g, b);
+  const color = rgbColorMap.get(id);
+  if (color !== void 0)
+    return color;
+  for (const color2 of rgbColorMap.values()) {
+    if (closeEnough(r, g, b, ...color2.rgb))
+      return color2;
+  }
+  return otherColor;
+}
+var colorPalette = [
+  { name: "Transparent", rgb: [222, 250, 206] },
+  { name: "Black", rgb: [0, 0, 0] },
+  { name: "Dark Gray", rgb: [60, 60, 60] },
+  { name: "Gray", rgb: [120, 120, 120] },
+  { name: "Light Gray", rgb: [210, 210, 210] },
+  { name: "White", rgb: [255, 255, 255] },
+  { name: "Deep Red", rgb: [96, 0, 24] },
+  { name: "Red", rgb: [237, 28, 36] },
+  { name: "Orange", rgb: [255, 127, 39] },
+  { name: "Gold", rgb: [246, 170, 9] },
+  { name: "Yellow", rgb: [249, 221, 59] },
+  { name: "Light Yellow", rgb: [255, 250, 188] },
+  { name: "Dark Green", rgb: [14, 185, 104] },
+  { name: "Green", rgb: [19, 230, 123] },
+  { name: "Light Green", rgb: [135, 255, 94] },
+  { name: "Dark Teal", rgb: [12, 129, 110] },
+  { name: "Teal", rgb: [16, 174, 166] },
+  { name: "Light Teal", rgb: [19, 225, 190] },
+  { name: "Dark Blue", rgb: [40, 80, 158] },
+  { name: "Blue", rgb: [64, 147, 228] },
+  { name: "Cyan", rgb: [96, 247, 242] },
+  { name: "Indigo", rgb: [107, 80, 246] },
+  { name: "Light Indigo", rgb: [153, 177, 251] },
+  { name: "Dark Purple", rgb: [120, 12, 153] },
+  { name: "Purple", rgb: [170, 56, 185] },
+  { name: "Light Purple", rgb: [224, 159, 249] },
+  { name: "Dark Pink", rgb: [203, 0, 122] },
+  { name: "Pink", rgb: [236, 31, 128] },
+  { name: "Light Pink", rgb: [243, 141, 169] },
+  { name: "Dark Brown", rgb: [104, 70, 52] },
+  { name: "Brown", rgb: [149, 104, 42] },
+  { name: "Beige", rgb: [248, 178, 119] },
+  { name: "Medium Gray", rgb: [170, 170, 170] },
+  { name: "Dark Red", rgb: [165, 14, 30] },
+  { name: "Light Red", rgb: [250, 128, 114] },
+  { name: "Dark Orange", rgb: [228, 92, 26] },
+  { name: "Light Tan", rgb: [214, 181, 148] },
+  { name: "Dark Goldenrod", rgb: [156, 132, 49] },
+  { name: "Goldenrod", rgb: [197, 173, 49] },
+  { name: "Light Goldenrod", rgb: [232, 212, 95] },
+  { name: "Dark Olive", rgb: [74, 107, 58] },
+  { name: "Olive", rgb: [90, 148, 74] },
+  { name: "Light Olive", rgb: [132, 197, 115] },
+  { name: "Dark Cyan", rgb: [15, 121, 159] },
+  { name: "Light Cyan", rgb: [187, 250, 242] },
+  { name: "Light Blue", rgb: [125, 199, 255] },
+  { name: "Dark Indigo", rgb: [77, 49, 184] },
+  { name: "Dark Slate Blue", rgb: [74, 66, 132] },
+  { name: "Slate Blue", rgb: [122, 113, 196] },
+  { name: "Light Slate Blue", rgb: [181, 174, 241] },
+  { name: "Light Brown", rgb: [219, 164, 99] },
+  { name: "Dark Beige", rgb: [209, 128, 81] },
+  { name: "Light Beige", rgb: [255, 197, 165] },
+  { name: "Dark Peach", rgb: [155, 82, 73] },
+  { name: "Peach", rgb: [209, 128, 120] },
+  { name: "Light Peach", rgb: [250, 182, 164] },
+  { name: "Dark Tan", rgb: [123, 99, 82] },
+  { name: "Tan", rgb: [156, 132, 107] },
+  { name: "Dark Slate", rgb: [51, 57, 65] },
+  { name: "Slate", rgb: [109, 117, 141] },
+  { name: "Light Slate", rgb: [179, 185, 209] },
+  { name: "Dark Stone", rgb: [109, 100, 63] },
+  { name: "Stone", rgb: [148, 140, 107] },
+  { name: "Light Stone", rgb: [205, 197, 158] }
+];
+var rgbColorMap = /* @__PURE__ */ new Map();
+for (const color of colorPalette) {
+  rgbColorMap.set(rgbToId(...color.rgb), { ...color, id: rgbToId(...color.rgb) });
+}
+
 // dist/Template.js
 var Template = class _Template {
   name;
@@ -295,12 +399,16 @@ var Template = class _Template {
   overlappedTiles;
   bitmap;
   base64Data;
+  colorsInfo;
+  totalPixelCount;
   constructor(name, coords) {
     this.name = name;
     this.coords = coords;
     this.overlappedTiles = [];
     this.bitmap = null;
     this.base64Data = "";
+    this.colorsInfo = /* @__PURE__ */ new Map();
+    this.totalPixelCount = 0;
   }
   static async fromFile(name, coords, file) {
     const template = new _Template(name, coords);
@@ -314,8 +422,20 @@ var Template = class _Template {
     for (let y = 0; y < imageData.height; y++)
       for (let x = 0; x < imageData.width; x++) {
         const pixelIndex = (y * imageData.width + x) * 4;
-        if (x % Manager.patternSize !== 1 || y % Manager.patternSize !== 1)
+        if (x % Manager.patternSize !== 1 || y % Manager.patternSize !== 1) {
           imageData.data[pixelIndex + 3] = 0;
+          continue;
+        }
+        if (imageData.data[pixelIndex + 3] < 128)
+          continue;
+        const color = getClosestColor(imageData.data[pixelIndex + 0], imageData.data[pixelIndex + 1], imageData.data[pixelIndex + 2]);
+        template.colorsInfo.set(color.id, (template.colorsInfo.get(color.id) ?? 0) + 1);
+        template.totalPixelCount++;
+        if (color.name !== "Other") {
+          imageData.data[pixelIndex + 0] = color.rgb[0];
+          imageData.data[pixelIndex + 1] = color.rgb[1];
+          imageData.data[pixelIndex + 2] = color.rgb[2];
+        }
       }
     ctx.putImageData(imageData, 0, 0);
     const canvasBuffer = await (await canvas.convertToBlob()).bytes();
@@ -328,16 +448,18 @@ var Template = class _Template {
     template.#computeOverlappedTiles();
     return template;
   }
-  static async fromBase64(name, coords, base64Data) {
-    const template = new _Template(name, coords);
-    const binary = atob(base64Data);
+  static async fromStorage(stored) {
+    const template = new _Template(stored.name, PixelCoords.copy(stored.coords));
+    const binary = atob(stored.base64Data);
     const array = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) {
       array[i] = binary.charCodeAt(i);
     }
     const blob = new Blob([array], { type: "image/png" });
     template.bitmap = await createImageBitmap(blob);
-    template.base64Data = base64Data;
+    template.base64Data = stored.base64Data;
+    template.totalPixelCount = stored.totalPixelCount;
+    template.colorsInfo = new Map(stored.colorsInfo);
     template.#computeOverlappedTiles();
     return template;
   }
@@ -353,6 +475,8 @@ var Template = class _Template {
     return {
       name: this.name,
       coords: this.coords,
+      totalPixelCount: this.totalPixelCount,
+      colorsInfo: this.colorsInfo.entries().toArray(),
       base64Data: this.base64Data
     };
   }
@@ -420,10 +544,10 @@ var ManagerClass = class _ManagerClass {
       this.templates[0].bitmap?.close();
     this.templates = [];
     for (const storedTemplate of stored) {
-      const template = await Template.fromBase64(storedTemplate.name, PixelCoords.copy(storedTemplate.coords), storedTemplate.base64Data);
+      const template = await Template.fromStorage(storedTemplate);
       this.templates.push(template);
+      displayStatus("Loaded template at " + template.coords.toString() + ": " + template.totalPixelCount + " pixels");
     }
-    this.storeTemplates();
   }
   storeTemplates() {
     _ManagerClass.#storeValue("templates", this.templates);
@@ -438,6 +562,7 @@ var ManagerClass = class _ManagerClass {
     }
     this.templates = [template];
     this.storeTemplates();
+    displayStatus("Created template at " + template.coords.toString() + ": " + template.totalPixelCount + " pixels");
     return template;
   }
   async processTile(tile, response) {
@@ -522,7 +647,7 @@ function addListeners() {
   document.getElementById("ca-disable-button").addEventListener("click", () => {
     Manager.disabled = true;
   });
-  document.getElementById("ca-create-button").addEventListener("click", () => {
+  document.getElementById("ca-create-button").addEventListener("click", async () => {
     const fileInput = document.getElementById("ca-file-input");
     if (fileInput.files.length < 1) {
       displayStatus("Select a file to upload");
@@ -534,23 +659,11 @@ function addListeners() {
       return;
     }
     Manager.disabled = false;
-    Manager.createTemplate(coords, fileInput.files[0]);
-    displayStatus("Created template at " + coords.toString());
+    await Manager.createTemplate(coords, fileInput.files[0]);
   });
   document.getElementById("ca-converter-button").addEventListener("click", () => {
     window.open("https://pepoafonso.github.io/color_converter_wplace/", "_blank", "noopener noreferrer");
   });
-}
-
-// dist/utils.js
-function parsePixelCoordsFromURL(url) {
-  const urlSplitted = url.split("/");
-  const last = urlSplitted[urlSplitted.length - 1];
-  return new PixelCoords(parseInt(urlSplitted[urlSplitted.length - 2]), parseInt(urlSplitted[urlSplitted.length - 1]), parseInt(last.substring(last.indexOf("?") + 3)), parseInt(last.substring(last.indexOf("&") + 3)));
-}
-function parseTileCoordsFromURL(url) {
-  const urlSplitted = url.split("/");
-  return new TileCoords(parseInt(urlSplitted[urlSplitted.length - 2] ?? ""), parseInt(urlSplitted[urlSplitted.length - 1] ?? ""));
 }
 
 // dist/app.js
@@ -559,7 +672,7 @@ injectOverlay();
 addListeners();
 Manager.loadGlobals();
 await Manager.loadTemplates();
-displayStatus("version " + GM_info.script.version);
+document.getElementById("ca-version").innerText = "version " + GM_info.script.version;
 var originalFetch = unsafeWindow.fetch;
 unsafeWindow.fetch = async function(input, init) {
   const response = await originalFetch(input, init);
