@@ -68,16 +68,6 @@ div#ca-overlay {
     margin-top: 0.5em;
 }
 
-#ca-file-input {
-    display: none !important;
-}
-#ca-select-button {
-    width: 100%;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
 #ca-template-buttons {
     display: flex;
     flex-direction: row;
@@ -86,6 +76,46 @@ div#ca-overlay {
     justify-content: center;
     align-items: center;
     gap: 1ch;
+}
+
+#ca-file-input {
+    display: none !important;
+}
+#ca-select-button {
+    flex: 1 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#ca-create-button {
+    flex: 0 0;
+}
+
+#ca-template-list {
+    font-size: 85%;
+}
+#ca-template-list > div {
+    display: flex;
+    justify-content: space-between;
+    background-color: #FF000033;
+    border-radius: 1em;
+    gap: 1ch;
+    margin-bottom: 3px;
+}
+#ca-template-list > div > * {
+    flex: 0 0 auto;
+}
+#ca-template-list > div > span {
+    flex: unset;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+#ca-template-list input {
+    vertical-align: middle;
+    margin-right: 0.5ch;
+    filter: hue-rotate(70deg);
 }
 
 #ca-output {

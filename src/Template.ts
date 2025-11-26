@@ -15,6 +15,7 @@ export default class Template {
     base64Data: string;
     colorsInfo: Map<WplaceColorId, number>;
     totalPixelCount: number;
+    enabled: boolean;
 
 
     constructor(name: string, coords: PixelCoords) {
@@ -25,6 +26,7 @@ export default class Template {
         this.base64Data = '';
         this.colorsInfo = new Map();
         this.totalPixelCount = 0;
+        this.enabled = true;
     }
 
     static async fromFile(name: string, coords: PixelCoords, file: File): Promise<Template> {
@@ -104,7 +106,7 @@ export default class Template {
     }
 
     drawOnTile(tile: TileCoords, ctx: OffscreenCanvasRenderingContext2D): void {
-        if (this.bitmap === null || !this.overlaps(tile.toIndex()))
+        if (!this.enabled || this.bitmap === null || !this.overlaps(tile.toIndex()))
             return;
 
         ctx.drawImage(this.bitmap,
@@ -118,7 +120,8 @@ export default class Template {
             coords: this.coords,
             totalPixelCount: this.totalPixelCount,
             colorsInfo: this.colorsInfo.entries().toArray(),
-            base64Data: this.base64Data
+            base64Data: this.base64Data,
+            enabled: this.enabled
         };
     }
 

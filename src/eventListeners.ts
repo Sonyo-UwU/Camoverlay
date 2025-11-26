@@ -36,17 +36,8 @@ export function addListeners() {
             document.getElementById('ca-select-button')!.innerText = (e.target as HTMLInputElement).files![0]!.name;
     });
 
-    document.getElementById('ca-enable-button')!.addEventListener('click', () => {
-        Manager.disabled = false;
-        displayStatus('Disabled template');
-    });
-
-    document.getElementById('ca-disable-button')!.addEventListener('click', () => {
-        Manager.disabled = true;
-        displayStatus('Enabled template');
-    });
-
-    document.getElementById('ca-create-button')!.addEventListener('click', () => {
+    document.getElementById('ca-create-button')!.addEventListener('click', e => {
+        (e.target as HTMLInputElement).disabled = true;
         const fileInput = document.getElementById('ca-file-input') as HTMLInputElement;
         if (fileInput.files!.length < 1) {
             displayStatus('Select a file to upload');
@@ -59,8 +50,8 @@ export function addListeners() {
             return;
         }
 
-        Manager.disabled = false;
         Manager.createTemplate(coords, fileInput.files![0]!);
+        (e.target as HTMLInputElement).disabled = false;
     });
 
     document.getElementById('ca-converter-button')!.addEventListener('click', () => {

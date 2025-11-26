@@ -1,4 +1,6 @@
-import { PixelCoords } from './Coords';
+﻿import { PixelCoords } from './Coords';
+import { Manager } from './Manager';
+import Template from './Template';
 import type { UserData } from './types';
 
 declare function GM_addStyle(css: string): void;
@@ -29,8 +31,6 @@ export function displayStatus(message: string) {
 }
 
 export function displayUserData(data: UserData) {
-    //console.log(data);
-
     // Calculates pixels to the next level
     const nextLevelPixels = Math.ceil(Math.pow(Math.floor(data.level) * Math.pow(30, 0.65), (1 / 0.65)) - data.pixelsPainted);
 
@@ -39,6 +39,50 @@ export function displayUserData(data: UserData) {
         username.innerText = data.name;
         document.getElementById('ca-user-droplets')!.innerText = data.droplets.toLocaleString();
         document.getElementById('ca-user-level')!.innerText = nextLevelPixels.toLocaleString();
+    }
+}
+
+export function addTemplateRow(template: Template) {
+    const outer = document.createElement('div');
+
+    const fly = document.createElement('button');
+    fly.innerText = '✈️';
+    fly.classList.add('ca-icon-button');
+
+    const text = document.createElement('span');
+    text.innerText = template.name;
+
+    const inner = document.createElement('div');
+
+    const enable = document.createElement('input');
+    enable.setAttribute('type', 'checkbox');
+    if (template.enabled)
+        enable.setAttribute('checked', '');
+
+    enable.addEventListener('change', e => {
+        template.enabled = (e.target as HTMLInputElement).checked;
+        Manager.resetTiles(template.overlappedTiles);
+    });
+
+    const del = document.createElement('button');
+    del.innerText = '🗑️';
+    del.classList.add('ca-icon-button');
+
+    del.addEventListener('click', () => {
+        Manager.deleteTemplate(Manager.templates.indexOf(template));
+    });
+
+    inner.append(enable, del);
+    outer.append(fly, text, inner);
+    document.getElementById('ca-template-list')!.appendChild(outer);
+}
+
+export function removeTemplateRow(name: string) {
+    for (const div of document.getElementById('ca-template-list')!.children) {
+        if (div.children[1]?.textContent === name) {
+            div.remove();
+            break;
+        }
     }
 }
 

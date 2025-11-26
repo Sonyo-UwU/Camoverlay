@@ -1,5 +1,5 @@
 import { PixelCoords, TileCoords } from './Coords';
-import { displayStatus, setInputCoords } from './display';
+import { addTemplateRow, displayStatus, removeTemplateRow, setInputCoords } from './display';
 import Template from './Template';
 import { JsonifiedValue, TileIndex, TileInfo } from './types';
 
@@ -15,7 +15,6 @@ class ManagerClass {
     readonly patternSize: number = 3;
     templates: Template[];
     tilesInfo: Map<TileIndex, TileInfo>;
-    disabled: boolean;
     lastClickedCoords: PixelCoords | null = null;
 
     setInputCoords(value: PixelCoords | null) {
@@ -40,7 +39,6 @@ class ManagerClass {
     constructor() {
         this.templates = [];
         this.tilesInfo = new Map();
-        this.disabled = false;
     }
 
     static #loadValue<K extends keyof StorageValues>(key: K): JsonifiedValue<StorageValues[K]> | null {
@@ -75,7 +73,9 @@ class ManagerClass {
 
         for (const storedTemplate of stored) {
             const template = await Template.fromStorage(storedTemplate);
+            this.resetTiles(template.overlappedTiles);
             this.templates.push(template);
+            addTemplateRow(template);
             displayStatus('Loaded template at ' + template.coords.toString() + ': ' + template.totalPixelCount + ' pixels');
         }
     }
@@ -84,22 +84,33 @@ class ManagerClass {
         ManagerClass.#storeValue('templates', this.templates);
     }
 
+    resetTiles(indices: number[]): void {
+        for (const index of indices)
+            this.tilesInfo.delete(index);
+    }
+
     async createTemplate(coords: PixelCoords, file: File): Promise<Template> {
+        let name = file.name.slice(0, file.name.lastIndexOf('.'));
+        if (name.startsWith('converted_'))
+            name = name.substring(10);
+
+        for (let i = 0; i < this.templates.length; i++)
+            if (this.templates[i]!.name === name) {
+                this.deleteTemplate(i);
+                i--;
+            }
+
         const start = performance.now();
-        const template = await Template.fromFile(file.name, coords, file);
+        const template = await Template.fromFile(name, coords, file);
         const time = performance.now() - start;
         console.log('Created template in ' + time + 'ms');
 
-        for (const index of template.overlappedTiles) {
-            this.tilesInfo.delete(index);
-        }
+        this.resetTiles(template.overlappedTiles);
 
-        // Multiple templates not supported
-        while (this.templates.length > 0)
-            this.deleteTemplate(0);
         this.templates.push(template);
-
         this.storeTemplates();
+
+        addTemplateRow(template);
         displayStatus('Created template at ' + template.coords.toString() + ': ' + template.totalPixelCount + ' pixels');
         return template;
     }
@@ -110,17 +121,12 @@ class ManagerClass {
             return;
 
         template.bitmap?.close();
-        for (const tileIndex of template.overlappedTiles) {
-            this.tilesInfo.delete(tileIndex);
-        }
+        this.resetTiles(template.overlappedTiles);
+        removeTemplateRow(template.name);
         this.templates.splice(index, 1);
     }
 
     async processTile(tile: TileCoords, response: Response): Promise<Response> {
-        // Exit early if disabled
-        if (this.disabled)
-            return response;
-
         const lastModified = new Date(response.headers.get('last-modified') ?? 0).getTime();
 
         const tileIndex = tile.toIndex();
@@ -128,7 +134,7 @@ class ManagerClass {
         // Check if any template overlaps
         let overlap = false;
         for (const template of this.templates) {
-            if (template.overlaps(tileIndex)) {
+            if (template.enabled && template.overlaps(tileIndex)) {
                 overlap = true;
                 break;
             }
@@ -176,7 +182,8 @@ class ManagerClass {
         ctx.drawImage(await createImageBitmap(blob), 0, 0, canvas.width, canvas.height);
 
         for (const template of this.templates) {
-            template.drawOnTile(tile, ctx);
+            if (template.enabled)
+                template.drawOnTile(tile, ctx);
         }
 
         return await canvas.convertToBlob();
