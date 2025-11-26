@@ -42,6 +42,16 @@ export function displayUserData(data: UserData) {
     }
 }
 
+function setNewName(s: HTMLElement, template: Template) {
+    const newName = s.textContent.replaceAll('\n', '');
+    if (newName.length === 0 || Manager.templates.some(t => t.name === newName)) {
+        s.textContent = template.name;
+        return;
+    }
+
+    template.name = newName;
+}
+
 export function addTemplateRow(template: Template) {
     const outer = document.createElement('div');
 
@@ -51,6 +61,29 @@ export function addTemplateRow(template: Template) {
 
     const text = document.createElement('span');
     text.innerText = template.name;
+
+    text.addEventListener('click', e => {
+        const s = e.target as HTMLElement;
+        if (!s.hasAttribute('contenteditable')) {
+            s.setAttribute('contenteditable', '');
+            s.focus();
+        }
+    });
+    text.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const s = e.target as HTMLElement;
+            s.removeAttribute('contenteditable');
+            s.scrollTo(0, 0);
+            setNewName(s, template);
+        }
+    });
+    text.addEventListener('blur', e => {
+        const s = e.target as HTMLElement;
+        s.removeAttribute('contenteditable');
+        s.scrollTo(0, 0);
+        setNewName(s, template);
+    });
 
     const inner = document.createElement('div');
 

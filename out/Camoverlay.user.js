@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.4.0
+// @version      0.4.1
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -640,6 +640,14 @@ function displayUserData(data) {
     document.getElementById("ca-user-level").innerText = nextLevelPixels.toLocaleString();
   }
 }
+function setNewName(s, template) {
+  const newName = s.textContent.replaceAll("\n", "");
+  if (newName.length === 0 || Manager.templates.some((t) => t.name === newName)) {
+    s.textContent = template.name;
+    return;
+  }
+  template.name = newName;
+}
 function addTemplateRow(template) {
   const outer = document.createElement("div");
   const fly = document.createElement("button");
@@ -647,6 +655,28 @@ function addTemplateRow(template) {
   fly.classList.add("ca-icon-button");
   const text = document.createElement("span");
   text.innerText = template.name;
+  text.addEventListener("click", (e) => {
+    const s = e.target;
+    if (!s.hasAttribute("contenteditable")) {
+      s.setAttribute("contenteditable", "");
+      s.focus();
+    }
+  });
+  text.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const s = e.target;
+      s.removeAttribute("contenteditable");
+      s.scrollTo(0, 0);
+      setNewName(s, template);
+    }
+  });
+  text.addEventListener("blur", (e) => {
+    const s = e.target;
+    s.removeAttribute("contenteditable");
+    s.scrollTo(0, 0);
+    setNewName(s, template);
+  });
   const inner = document.createElement("div");
   const enable = document.createElement("input");
   enable.setAttribute("type", "checkbox");
