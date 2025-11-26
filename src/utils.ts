@@ -30,7 +30,7 @@ function closeEnough(r1: number, g1: number, b1: number, r2: number, g2: number,
 }
 
 function rgbToId(r: number, g: number, b: number): WplaceColorId {
-    return r * 1000 * 1000 + g * 1000 + b;
+    return (r * 1000 * 1000 + g * 1000 + b) as WplaceColorId;
 }
 
 export const otherColor: WplaceColor = { id: rgbToId(136, 136, 136), name: 'Other', rgb: [136, 136, 136] };

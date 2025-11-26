@@ -1,3 +1,5 @@
+declare const __brand: unique symbol;
+
 export type TileIndex = number;
 
 export type TileInfo = {
@@ -5,7 +7,7 @@ export type TileInfo = {
     blob: Blob | null;
 };
 
-export type WplaceColorId = number;
+export type WplaceColorId = number & { [__brand]: 0; };
 export type WplaceColor = {
     id: WplaceColorId,
     name: string,

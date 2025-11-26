@@ -70,9 +70,8 @@ class ManagerClass {
         if (!stored)
             return;
 
-        for (let i = 0; i < this.templates.length; i++)
-            this.templates[0]!.bitmap?.close();
-        this.templates = [];
+        while (this.templates.length > 0)
+            this.deleteTemplate(0);
 
         for (const storedTemplate of stored) {
             const template = await Template.fromStorage(storedTemplate);
@@ -95,11 +94,26 @@ class ManagerClass {
             this.tilesInfo.delete(index);
         }
 
-        //this.templates.push(template);
-        this.templates = [template];
+        // Multiple templates not supported
+        while (this.templates.length > 0)
+            this.deleteTemplate(0);
+        this.templates.push(template);
+
         this.storeTemplates();
         displayStatus('Created template at ' + template.coords.toString() + ': ' + template.totalPixelCount + ' pixels');
         return template;
+    }
+
+    deleteTemplate(index: number): void {
+        const template = this.templates[index];
+        if (template === undefined)
+            return;
+
+        template.bitmap?.close();
+        for (const tileIndex of template.overlappedTiles) {
+            this.tilesInfo.delete(tileIndex);
+        }
+        this.templates.splice(index, 1);
     }
 
     async processTile(tile: TileCoords, response: Response): Promise<Response> {

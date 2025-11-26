@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.3.0
+// @version      0.3.1
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -540,9 +540,8 @@ var ManagerClass = class _ManagerClass {
     const stored = _ManagerClass.#loadValue("templates");
     if (!stored)
       return;
-    for (let i = 0; i < this.templates.length; i++)
-      this.templates[0].bitmap?.close();
-    this.templates = [];
+    while (this.templates.length > 0)
+      this.deleteTemplate(0);
     for (const storedTemplate of stored) {
       const template = await Template.fromStorage(storedTemplate);
       this.templates.push(template);
@@ -560,10 +559,22 @@ var ManagerClass = class _ManagerClass {
     for (const index of template.overlappedTiles) {
       this.tilesInfo.delete(index);
     }
-    this.templates = [template];
+    while (this.templates.length > 0)
+      this.deleteTemplate(0);
+    this.templates.push(template);
     this.storeTemplates();
     displayStatus("Created template at " + template.coords.toString() + ": " + template.totalPixelCount + " pixels");
     return template;
+  }
+  deleteTemplate(index) {
+    const template = this.templates[index];
+    if (template === void 0)
+      return;
+    template.bitmap?.close();
+    for (const tileIndex of template.overlappedTiles) {
+      this.tilesInfo.delete(tileIndex);
+    }
+    this.templates.splice(index, 1);
   }
   async processTile(tile, response) {
     if (this.disabled)
