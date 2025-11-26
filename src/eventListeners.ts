@@ -38,10 +38,12 @@ export function addListeners() {
 
     document.getElementById('ca-enable-button')!.addEventListener('click', () => {
         Manager.disabled = false;
+        displayStatus('Disabled template');
     });
 
     document.getElementById('ca-disable-button')!.addEventListener('click', () => {
         Manager.disabled = true;
+        displayStatus('Enabled template');
     });
 
     document.getElementById('ca-create-button')!.addEventListener('click', () => {
