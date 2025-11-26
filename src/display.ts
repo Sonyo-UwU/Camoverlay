@@ -50,6 +50,7 @@ function setNewName(s: HTMLElement, template: Template) {
     }
 
     template.name = newName;
+    Manager.storeTemplates();
 }
 
 export function addTemplateRow(template: Template) {

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.4.1
+// @version      0.4.2
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -647,6 +647,7 @@ function setNewName(s, template) {
     return;
   }
   template.name = newName;
+  Manager.storeTemplates();
 }
 function addTemplateRow(template) {
   const outer = document.createElement("div");
