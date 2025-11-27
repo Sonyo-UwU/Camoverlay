@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.4.3
+// @version      0.4.4
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -405,7 +405,7 @@ function injectOverlay() {
   document.body.appendChild(document.createElement("div")).outerHTML = `
 <div id="ca-overlay">
     <div id="ca-header">
-        <img src="https://cdn.bsky.app/img/avatar/plain/did:plc:kwmxodxbf5nshavpy5r5l3jj/bafkreiaddzuq5vgrpi3aeufp7gwkbameb426d4vb4zlxvc6c4vo23wkn5a@jpeg" />
+        <img id="ca-image-collapse" src="https://cdn.bsky.app/img/avatar/plain/did:plc:kwmxodxbf5nshavpy5r5l3jj/bafkreiaddzuq5vgrpi3aeufp7gwkbameb426d4vb4zlxvc6c4vo23wkn5a@jpeg" />
         <h1>Camoverlay</h1>
     </div>
     <hr />
@@ -458,13 +458,33 @@ function injectOverlay() {
     background-color: #5D1F18E6;
     border-radius: 8px;
     color: white;
+    max-height: 100%;
     max-width: 300px;
+    overflow: hidden;
     padding: 10px;
     position: absolute;
     right: 75px;
     top: 10px;
+    transition-duration: 500ms;
+    transition-property: max-height, max-width;
     width: auto;
+    white-space: nowrap;
     z-index: 29;
+}
+
+/* Collapsing */
+#ca-overlay.collapsed {
+    max-width: 60px;
+    max-height: 60px;
+}
+
+#ca-overlay > :not(#ca-header), #ca-overlay h1 {
+    opacity: 1;
+    transition-property: opacity;
+    transition-duration: 500ms;
+}
+#ca-overlay.collapsed > :not(#ca-header), #ca-overlay.collapsed h1 {
+    opacity: 0;
 }
 
 div#ca-overlay {
@@ -497,14 +517,6 @@ div#ca-overlay {
     text-align: right;
 }
 
-#ca-header img {
-    border-radius: 12px;
-    display: inline-block;
-    height: 2.5em;
-    margin-right: 1ch;
-    vertical-align: middle;
-}
-
 #ca-overlay button {
     background-color: #cb4334;
     border-radius: 1em;
@@ -518,6 +530,15 @@ div#ca-overlay {
 }
 #ca-overlay button:disabled {
     text-decoration: line-through;
+}
+
+#ca-image-collapse {
+    border-radius: 12px;
+    cursor: pointer;
+    display: inline-block;
+    height: 2.5em;
+    margin-right: 1ch;
+    vertical-align: middle;
 }
 
 #ca-templates > * {
@@ -734,6 +755,9 @@ function setInputCoords(coords) {
 
 // dist/eventListeners.js
 function addListeners() {
+  document.getElementById("ca-image-collapse").addEventListener("click", () => {
+    document.getElementById("ca-overlay").classList.toggle("collapsed");
+  });
   function pasted(e) {
     const values = e.clipboardData?.getData("text").split(" ").filter((n) => n).map(Number).filter((n) => !isNaN(n));
     if (values === void 0 || values.length !== 4)

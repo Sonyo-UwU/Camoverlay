@@ -4,6 +4,10 @@ import { Manager } from './Manager';
 
 
 export function addListeners() {
+    document.getElementById('ca-image-collapse')!.addEventListener('click', () => {
+        document.getElementById('ca-overlay')!.classList.toggle('collapsed');
+    });
+
     function pasted(e: ClipboardEvent) {
         const values = e.clipboardData?.getData('text').split(" ").filter(n => n).map(Number).filter(n => !isNaN(n));
         if (values === undefined || values.length !== 4)
