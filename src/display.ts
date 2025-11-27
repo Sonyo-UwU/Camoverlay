@@ -60,6 +60,8 @@ export function addTemplateRow(template: Template) {
     fly.innerText = '✈️';
     fly.classList.add('ca-icon-button');
 
+    const middle = document.createElement('div');
+
     const text = document.createElement('span');
     text.innerText = template.name;
 
@@ -75,23 +77,25 @@ export function addTemplateRow(template: Template) {
             e.preventDefault();
             const s = e.target as HTMLElement;
             s.removeAttribute('contenteditable');
-            s.scrollTo(0, 0);
+            s.parentElement!.scrollTo(0, 0);
             setNewName(s, template);
         }
     });
     text.addEventListener('blur', e => {
         const s = e.target as HTMLElement;
         s.removeAttribute('contenteditable');
-        s.scrollTo(0, 0);
+        s.parentElement!.scrollTo(0, 0);
         setNewName(s, template);
     });
 
-    const inner = document.createElement('div');
+    const count = document.createElement('span');
+    count.textContent = template.totalPixelCount + ' • ';
+
+    const right = document.createElement('div');
 
     const enable = document.createElement('input');
     enable.setAttribute('type', 'checkbox');
-    if (template.enabled)
-        enable.setAttribute('checked', '');
+    enable.checked = template.enabled;
 
     enable.addEventListener('change', e => {
         template.enabled = (e.target as HTMLInputElement).checked;
@@ -106,8 +110,9 @@ export function addTemplateRow(template: Template) {
         Manager.deleteTemplate(Manager.templates.indexOf(template));
     });
 
-    inner.append(enable, del);
-    outer.append(fly, text, inner);
+    middle.append(count, text);
+    right.append(enable, del);
+    outer.append(fly, middle, right);
     document.getElementById('ca-template-list')!.appendChild(outer);
 }
 

@@ -93,7 +93,7 @@ div#ca-overlay {
 }
 
 #ca-template-list {
-    font-size: 85%;
+    font-size: 80%;
 }
 #ca-template-list > div {
     display: flex;
@@ -106,7 +106,7 @@ div#ca-overlay {
 #ca-template-list > div > * {
     flex: 0 0 auto;
 }
-#ca-template-list > div > span {
+#ca-template-list > div > *:nth-child(2) {
     flex: unset;
     white-space: nowrap;
     overflow: hidden;

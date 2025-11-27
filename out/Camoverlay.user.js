@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.4.2
+// @version      0.4.3
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -549,7 +549,7 @@ div#ca-overlay {
 }
 
 #ca-template-list {
-    font-size: 85%;
+    font-size: 80%;
 }
 #ca-template-list > div {
     display: flex;
@@ -562,7 +562,7 @@ div#ca-overlay {
 #ca-template-list > div > * {
     flex: 0 0 auto;
 }
-#ca-template-list > div > span {
+#ca-template-list > div > *:nth-child(2) {
     flex: unset;
     white-space: nowrap;
     overflow: hidden;
@@ -654,6 +654,7 @@ function addTemplateRow(template) {
   const fly = document.createElement("button");
   fly.innerText = "\u2708\uFE0F";
   fly.classList.add("ca-icon-button");
+  const middle = document.createElement("div");
   const text = document.createElement("span");
   text.innerText = template.name;
   text.addEventListener("click", (e) => {
@@ -668,21 +669,22 @@ function addTemplateRow(template) {
       e.preventDefault();
       const s = e.target;
       s.removeAttribute("contenteditable");
-      s.scrollTo(0, 0);
+      s.parentElement.scrollTo(0, 0);
       setNewName(s, template);
     }
   });
   text.addEventListener("blur", (e) => {
     const s = e.target;
     s.removeAttribute("contenteditable");
-    s.scrollTo(0, 0);
+    s.parentElement.scrollTo(0, 0);
     setNewName(s, template);
   });
-  const inner = document.createElement("div");
+  const count = document.createElement("span");
+  count.textContent = template.totalPixelCount + " \u2022 ";
+  const right = document.createElement("div");
   const enable = document.createElement("input");
   enable.setAttribute("type", "checkbox");
-  if (template.enabled)
-    enable.setAttribute("checked", "");
+  enable.checked = template.enabled;
   enable.addEventListener("change", (e) => {
     template.enabled = e.target.checked;
     Manager.resetTiles(template.overlappedTiles);
@@ -693,8 +695,9 @@ function addTemplateRow(template) {
   del.addEventListener("click", () => {
     Manager.deleteTemplate(Manager.templates.indexOf(template));
   });
-  inner.append(enable, del);
-  outer.append(fly, text, inner);
+  middle.append(count, text);
+  right.append(enable, del);
+  outer.append(fly, middle, right);
   document.getElementById("ca-template-list").appendChild(outer);
 }
 function removeTemplateRow(name) {
