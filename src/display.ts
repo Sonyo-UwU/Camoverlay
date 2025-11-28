@@ -1,7 +1,8 @@
 ﻿import { PixelCoords } from './Coords';
 import { Manager } from './Manager';
 import Template from './Template';
-import type { UserData } from './types';
+import type { UserData, WplaceColorId } from './types';
+import { rgbColorMap, rgbToCss } from './utils';
 
 declare function GM_addStyle(css: string): void;
 
@@ -40,6 +41,25 @@ export function displayUserData(data: UserData) {
         document.getElementById('ca-user-droplets')!.innerText = data.droplets.toLocaleString();
         document.getElementById('ca-user-level')!.innerText = nextLevelPixels.toLocaleString();
     }
+}
+
+export function addColorRow(template: Template, colorId: WplaceColorId) {
+    const c = rgbColorMap.get(colorId)!;
+
+    const row = (document.getElementById('ca-template-color') as HTMLTemplateElement).content.cloneNode(true) as DocumentFragment;
+
+    const enable = row.querySelector('input')!;
+    enable.checked = true;
+
+    const color = row.querySelector('.ca-color-display') as HTMLDivElement;
+    color.style.backgroundColor = `#${rgbToCss(c.rgb)}`;
+
+    //const paint = row.querySelector('button')!;
+
+    row.querySelector('.ca-color-count')!.textContent = template.colorsInfo.get(colorId)!.toString();
+    row.querySelector('.ca-color-name')!.textContent = c.name;
+
+    document.getElementById('ca-color-list')!.appendChild(row);
 }
 
 function setNewName(s: HTMLElement, template: Template) {

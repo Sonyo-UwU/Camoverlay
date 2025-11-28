@@ -22,6 +22,11 @@ export function parseTileCoordsFromURL(url: string): TileCoords {
 }
 
 
+function twoHexDigits(n: number): string {
+    return n < 16 ? '0' + n.toString(16) : n.toString(16);
+}
+
+
 function closeEnough(r1: number, g1: number, b1: number, r2: number, g2: number, b2: number): boolean {
     const dr = r1 - r2;
     const dg = g1 - g2;
@@ -31,6 +36,10 @@ function closeEnough(r1: number, g1: number, b1: number, r2: number, g2: number,
 
 function rgbToId(r: number, g: number, b: number): WplaceColorId {
     return (r * 1000 * 1000 + g * 1000 + b) as WplaceColorId;
+}
+
+export function rgbToCss(rgb: [number, number, number]): string {
+    return twoHexDigits(rgb[0]) + twoHexDigits(rgb[1]) + twoHexDigits(rgb[2]);
 }
 
 export const otherColor: WplaceColor = { id: rgbToId(136, 136, 136), name: 'Other', rgb: [136, 136, 136] };
@@ -115,7 +124,7 @@ const colorPalette: Omit<WplaceColor, 'id'>[] = [
     { name: "Light Stone"     , rgb: [205, 197, 158] }
 ];
 
-const rgbColorMap = new Map<WplaceColorId, WplaceColor>();
+export const rgbColorMap = new Map<WplaceColorId, WplaceColor>();
 for (const color of colorPalette) {
     rgbColorMap.set(rgbToId(...color.rgb), { ...color, id: rgbToId(...color.rgb) });
 }

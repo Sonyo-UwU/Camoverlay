@@ -1,5 +1,5 @@
 import { PixelCoords, TileCoords } from './Coords';
-import { addTemplateRow, displayStatus, removeTemplateRow, setInputCoords } from './display';
+import { addColorRow, addTemplateRow, displayStatus, removeTemplateRow, setInputCoords } from './display';
 import Template from './Template';
 import { JsonifiedValue, TileIndex, TileInfo } from './types';
 
@@ -76,6 +76,7 @@ class ManagerClass {
             this.resetTiles(template.overlappedTiles);
             this.templates.push(template);
             addTemplateRow(template);
+            addColorRow(template, template.colorsInfo.keys().toArray()[0]!);
             displayStatus('Loaded template at ' + template.coords.toString() + ': ' + template.totalPixelCount + ' pixels');
         }
     }

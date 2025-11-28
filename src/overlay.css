@@ -85,6 +85,50 @@ div#ca-overlay {
     vertical-align: middle;
 }
 
+#ca-color-list {
+    background-color: #00000022;
+    border-color: black;
+    border-radius: .3em;
+    border-width: 1px;
+    font-size: 85%;
+    margin-top: 0.5em;
+    padding: 5px;
+}
+#ca-color-list:empty {
+    display: none;
+}
+.ca-color-row {
+    align-content: center;
+    align-items: center;
+    display: flex;
+    flex-direction: row;
+    gap: 1ch;
+    justify-content: start;
+}
+.ca-color-row > * {
+    flex: 0 0 auto;
+}
+.ca-color-row > input {
+    filter: hue-rotate(130deg);
+}
+.ca-color-display {
+    border-radius: 0.3em;
+    height: 1.2em;
+    width: 1.2em;
+}
+.ca-color-row > button {
+    height: 1.3em;
+    width: 1.3em;
+}
+.ca-color-row > button > svg {
+    width: 80%;
+}
+.ca-color-name {
+    flex: unset;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 #ca-templates > * {
     margin-top: 0.5em;
 }

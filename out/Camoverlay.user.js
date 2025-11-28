@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.4.4
+// @version      0.5.0
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -65,6 +65,9 @@ function parseTileCoordsFromURL(url) {
   const urlSplitted = url.split("/");
   return new TileCoords(parseInt(urlSplitted[urlSplitted.length - 2] ?? ""), parseInt(urlSplitted[urlSplitted.length - 1] ?? ""));
 }
+function twoHexDigits(n) {
+  return n < 16 ? "0" + n.toString(16) : n.toString(16);
+}
 function closeEnough(r1, g1, b1, r2, g2, b2) {
   const dr = r1 - r2;
   const dg = g1 - g2;
@@ -73,6 +76,9 @@ function closeEnough(r1, g1, b1, r2, g2, b2) {
 }
 function rgbToId(r, g, b) {
   return r * 1e3 * 1e3 + g * 1e3 + b;
+}
+function rgbToCss(rgb) {
+  return twoHexDigits(rgb[0]) + twoHexDigits(rgb[1]) + twoHexDigits(rgb[2]);
 }
 var otherColor = { id: rgbToId(136, 136, 136), name: "Other", rgb: [136, 136, 136] };
 function getClosestColor(r, g, b) {
@@ -313,6 +319,7 @@ var ManagerClass = class _ManagerClass {
       this.resetTiles(template.overlappedTiles);
       this.templates.push(template);
       addTemplateRow(template);
+      addColorRow(template, template.colorsInfo.keys().toArray()[0]);
       displayStatus("Loaded template at " + template.coords.toString() + ": " + template.totalPixelCount + " pixels");
     }
   }
@@ -404,6 +411,19 @@ var Manager = new ManagerClass();
 function injectOverlay() {
   document.body.appendChild(document.createElement("div")).outerHTML = `
 <div id="ca-overlay">
+    <template id="ca-template-color">
+        <div class="ca-color-row">
+            <input type="checkbox" />
+            <div class="ca-color-display"></div>
+            <button class="ca-icon-button">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M240-120q-45 0-89-22t-71-58q26 0 53-20.5t27-59.5q0-50 35-85t85-35q50 0 85 35t35 85q0 66-47 113t-113 47Zm230-240L360-470l358-358q11-11 27.5-11.5T774-828l54 54q12 12 12 28t-12 28L470-360Z"></path></svg>
+            </button>
+            <span class="ca-color-count"></span>
+            <span> • </span>
+            <span class="ca-color-name"></span>
+        </div>
+    </template>
+
     <div id="ca-header">
         <img id="ca-image-collapse" src="https://cdn.bsky.app/img/avatar/plain/did:plc:kwmxodxbf5nshavpy5r5l3jj/bafkreiaddzuq5vgrpi3aeufp7gwkbameb426d4vb4zlxvc6c4vo23wkn5a@jpeg" />
         <h1>Camoverlay</h1>
@@ -425,6 +445,7 @@ function injectOverlay() {
                 </svg>
             </button><input id="ca-input-tx" class="ca-coords-input" type="number" min="0" max="2047" step="1" placeholder="Tl X" /><input id="ca-input-ty" class="ca-coords-input" type="number" min="0" max="2047" step="1" placeholder="Tl Y" /><input id="ca-input-px" class="ca-coords-input" type="number" min="0" max="999" step="1" placeholder="Px X" /><input id="ca-input-py" class="ca-coords-input" type="number" min="0" max="999" step="1" placeholder="Px Y" />
         </div>
+        <div id="ca-color-list"></div>
         <div id="ca-templates">
             <div id="ca-template-buttons">
                 <input id="ca-file-input" type="file" accept="image/png" />
@@ -539,6 +560,50 @@ div#ca-overlay {
     height: 2.5em;
     margin-right: 1ch;
     vertical-align: middle;
+}
+
+#ca-color-list {
+    background-color: #00000022;
+    border-color: black;
+    border-radius: .3em;
+    border-width: 1px;
+    font-size: 85%;
+    margin-top: 0.5em;
+    padding: 5px;
+}
+#ca-color-list:empty {
+    display: none;
+}
+.ca-color-row {
+    align-content: center;
+    align-items: center;
+    display: flex;
+    flex-direction: row;
+    gap: 1ch;
+    justify-content: start;
+}
+.ca-color-row > * {
+    flex: 0 0 auto;
+}
+.ca-color-row > input {
+    filter: hue-rotate(130deg);
+}
+.ca-color-display {
+    border-radius: 0.3em;
+    height: 1.2em;
+    width: 1.2em;
+}
+.ca-color-row > button {
+    height: 1.3em;
+    width: 1.3em;
+}
+.ca-color-row > button > svg {
+    width: 80%;
+}
+.ca-color-name {
+    flex: unset;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 #ca-templates > * {
@@ -660,6 +725,17 @@ function displayUserData(data) {
     document.getElementById("ca-user-droplets").innerText = data.droplets.toLocaleString();
     document.getElementById("ca-user-level").innerText = nextLevelPixels.toLocaleString();
   }
+}
+function addColorRow(template, colorId) {
+  const c = rgbColorMap.get(colorId);
+  const row = document.getElementById("ca-template-color").content.cloneNode(true);
+  const enable = row.querySelector("input");
+  enable.checked = true;
+  const color = row.querySelector(".ca-color-display");
+  color.style.backgroundColor = `#${rgbToCss(c.rgb)}`;
+  row.querySelector(".ca-color-count").textContent = template.colorsInfo.get(colorId).toString();
+  row.querySelector(".ca-color-name").textContent = c.name;
+  document.getElementById("ca-color-list").appendChild(row);
 }
 function setNewName(s, template) {
   const newName = s.textContent.replaceAll("\n", "");
