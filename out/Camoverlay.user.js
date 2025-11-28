@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.5.1
+// @version      0.5.2
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -319,9 +319,9 @@ var ManagerClass = class _ManagerClass {
       this.resetTiles(template.overlappedTiles);
       this.templates.push(template);
       addTemplateRow(template);
-      addColorRow(template, template.colorsInfo.keys().toArray()[0]);
-      displayStatus("Loaded template at " + template.coords.toString() + ": " + template.totalPixelCount + " pixels");
     }
+    this.updateColorList();
+    displayStatus("Loaded " + this.templates.length + " templates");
   }
   storeTemplates() {
     _ManagerClass.#storeValue("templates", this.templates);
@@ -347,6 +347,7 @@ var ManagerClass = class _ManagerClass {
     this.templates.push(template);
     this.storeTemplates();
     addTemplateRow(template);
+    this.updateColorList();
     displayStatus("Created template at " + template.coords.toString() + ": " + template.totalPixelCount + " pixels");
     return template;
   }
@@ -359,6 +360,21 @@ var ManagerClass = class _ManagerClass {
     this.templates.splice(index, 1);
     this.storeTemplates();
     removeTemplateRow(template.name);
+    this.updateColorList();
+  }
+  updateColorList() {
+    const list = document.getElementById("ca-color-list");
+    while (list.firstChild)
+      list.firstChild.remove();
+    const colorCounts = /* @__PURE__ */ new Map();
+    for (const template of this.templates) {
+      if (template.enabled)
+        for (const [id, count] of template.colorsInfo)
+          colorCounts.set(id, (colorCounts.get(id) ?? 0) + count);
+    }
+    for (const [id, count] of colorCounts.entries().toArray().sort((a, b) => b[1] - a[1])) {
+      addColorRow(id, count);
+    }
   }
   async processTile(tile, response) {
     const lastModified = new Date(response.headers.get("last-modified") ?? 0).getTime();
@@ -410,81 +426,7 @@ var Manager = new ManagerClass();
 
 // dist/display.js
 function injectOverlay() {
-  document.body.appendChild(document.createElement("div")).outerHTML = `
-<div id="ca-overlay">
-    <template id="ca-color-template">
-        <div class="ca-color-row">
-            <input type="checkbox" />
-            <div class="ca-color-display"></div>
-            <button class="ca-icon-button">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M240-120q-45 0-89-22t-71-58q26 0 53-20.5t27-59.5q0-50 35-85t85-35q50 0 85 35t35 85q0 66-47 113t-113 47Zm230-240L360-470l358-358q11-11 27.5-11.5T774-828l54 54q12 12 12 28t-12 28L470-360Z"></path></svg>
-            </button>
-            <span class="ca-color-count"></span>
-            <span> • </span>
-            <span class="ca-color-name"></span>
-        </div>
-    </template>
-    <template id="ca-template-template">
-        <div class="ca-template-row">
-            <button class="ca-icon-button ca-template-fly" disabled>✈️</button>
-            <div>
-                <span class="ca-pixel-count"></span><span> • </span>
-                <span class="ca-template-name"></span>
-            </div>
-            <div>
-                <input type="checkbox" /><button class="ca-icon-button ca-template-delete">🗑️</button>
-            </div>
-        </div>
-    </template>
-
-    <div id="ca-header">
-        <img id="ca-image-collapse" src="https://cdn.bsky.app/img/avatar/plain/did:plc:kwmxodxbf5nshavpy5r5l3jj/bafkreiaddzuq5vgrpi3aeufp7gwkbameb426d4vb4zlxvc6c4vo23wkn5a@jpeg" />
-        <h1>Camoverlay</h1>
-    </div>
-    <hr />
-    <div>
-        <p>Username: <b id="ca-user-name"></b></p>
-        <p>Droplets: <b id="ca-user-droplets"></b></p>
-        <p>Next level in: <b id="ca-user-level">...</b> pixels</p>
-    </div>
-    <hr />
-    <div id="ca-automation">
-        <div id="ca-coords">
-            <button id="ca-coords-button" class="ca-icon-button">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 6">
-                    <circle cx="2" cy="2" r="2"></circle>
-                    <path d="M2 6 L3.7 3 L0.3 3 Z"></path>
-                    <circle cx="2" cy="2" r="0.7" fill="white"></circle>
-                </svg>
-            </button><input id="ca-input-tx" class="ca-coords-input" type="number" min="0" max="2047" step="1" placeholder="Tl X" /><input id="ca-input-ty" class="ca-coords-input" type="number" min="0" max="2047" step="1" placeholder="Tl Y" /><input id="ca-input-px" class="ca-coords-input" type="number" min="0" max="999" step="1" placeholder="Px X" /><input id="ca-input-py" class="ca-coords-input" type="number" min="0" max="999" step="1" placeholder="Px Y" />
-        </div>
-        <div id="ca-color-list"></div>
-        <div id="ca-templates">
-            <div id="ca-template-buttons">
-                <input id="ca-file-input" type="file" accept="image/png" />
-                <button id="ca-select-button">Select file</button>
-                <button id="ca-create-button">Create</button>
-            </div>
-            <div id="ca-template-list"></div>
-        </div>
-        <textarea id="ca-output" readonly placeholder="Sleeping"></textarea>
-        <div id="ca-bottom">
-            <div>
-                <button id="ca-converter-button" class="ca-icon-button">🎨</button>
-            </div>
-            <small>
-                Made by Sonyo
-                <br>
-                Original by SwingTheVine
-                <br>
-                Art by <a href="https://camomille1411en.carrd.co/" target="_blank">camomille1411</a>
-                <br>
-                <span id="ca-version"></span>
-            </small>
-        </div>
-    </div>
-</div>
-`;
+  document.body.appendChild(document.createElement("div")).outerHTML = `<div id="ca-overlay"><template id="ca-color-template"><div class="ca-color-row"><input type="checkbox" /><div class="ca-color-display"></div><button class="ca-icon-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M240-120q-45 0-89-22t-71-58q26 0 53-20.5t27-59.5q0-50 35-85t85-35q50 0 85 35t35 85q0 66-47 113t-113 47Zm230-240L360-470l358-358q11-11 27.5-11.5T774-828l54 54q12 12 12 28t-12 28L470-360Z"></path></svg></button><span class="ca-color-count"></span><span> • </span><span class="ca-color-name"></span></div></template><template id="ca-template-template"><div class="ca-template-row"><button class="ca-icon-button ca-template-fly" disabled>✈️</button><div><span class="ca-pixel-count"></span><span> • </span><span class="ca-template-name"></span></div><div><input type="checkbox" /><button class="ca-icon-button ca-template-delete">🗑️</button></div></div></template><div id="ca-header"><img id="ca-image-collapse" src="https://cdn.bsky.app/img/avatar/plain/did:plc:kwmxodxbf5nshavpy5r5l3jj/bafkreiaddzuq5vgrpi3aeufp7gwkbameb426d4vb4zlxvc6c4vo23wkn5a@jpeg" /><h1>Camoverlay</h1></div><hr /><div><p>Username: <b id="ca-user-name"></b></p><p>Droplets: <b id="ca-user-droplets"></b></p><p>Next level in: <b id="ca-user-level">...</b> pixels</p></div><hr /><div id="ca-automation"><div id="ca-coords"><button id="ca-coords-button" class="ca-icon-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 6"><circle cx="2" cy="2" r="2"></circle><path d="M2 6 L3.7 3 L0.3 3 Z"></path><circle cx="2" cy="2" r="0.7" fill="white"></circle></svg></button><input id="ca-input-tx" class="ca-coords-input" type="number" min="0" max="2047" step="1" placeholder="Tl X" /><input id="ca-input-ty" class="ca-coords-input" type="number" min="0" max="2047" step="1" placeholder="Tl Y" /><input id="ca-input-px" class="ca-coords-input" type="number" min="0" max="999" step="1" placeholder="Px X" /><input id="ca-input-py" class="ca-coords-input" type="number" min="0" max="999" step="1" placeholder="Px Y" /></div><div id="ca-color-list"></div><div id="ca-templates"><div id="ca-template-buttons"><input id="ca-file-input" type="file" accept="image/png" /><button id="ca-select-button">Select file</button><button id="ca-create-button">Create</button></div><div id="ca-template-list"></div></div><textarea id="ca-output" readonly placeholder="Sleeping"></textarea><div id="ca-bottom"><div><button id="ca-converter-button" class="ca-icon-button">🎨</button></div><small><span>Made by Sonyo<br>Original by SwingTheVine<br>Art by <a href="https://camomille1411en.carrd.co/" target="_blank">camomille1411</a><br></span><span id="ca-version"></span></small></div></div></div>`;
   GM_addStyle(`
 #ca-overlay {
     background-color: #5D1F18E6;
@@ -575,8 +517,10 @@ div#ca-overlay {
     border-color: black;
     border-radius: .3em;
     border-width: 1px;
-    font-size: 85%;
+    font-size: 80%;
     margin-top: 0.5em;
+    max-height: 120px;
+    overflow: auto;
     padding: 5px;
 }
 #ca-color-list:empty {
@@ -737,14 +681,14 @@ function displayUserData(data) {
     document.getElementById("ca-user-level").innerText = nextLevelPixels.toLocaleString();
   }
 }
-function addColorRow(template, colorId) {
-  const c = rgbColorMap.get(colorId);
+function addColorRow(colorId, count) {
+  const c = rgbColorMap.get(colorId) ?? otherColor;
   const row = document.getElementById("ca-color-template").content.cloneNode(true);
   const enable = row.querySelector("input");
   enable.checked = true;
   const color = row.querySelector(".ca-color-display");
   color.style.backgroundColor = `#${rgbToCss(c.rgb)}`;
-  row.querySelector(".ca-color-count").textContent = template.colorsInfo.get(colorId).toString();
+  row.querySelector(".ca-color-count").textContent = count.toString();
   row.querySelector(".ca-color-name").textContent = c.name;
   document.getElementById("ca-color-list").appendChild(row);
 }
@@ -755,6 +699,7 @@ function setNewName(s, template) {
     return;
   }
   template.name = newName;
+  s.closest(".ca-template-row").id = `ca-template-id-${newName}`;
   Manager.storeTemplates();
 }
 function addTemplateRow(template) {
@@ -791,6 +736,7 @@ function addTemplateRow(template) {
   enable.addEventListener("change", (e) => {
     template.enabled = e.target.checked;
     Manager.resetTiles(template.overlappedTiles);
+    Manager.updateColorList();
   });
   const del = row.querySelector(".ca-template-delete");
   del.addEventListener("click", () => {

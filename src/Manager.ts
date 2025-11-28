@@ -1,7 +1,7 @@
 import { PixelCoords, TileCoords } from './Coords';
 import { addColorRow, addTemplateRow, displayStatus, removeTemplateRow, setInputCoords } from './display';
 import Template from './Template';
-import { JsonifiedValue, TileIndex, TileInfo } from './types';
+import { JsonifiedValue, TileIndex, TileInfo, WplaceColorId } from './types';
 
 declare type StorageValues = {
     'global': { inputCoords: PixelCoords | null },
@@ -76,9 +76,10 @@ class ManagerClass {
             this.resetTiles(template.overlappedTiles);
             this.templates.push(template);
             addTemplateRow(template);
-            addColorRow(template, template.colorsInfo.keys().toArray()[0]!);
-            displayStatus('Loaded template at ' + template.coords.toString() + ': ' + template.totalPixelCount + ' pixels');
         }
+
+        this.updateColorList();
+        displayStatus('Loaded ' + this.templates.length + ' templates');
     }
 
     storeTemplates(): void {
@@ -112,6 +113,7 @@ class ManagerClass {
         this.storeTemplates();
 
         addTemplateRow(template);
+        this.updateColorList();
         displayStatus('Created template at ' + template.coords.toString() + ': ' + template.totalPixelCount + ' pixels');
         return template;
     }
@@ -127,6 +129,25 @@ class ManagerClass {
         this.storeTemplates();
 
         removeTemplateRow(template.name);
+        this.updateColorList();
+    }
+
+    updateColorList() {
+        const list = document.getElementById('ca-color-list')!;
+        while (list.firstChild)
+            list.firstChild!.remove();
+
+        const colorCounts = new Map<WplaceColorId, number>();
+
+        for (const template of this.templates) {
+            if (template.enabled)
+                for (const [id, count] of template.colorsInfo)
+                    colorCounts.set(id, (colorCounts.get(id) ?? 0) + count);
+        }
+
+        for (const [id, count] of colorCounts.entries().toArray().sort((a, b) => b[1] - a[1])) {
+            addColorRow(id, count);
+        }
     }
 
     async processTile(tile: TileCoords, response: Response): Promise<Response> {

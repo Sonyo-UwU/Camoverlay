@@ -2,14 +2,13 @@
 import { Manager } from './Manager';
 import Template from './Template';
 import type { UserData, WplaceColorId } from './types';
-import { rgbColorMap, rgbToCss } from './utils';
+import { otherColor, rgbColorMap, rgbToCss } from './utils';
 
 declare function GM_addStyle(css: string): void;
 
 export function injectOverlay() {
     // Inject HTML
-    document.body.appendChild(document.createElement('div')).outerHTML = `
-%overlay.html%`;
+    document.body.appendChild(document.createElement('div')).outerHTML = `%overlay.html%`;
 
     // Inject CSS
     GM_addStyle(`
@@ -43,8 +42,8 @@ export function displayUserData(data: UserData) {
     }
 }
 
-export function addColorRow(template: Template, colorId: WplaceColorId) {
-    const c = rgbColorMap.get(colorId)!;
+export function addColorRow(colorId: WplaceColorId, count: number) {
+    const c = rgbColorMap.get(colorId) ?? otherColor;
 
     const row = (document.getElementById('ca-color-template') as HTMLTemplateElement).content.cloneNode(true) as DocumentFragment;
 
@@ -56,7 +55,7 @@ export function addColorRow(template: Template, colorId: WplaceColorId) {
 
     //const paint = row.querySelector('button')!;
 
-    row.querySelector('.ca-color-count')!.textContent = template.colorsInfo.get(colorId)!.toString();
+    row.querySelector('.ca-color-count')!.textContent = count.toString();
     row.querySelector('.ca-color-name')!.textContent = c.name;
 
     document.getElementById('ca-color-list')!.appendChild(row);
@@ -70,6 +69,7 @@ function setNewName(s: HTMLElement, template: Template) {
     }
 
     template.name = newName;
+    s.closest('.ca-template-row')!.id = `ca-template-id-${newName}`;
     Manager.storeTemplates();
 }
 
@@ -113,6 +113,7 @@ export function addTemplateRow(template: Template) {
     enable.addEventListener('change', e => {
         template.enabled = (e.target as HTMLInputElement).checked;
         Manager.resetTiles(template.overlappedTiles);
+        Manager.updateColorList();
     });
 
     const del = row.querySelector('.ca-template-delete') as HTMLButtonElement;
