@@ -46,7 +46,7 @@ export function displayUserData(data: UserData) {
 export function addColorRow(template: Template, colorId: WplaceColorId) {
     const c = rgbColorMap.get(colorId)!;
 
-    const row = (document.getElementById('ca-template-color') as HTMLTemplateElement).content.cloneNode(true) as DocumentFragment;
+    const row = (document.getElementById('ca-color-template') as HTMLTemplateElement).content.cloneNode(true) as DocumentFragment;
 
     const enable = row.querySelector('input')!;
     enable.checked = true;
@@ -74,19 +74,19 @@ function setNewName(s: HTMLElement, template: Template) {
 }
 
 export function addTemplateRow(template: Template) {
-    const outer = document.createElement('div');
+    const row = (document.getElementById('ca-template-template') as HTMLTemplateElement).content.cloneNode(true) as DocumentFragment;
 
-    const fly = document.createElement('button');
-    fly.innerText = '✈️';
-    fly.classList.add('ca-icon-button');
+    row.firstElementChild!.id = `ca-template-id-${template.name}`;
 
-    const middle = document.createElement('div');
+    //const fly = row.querySelector('.ca-template-fly') as HTMLButtonElement;
 
-    const text = document.createElement('span');
-    text.innerText = template.name;
+    const count = row.querySelector('.ca-pixel-count') as HTMLSpanElement;
+    count.textContent = template.totalPixelCount.toString();
 
+    const text = row.querySelector('.ca-template-name') as HTMLSpanElement;
+    text.textContent = template.name;
     text.addEventListener('click', e => {
-        const s = e.target as HTMLElement;
+        const s = e.target as HTMLSpanElement;
         if (!s.hasAttribute('contenteditable')) {
             s.setAttribute('contenteditable', '');
             s.focus();
@@ -95,54 +95,36 @@ export function addTemplateRow(template: Template) {
     text.addEventListener('keydown', e => {
         if (e.key === 'Enter') {
             e.preventDefault();
-            const s = e.target as HTMLElement;
+            const s = e.target as HTMLSpanElement;
             s.removeAttribute('contenteditable');
             s.parentElement!.scrollTo(0, 0);
             setNewName(s, template);
         }
     });
     text.addEventListener('blur', e => {
-        const s = e.target as HTMLElement;
+        const s = e.target as HTMLSpanElement;
         s.removeAttribute('contenteditable');
         s.parentElement!.scrollTo(0, 0);
         setNewName(s, template);
     });
 
-    const count = document.createElement('span');
-    count.textContent = template.totalPixelCount + ' • ';
-
-    const right = document.createElement('div');
-
-    const enable = document.createElement('input');
-    enable.setAttribute('type', 'checkbox');
+    const enable = row.querySelector('input')!;
     enable.checked = template.enabled;
-
     enable.addEventListener('change', e => {
         template.enabled = (e.target as HTMLInputElement).checked;
         Manager.resetTiles(template.overlappedTiles);
     });
 
-    const del = document.createElement('button');
-    del.innerText = '🗑️';
-    del.classList.add('ca-icon-button');
-
+    const del = row.querySelector('.ca-template-delete') as HTMLButtonElement;
     del.addEventListener('click', () => {
         Manager.deleteTemplate(Manager.templates.indexOf(template));
     });
 
-    middle.append(count, text);
-    right.append(enable, del);
-    outer.append(fly, middle, right);
-    document.getElementById('ca-template-list')!.appendChild(outer);
+    document.getElementById('ca-template-list')!.appendChild(row);
 }
 
 export function removeTemplateRow(name: string) {
-    for (const div of document.getElementById('ca-template-list')!.children) {
-        if (div.children[1]?.textContent === name) {
-            div.remove();
-            break;
-        }
-    }
+    document.getElementById(`ca-template-id-${name}`)?.remove();
 }
 
 export function displayTileCoords(coords: PixelCoords) {

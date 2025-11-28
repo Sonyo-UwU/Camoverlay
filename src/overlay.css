@@ -72,9 +72,6 @@ div#ca-overlay {
 #ca-overlay button:active, #ca-overlay button:disabled {
     background-color: #d68d85;
 }
-#ca-overlay button:disabled {
-    text-decoration: line-through;
-}
 
 #ca-image-collapse {
     border-radius: 12px;
@@ -160,7 +157,10 @@ div#ca-overlay {
 #ca-template-list {
     font-size: 80%;
 }
-#ca-template-list > div {
+#ca-template-list:empty {
+    display: none;
+}
+.ca-template-row {
     display: flex;
     justify-content: space-between;
     background-color: #FF000033;
@@ -168,16 +168,16 @@ div#ca-overlay {
     gap: 1ch;
     margin-bottom: 3px;
 }
-#ca-template-list > div > * {
+.ca-template-row > * {
     flex: 0 0 auto;
 }
-#ca-template-list > div > *:nth-child(2) {
+.ca-template-row > *:nth-child(2) {
     flex: unset;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
-#ca-template-list input {
+.ca-template-row input {
     vertical-align: middle;
     margin-right: 0.5ch;
     filter: hue-rotate(70deg);

@@ -123,8 +123,10 @@ class ManagerClass {
 
         template.bitmap?.close();
         this.resetTiles(template.overlappedTiles);
-        removeTemplateRow(template.name);
         this.templates.splice(index, 1);
+        this.storeTemplates();
+
+        removeTemplateRow(template.name);
     }
 
     async processTile(tile: TileCoords, response: Response): Promise<Response> {

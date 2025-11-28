@@ -1,5 +1,5 @@
 <div id="ca-overlay">
-    <template id="ca-template-color">
+    <template id="ca-color-template">
         <div class="ca-color-row">
             <input type="checkbox" />
             <div class="ca-color-display"></div>
@@ -9,6 +9,20 @@
             <span class="ca-color-count"></span>
             <span> • </span>
             <span class="ca-color-name"></span>
+        </div>
+    </template>
+    <template id="ca-template-template">
+        <div class="ca-template-row">
+            <button class="ca-icon-button ca-template-fly" disabled>✈️</button>
+            <div>
+                <span class="ca-pixel-count"></span><!--%%-->
+                <span> • </span>
+                <span class="ca-template-name"></span>
+            </div>
+            <div>
+                <input type="checkbox" /><!--%%-->
+                <button class="ca-icon-button ca-template-delete">🗑️</button>
+            </div>
         </div>
     </template>
 
@@ -44,9 +58,7 @@
                 <button id="ca-select-button">Select file</button>
                 <button id="ca-create-button">Create</button>
             </div>
-            <div id="ca-template-list">
-
-            </div>
+            <div id="ca-template-list"></div>
         </div>
         <textarea id="ca-output" readonly placeholder="Sleeping"></textarea>
         <div id="ca-bottom">

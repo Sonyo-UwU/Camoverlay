@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.5.0
+// @version      0.5.1
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -356,8 +356,9 @@ var ManagerClass = class _ManagerClass {
       return;
     template.bitmap?.close();
     this.resetTiles(template.overlappedTiles);
-    removeTemplateRow(template.name);
     this.templates.splice(index, 1);
+    this.storeTemplates();
+    removeTemplateRow(template.name);
   }
   async processTile(tile, response) {
     const lastModified = new Date(response.headers.get("last-modified") ?? 0).getTime();
@@ -411,7 +412,7 @@ var Manager = new ManagerClass();
 function injectOverlay() {
   document.body.appendChild(document.createElement("div")).outerHTML = `
 <div id="ca-overlay">
-    <template id="ca-template-color">
+    <template id="ca-color-template">
         <div class="ca-color-row">
             <input type="checkbox" />
             <div class="ca-color-display"></div>
@@ -421,6 +422,18 @@ function injectOverlay() {
             <span class="ca-color-count"></span>
             <span> • </span>
             <span class="ca-color-name"></span>
+        </div>
+    </template>
+    <template id="ca-template-template">
+        <div class="ca-template-row">
+            <button class="ca-icon-button ca-template-fly" disabled>✈️</button>
+            <div>
+                <span class="ca-pixel-count"></span><span> • </span>
+                <span class="ca-template-name"></span>
+            </div>
+            <div>
+                <input type="checkbox" /><button class="ca-icon-button ca-template-delete">🗑️</button>
+            </div>
         </div>
     </template>
 
@@ -452,9 +465,7 @@ function injectOverlay() {
                 <button id="ca-select-button">Select file</button>
                 <button id="ca-create-button">Create</button>
             </div>
-            <div id="ca-template-list">
-
-            </div>
+            <div id="ca-template-list"></div>
         </div>
         <textarea id="ca-output" readonly placeholder="Sleeping"></textarea>
         <div id="ca-bottom">
@@ -549,9 +560,6 @@ div#ca-overlay {
 #ca-overlay button:active, #ca-overlay button:disabled {
     background-color: #d68d85;
 }
-#ca-overlay button:disabled {
-    text-decoration: line-through;
-}
 
 #ca-image-collapse {
     border-radius: 12px;
@@ -637,7 +645,10 @@ div#ca-overlay {
 #ca-template-list {
     font-size: 80%;
 }
-#ca-template-list > div {
+#ca-template-list:empty {
+    display: none;
+}
+.ca-template-row {
     display: flex;
     justify-content: space-between;
     background-color: #FF000033;
@@ -645,16 +656,16 @@ div#ca-overlay {
     gap: 1ch;
     margin-bottom: 3px;
 }
-#ca-template-list > div > * {
+.ca-template-row > * {
     flex: 0 0 auto;
 }
-#ca-template-list > div > *:nth-child(2) {
+.ca-template-row > *:nth-child(2) {
     flex: unset;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
-#ca-template-list input {
+.ca-template-row input {
     vertical-align: middle;
     margin-right: 0.5ch;
     filter: hue-rotate(70deg);
@@ -728,7 +739,7 @@ function displayUserData(data) {
 }
 function addColorRow(template, colorId) {
   const c = rgbColorMap.get(colorId);
-  const row = document.getElementById("ca-template-color").content.cloneNode(true);
+  const row = document.getElementById("ca-color-template").content.cloneNode(true);
   const enable = row.querySelector("input");
   enable.checked = true;
   const color = row.querySelector(".ca-color-display");
@@ -747,13 +758,12 @@ function setNewName(s, template) {
   Manager.storeTemplates();
 }
 function addTemplateRow(template) {
-  const outer = document.createElement("div");
-  const fly = document.createElement("button");
-  fly.innerText = "\u2708\uFE0F";
-  fly.classList.add("ca-icon-button");
-  const middle = document.createElement("div");
-  const text = document.createElement("span");
-  text.innerText = template.name;
+  const row = document.getElementById("ca-template-template").content.cloneNode(true);
+  row.firstElementChild.id = `ca-template-id-${template.name}`;
+  const count = row.querySelector(".ca-pixel-count");
+  count.textContent = template.totalPixelCount.toString();
+  const text = row.querySelector(".ca-template-name");
+  text.textContent = template.name;
   text.addEventListener("click", (e) => {
     const s = e.target;
     if (!s.hasAttribute("contenteditable")) {
@@ -776,34 +786,20 @@ function addTemplateRow(template) {
     s.parentElement.scrollTo(0, 0);
     setNewName(s, template);
   });
-  const count = document.createElement("span");
-  count.textContent = template.totalPixelCount + " \u2022 ";
-  const right = document.createElement("div");
-  const enable = document.createElement("input");
-  enable.setAttribute("type", "checkbox");
+  const enable = row.querySelector("input");
   enable.checked = template.enabled;
   enable.addEventListener("change", (e) => {
     template.enabled = e.target.checked;
     Manager.resetTiles(template.overlappedTiles);
   });
-  const del = document.createElement("button");
-  del.innerText = "\u{1F5D1}\uFE0F";
-  del.classList.add("ca-icon-button");
+  const del = row.querySelector(".ca-template-delete");
   del.addEventListener("click", () => {
     Manager.deleteTemplate(Manager.templates.indexOf(template));
   });
-  middle.append(count, text);
-  right.append(enable, del);
-  outer.append(fly, middle, right);
-  document.getElementById("ca-template-list").appendChild(outer);
+  document.getElementById("ca-template-list").appendChild(row);
 }
 function removeTemplateRow(name) {
-  for (const div of document.getElementById("ca-template-list").children) {
-    if (div.children[1]?.textContent === name) {
-      div.remove();
-      break;
-    }
-  }
+  document.getElementById(`ca-template-id-${name}`)?.remove();
 }
 function displayTileCoords(coords) {
   const textCoords = `Tile X: ${coords.tx}, Tile Y: ${coords.ty} ; Pixel X: ${coords.px}, Pixel Y: ${coords.py}`;
