@@ -1,5 +1,5 @@
 import { PixelCoords, TileCoords } from './Coords';
-import { addColorRow, addTemplateRow, displayStatus, removeTemplateRow, setInputCoords } from './display';
+import { addColorRow, addTemplateRow, displayStatus, removeTemplateRow } from './display';
 import Template from './Template';
 import { JsonifiedValue, TileIndex, TileInfo, WplaceColorId } from './types';
 
@@ -19,8 +19,10 @@ class ManagerClass {
     lastClickedCoords: PixelCoords | null;
 
     setInputCoords(value: PixelCoords | null) {
-        if (value !== null)
-            setInputCoords(value);
+        (document.getElementById('ca-input-tx') as HTMLInputElement).value = value?.tx.toString() ?? '';
+        (document.getElementById('ca-input-ty') as HTMLInputElement).value = value?.ty.toString() ?? '';
+        (document.getElementById('ca-input-px') as HTMLInputElement).value = value?.px.toString() ?? '';
+        (document.getElementById('ca-input-py') as HTMLInputElement).value = value?.py.toString() ?? '';
         this.storeGlobal({ inputCoords: value });
     };
     getInputCoords(): PixelCoords | null {

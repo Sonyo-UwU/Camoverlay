@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.5.6
+// @version      0.5.7
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -178,7 +178,6 @@ var Template = class _Template {
   imageData;
   width;
   height;
-  //bitmap: ImageBitmap | null;
   base64Data;
   colorsInfo;
   totalPixelCount;
@@ -296,8 +295,10 @@ var ManagerClass = class _ManagerClass {
   enabledColors;
   lastClickedCoords;
   setInputCoords(value) {
-    if (value !== null)
-      setInputCoords(value);
+    document.getElementById("ca-input-tx").value = value?.tx.toString() ?? "";
+    document.getElementById("ca-input-ty").value = value?.ty.toString() ?? "";
+    document.getElementById("ca-input-px").value = value?.px.toString() ?? "";
+    document.getElementById("ca-input-py").value = value?.py.toString() ?? "";
     this.storeGlobal({ inputCoords: value });
   }
   getInputCoords() {
@@ -811,12 +812,6 @@ function displayTileCoords(coords) {
       div.insertAdjacentElement("beforebegin", span);
     }
   }
-}
-function setInputCoords(coords) {
-  document.getElementById("ca-input-tx").value = coords.tx.toString();
-  document.getElementById("ca-input-ty").value = coords.ty.toString();
-  document.getElementById("ca-input-px").value = coords.px.toString();
-  document.getElementById("ca-input-py").value = coords.py.toString();
 }
 
 // dist/eventListeners.js
