@@ -42,17 +42,18 @@ export function displayUserData(data: UserData) {
     }
 }
 
-export function addColorRow(colorId: WplaceColorId, count: number) {
+export function addColorRow(colorId: WplaceColorId, count: number, enabled: boolean) {
     const c = rgbColorMap.get(colorId) ?? otherColor;
 
     const row = (document.getElementById('ca-color-template') as HTMLTemplateElement).content.cloneNode(true) as DocumentFragment;
 
     const enable = row.querySelector('input')!;
-    enable.checked = true;
-    Manager.enabledColors.set(colorId, true);
+    enable.checked = enabled;
+    Manager.enabledColors.set(colorId, enabled);
     enable.addEventListener('change', e => {
         Manager.enabledColors.set(colorId, (e.target as HTMLInputElement).checked);
         Manager.tilesInfo.clear();
+        Manager.storeGlobal();
     });
 
     const color = row.querySelector('.ca-color-display') as HTMLDivElement;

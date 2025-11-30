@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.5.4
+// @version      0.5.5
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -319,14 +319,18 @@ var ManagerClass = class _ManagerClass {
   }
   loadGlobals() {
     const stored = _ManagerClass.#loadValue("global");
-    if (stored && stored.inputCoords) {
+    if (stored === null)
+      return;
+    if (stored.inputCoords) {
       this.lastClickedCoords = PixelCoords.copy(stored.inputCoords);
       this.setInputCoords(this.lastClickedCoords);
     }
+    this.enabledColors = new Map(stored.enabledColors);
   }
   storeGlobal(overrides) {
     _ManagerClass.#storeValue("global", {
-      inputCoords: overrides?.inputCoords ?? this.getInputCoords()
+      inputCoords: overrides?.inputCoords ?? this.getInputCoords(),
+      enabledColors: this.enabledColors.entries().toArray()
     });
   }
   async loadTemplates() {
@@ -384,18 +388,22 @@ var ManagerClass = class _ManagerClass {
     this.updateColorList();
   }
   updateColorList() {
+    debugger;
     const list = document.getElementById("ca-color-list");
     while (list.firstChild)
       list.firstChild.remove();
-    this.enabledColors.clear();
     const colorCounts = /* @__PURE__ */ new Map();
     for (const template of this.templates) {
       if (template.enabled)
         for (const [id, count] of template.colorsInfo)
           colorCounts.set(id, (colorCounts.get(id) ?? 0) + count);
     }
+    for (const id of this.enabledColors.keys()) {
+      if (!colorCounts.has(id))
+        this.enabledColors.delete(id);
+    }
     for (const [id, count] of colorCounts.entries().toArray().sort((a, b) => b[1] - a[1])) {
-      addColorRow(id, count);
+      addColorRow(id, count, this.enabledColors.get(id) ?? true);
     }
   }
   async processTile(tile, response) {
@@ -718,15 +726,16 @@ function displayUserData(data) {
     document.getElementById("ca-user-level").innerText = nextLevelPixels.toLocaleString();
   }
 }
-function addColorRow(colorId, count) {
+function addColorRow(colorId, count, enabled) {
   const c = rgbColorMap.get(colorId) ?? otherColor;
   const row = document.getElementById("ca-color-template").content.cloneNode(true);
   const enable = row.querySelector("input");
-  enable.checked = true;
-  Manager.enabledColors.set(colorId, true);
+  enable.checked = enabled;
+  Manager.enabledColors.set(colorId, enabled);
   enable.addEventListener("change", (e) => {
     Manager.enabledColors.set(colorId, e.target.checked);
     Manager.tilesInfo.clear();
+    Manager.storeGlobal();
   });
   const color = row.querySelector(".ca-color-display");
   color.style.backgroundColor = `#${rgbToCss(c.rgb)}`;

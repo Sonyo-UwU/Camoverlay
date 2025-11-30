@@ -4,7 +4,7 @@ import Template from './Template';
 import { JsonifiedValue, TileIndex, TileInfo, WplaceColorId } from './types';
 
 declare type StorageValues = {
-    'global': { inputCoords: PixelCoords | null },
+    'global': { inputCoords: PixelCoords | null, enabledColors: [WplaceColorId, boolean][] },
     'templates': Template[];
 };
 
@@ -54,15 +54,21 @@ class ManagerClass {
 
     loadGlobals(): void {
         const stored = ManagerClass.#loadValue('global');
-        if (stored && stored.inputCoords) {
+        if (stored === null)
+            return;
+
+        if (stored.inputCoords) {
             this.lastClickedCoords = PixelCoords.copy(stored.inputCoords);
             this.setInputCoords(this.lastClickedCoords);
         }
+
+        this.enabledColors = new Map(stored.enabledColors);
     }
 
     storeGlobal(overrides?: Partial<StorageValues['global']>): void {
         ManagerClass.#storeValue('global', {
-            inputCoords: overrides?.inputCoords ?? this.getInputCoords()
+            inputCoords: overrides?.inputCoords ?? this.getInputCoords(),
+            enabledColors: this.enabledColors.entries().toArray()
         });
     }
 
@@ -136,10 +142,10 @@ class ManagerClass {
     }
 
     updateColorList() {
+        debugger;
         const list = document.getElementById('ca-color-list')!;
         while (list.firstChild)
             list.firstChild!.remove();
-        this.enabledColors.clear();
 
         const colorCounts = new Map<WplaceColorId, number>();
 
@@ -149,8 +155,13 @@ class ManagerClass {
                     colorCounts.set(id, (colorCounts.get(id) ?? 0) + count);
         }
 
+        for (const id of this.enabledColors.keys()) {
+            if (!colorCounts.has(id))
+                this.enabledColors.delete(id);
+        }
+
         for (const [id, count] of colorCounts.entries().toArray().sort((a, b) => b[1] - a[1])) {
-            addColorRow(id, count);
+            addColorRow(id, count, this.enabledColors.get(id) ?? true);
         }
     }
 
