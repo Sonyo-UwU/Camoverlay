@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.5.5
+// @version      0.5.6
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -175,39 +175,38 @@ var Template = class _Template {
   name;
   coords;
   overlappedTiles;
-  bitmap;
+  imageData;
+  width;
+  height;
+  //bitmap: ImageBitmap | null;
   base64Data;
   colorsInfo;
   totalPixelCount;
   enabled;
-  constructor(name, coords) {
+  constructor(name, coords, width, height) {
     this.name = name;
     this.coords = coords;
     this.overlappedTiles = [];
-    this.bitmap = null;
+    this.imageData = null;
+    this.width = width;
+    this.height = height;
     this.base64Data = "";
     this.colorsInfo = /* @__PURE__ */ new Map();
     this.totalPixelCount = 0;
     this.enabled = true;
   }
   static async fromFile(name, coords, file) {
-    const template = new _Template(name, coords);
     const bitmap = await createImageBitmap(file);
-    const canvas = new OffscreenCanvas(Manager.patternSize * bitmap.width, Manager.patternSize * bitmap.height);
+    const template = new _Template(name, coords, bitmap.width, bitmap.height);
+    const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
     const ctx = canvas.getContext("2d");
     ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    ctx.drawImage(bitmap, 0, 0);
     bitmap.close();
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     for (let y = 0; y < imageData.height; y++)
       for (let x = 0; x < imageData.width; x++) {
         const pixelIndex = (y * imageData.width + x) * 4;
-        if (x % Manager.patternSize !== 1 || y % Manager.patternSize !== 1) {
-          imageData.data[pixelIndex + 3] = 0;
-          continue;
-        }
-        if (imageData.data[pixelIndex + 3] < 128)
-          continue;
         const color = getClosestColor(imageData.data[pixelIndex + 0], imageData.data[pixelIndex + 1], imageData.data[pixelIndex + 2]);
         template.colorsInfo.set(color.id, (template.colorsInfo.get(color.id) ?? 0) + 1);
         template.totalPixelCount++;
@@ -218,25 +217,23 @@ var Template = class _Template {
         }
       }
     ctx.putImageData(imageData, 0, 0);
-    const canvasBuffer = await (await canvas.convertToBlob()).bytes();
+    template.imageData = imageData.data;
     let binary = "";
-    for (let i = 0; i < canvasBuffer.length; i++) {
-      binary += String.fromCharCode(canvasBuffer[i]);
+    for (let i = 0; i < template.imageData.length; i++) {
+      binary += String.fromCharCode(template.imageData[i]);
     }
     template.base64Data = btoa(binary);
-    template.bitmap = canvas.transferToImageBitmap();
     template.#computeOverlappedTiles();
     return template;
   }
   static async fromStorage(stored) {
-    const template = new _Template(stored.name, PixelCoords.copy(stored.coords));
+    const template = new _Template(stored.name, PixelCoords.copy(stored.coords), stored.width, stored.height);
     const binary = atob(stored.base64Data);
-    const array = new Uint8Array(binary.length);
+    const array = new Uint8ClampedArray(binary.length);
     for (let i = 0; i < binary.length; i++) {
       array[i] = binary.charCodeAt(i);
     }
-    const blob = new Blob([array], { type: "image/png" });
-    template.bitmap = await createImageBitmap(blob);
+    template.imageData = array;
     template.base64Data = stored.base64Data;
     template.totalPixelCount = stored.totalPixelCount;
     template.colorsInfo = new Map(stored.colorsInfo);
@@ -246,19 +243,27 @@ var Template = class _Template {
   overlaps(tile) {
     return this.overlappedTiles.includes(tile);
   }
-  drawOnTile(tile, ctx, noColorFilter) {
-    if (!this.enabled || this.bitmap === null || !this.overlaps(tile.toIndex()))
-      return;
-    ctx.drawImage(this.bitmap, (this.coords.tx * 1e3 + this.coords.px - tile.x * 1e3) * Manager.patternSize, (this.coords.ty * 1e3 + this.coords.py - tile.y * 1e3) * Manager.patternSize);
-    if (noColorFilter)
+  drawOnTile(tile, ctx) {
+    if (!this.enabled || this.imageData === null || !this.overlaps(tile.toIndex()))
       return;
     const imageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
-    for (let y = 1; y < 1e3 * Manager.patternSize; y += Manager.patternSize)
-      for (let x = 1; x < 1e3 * Manager.patternSize; x += Manager.patternSize) {
-        const pixelIndex = (y * ctx.canvas.width + x) * 4;
-        const color = getColor(imageData.data[pixelIndex + 0], imageData.data[pixelIndex + 1], imageData.data[pixelIndex + 2]);
-        if (!Manager.enabledColors.get(color.id))
-          imageData.data[pixelIndex + 3] = 0;
+    const startX = (this.coords.tx - tile.x) * 1e3;
+    const endX = Math.min(startX + this.width, 1e3);
+    const startY = (this.coords.ty - tile.y) * 1e3;
+    const endY = Math.min(startY + this.height, 1e3);
+    for (let y = startY; y < endY; y++)
+      for (let x = startX; x < endX; x++) {
+        const imagePixelIndex = (y * this.width + x) * 4;
+        const canvasPixelIndex = (((y + this.coords.py) * Manager.patternSize + 1) * ctx.canvas.width + (x + this.coords.px) * Manager.patternSize + 1) * 4;
+        if (this.imageData[imagePixelIndex + 3] === 0)
+          continue;
+        const color = getColor(this.imageData[imagePixelIndex + 0], this.imageData[imagePixelIndex + 1], this.imageData[imagePixelIndex + 2]);
+        if (Manager.enabledColors.get(color.id)) {
+          imageData.data[canvasPixelIndex + 0] = this.imageData[imagePixelIndex + 0];
+          imageData.data[canvasPixelIndex + 1] = this.imageData[imagePixelIndex + 1];
+          imageData.data[canvasPixelIndex + 2] = this.imageData[imagePixelIndex + 2];
+          imageData.data[canvasPixelIndex + 3] = this.imageData[imagePixelIndex + 3];
+        }
       }
     ctx.putImageData(imageData, 0, 0);
   }
@@ -266,6 +271,8 @@ var Template = class _Template {
     return {
       name: this.name,
       coords: this.coords,
+      width: this.width,
+      height: this.height,
       totalPixelCount: this.totalPixelCount,
       colorsInfo: this.colorsInfo.entries().toArray(),
       base64Data: this.base64Data,
@@ -273,10 +280,8 @@ var Template = class _Template {
     };
   }
   #computeOverlappedTiles() {
-    if (this.bitmap == null)
-      return;
     this.overlappedTiles = [];
-    const end = new PixelCoords(this.coords.tx, this.coords.ty, this.coords.px + this.bitmap.width, this.coords.py + this.bitmap.height);
+    const end = new PixelCoords(this.coords.tx, this.coords.ty, this.coords.px + this.width, this.coords.py + this.height);
     for (let i = this.coords.tx; i <= end.tx; i++)
       for (let j = this.coords.ty; j <= end.ty; j++)
         this.overlappedTiles.push(TileCoords.toIndex(i, j));
@@ -380,7 +385,6 @@ var ManagerClass = class _ManagerClass {
     const template = this.templates[index];
     if (template === void 0)
       return;
-    template.bitmap?.close();
     this.resetTiles(template.overlappedTiles);
     this.templates.splice(index, 1);
     this.storeTemplates();
@@ -388,7 +392,6 @@ var ManagerClass = class _ManagerClass {
     this.updateColorList();
   }
   updateColorList() {
-    debugger;
     const list = document.getElementById("ca-color-list");
     while (list.firstChild)
       list.firstChild.remove();
@@ -442,16 +445,10 @@ var ManagerClass = class _ManagerClass {
   }
   async drawOnTile(tile, blob) {
     let allDisabled = true;
-    let allEnabled = true;
-    for (const [_, enabled] of Manager.enabledColors) {
+    for (const enabled of Manager.enabledColors.values()) {
       if (enabled) {
         allDisabled = false;
-        if (!allEnabled)
-          break;
-      } else {
-        allEnabled = false;
-        if (!allDisabled)
-          break;
+        break;
       }
     }
     if (allDisabled)
@@ -462,7 +459,7 @@ var ManagerClass = class _ManagerClass {
     ctx.drawImage(await createImageBitmap(blob), 0, 0, canvas.width, canvas.height);
     for (const template of this.templates) {
       if (template.enabled)
-        template.drawOnTile(tile, ctx, allEnabled);
+        template.drawOnTile(tile, ctx);
     }
     return await canvas.convertToBlob();
   }

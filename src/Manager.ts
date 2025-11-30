@@ -132,7 +132,6 @@ class ManagerClass {
         if (template === undefined)
             return;
 
-        template.bitmap?.close();
         this.resetTiles(template.overlappedTiles);
         this.templates.splice(index, 1);
         this.storeTemplates();
@@ -142,7 +141,6 @@ class ManagerClass {
     }
 
     updateColorList() {
-        debugger;
         const list = document.getElementById('ca-color-list')!;
         while (list.firstChild)
             list.firstChild!.remove();
@@ -215,17 +213,10 @@ class ManagerClass {
 
     async drawOnTile(tile: TileCoords, blob: Blob): Promise<Blob> {
         let allDisabled = true;
-        let allEnabled = true;
-        for (const [_, enabled] of Manager.enabledColors) {
+        for (const enabled of Manager.enabledColors.values()) {
             if (enabled) {
                 allDisabled = false;
-                if (!allEnabled)
-                    break;
-            }
-            else {
-                allEnabled = false;
-                if (!allDisabled)
-                    break;
+                break;
             }
         }
 
@@ -241,7 +232,7 @@ class ManagerClass {
 
         for (const template of this.templates) {
             if (template.enabled)
-                template.drawOnTile(tile, ctx, allEnabled);
+                template.drawOnTile(tile, ctx);
         }
 
         return await canvas.convertToBlob();
