@@ -15,7 +15,8 @@ class ManagerClass {
     readonly patternSize: number = 3;
     templates: Template[];
     tilesInfo: Map<TileIndex, TileInfo>;
-    lastClickedCoords: PixelCoords | null = null;
+    enabledColors: Map<WplaceColorId, boolean>;
+    lastClickedCoords: PixelCoords | null;
 
     setInputCoords(value: PixelCoords | null) {
         if (value !== null)
@@ -39,6 +40,8 @@ class ManagerClass {
     constructor() {
         this.templates = [];
         this.tilesInfo = new Map();
+        this.enabledColors = new Map();
+        this.lastClickedCoords = null;
     }
 
     static #loadValue<K extends keyof StorageValues>(key: K): JsonifiedValue<StorageValues[K]> | null {
@@ -136,6 +139,7 @@ class ManagerClass {
         const list = document.getElementById('ca-color-list')!;
         while (list.firstChild)
             list.firstChild!.remove();
+        this.enabledColors.clear();
 
         const colorCounts = new Map<WplaceColorId, number>();
 
@@ -199,15 +203,34 @@ class ManagerClass {
     }
 
     async drawOnTile(tile: TileCoords, blob: Blob): Promise<Blob> {
+        let allDisabled = true;
+        let allEnabled = true;
+        for (const [_, enabled] of Manager.enabledColors) {
+            if (enabled) {
+                allDisabled = false;
+                if (!allEnabled)
+                    break;
+            }
+            else {
+                allEnabled = false;
+                if (!allDisabled)
+                    break;
+            }
+        }
+
+        if (allDisabled)
+            return blob;
+
         const canvas = new OffscreenCanvas(this.patternSize * 1000, this.patternSize * 1000);
         const ctx = canvas.getContext('2d')!;
         ctx.imageSmoothingEnabled = false;
 
         ctx.drawImage(await createImageBitmap(blob), 0, 0, canvas.width, canvas.height);
 
+
         for (const template of this.templates) {
             if (template.enabled)
-                template.drawOnTile(tile, ctx);
+                template.drawOnTile(tile, ctx, allEnabled);
         }
 
         return await canvas.convertToBlob();

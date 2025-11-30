@@ -1,7 +1,7 @@
 import { PixelCoords, TileCoords } from './Coords';
 import { Manager } from './Manager';
 import { JsonifiedValue, TileIndex, WplaceColorId } from './types';
-import { getClosestColor, otherColor } from './utils';
+import { getClosestColor, getColor, otherColor } from './utils';
 
 type StoredTemplate = Omit<JsonifiedValue<Omit<Template, 'toJSON'>>, 'overlappedTiles' | 'bitmap' | 'colorsInfo'> & {
     colorsInfo: [WplaceColorId, number][]
@@ -105,13 +105,31 @@ export default class Template {
         return this.overlappedTiles.includes(tile);
     }
 
-    drawOnTile(tile: TileCoords, ctx: OffscreenCanvasRenderingContext2D): void {
+    drawOnTile(tile: TileCoords, ctx: OffscreenCanvasRenderingContext2D, noColorFilter: boolean): void {
         if (!this.enabled || this.bitmap === null || !this.overlaps(tile.toIndex()))
             return;
 
         ctx.drawImage(this.bitmap,
             (this.coords.tx * 1000 + this.coords.px - tile.x * 1000) * Manager.patternSize,
             (this.coords.ty * 1000 + this.coords.py - tile.y * 1000) * Manager.patternSize);
+
+        if (noColorFilter)
+            return;
+
+
+        // Apply color filter
+        const imageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+        for (let y = 1; y < 1000 * Manager.patternSize; y += Manager.patternSize)
+            for (let x = 1; x < 1000 * Manager.patternSize; x += Manager.patternSize) {
+                const pixelIndex = (y * ctx.canvas.width + x) * 4;
+                const color = getColor(imageData.data[pixelIndex + 0]!, imageData.data[pixelIndex + 1]!, imageData.data[pixelIndex + 2]!);
+
+                if (!Manager.enabledColors.get(color.id))
+                    imageData.data[pixelIndex + 3] = 0;
+            }
+
+        ctx.putImageData(imageData, 0, 0);
     }
 
     toJSON(_: string | number): StoredTemplate {

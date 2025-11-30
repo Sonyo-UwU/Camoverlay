@@ -49,6 +49,11 @@ export function addColorRow(colorId: WplaceColorId, count: number) {
 
     const enable = row.querySelector('input')!;
     enable.checked = true;
+    Manager.enabledColors.set(colorId, true);
+    enable.addEventListener('change', e => {
+        Manager.enabledColors.set(colorId, (e.target as HTMLInputElement).checked);
+        Manager.tilesInfo.clear();
+    });
 
     const color = row.querySelector('.ca-color-display') as HTMLDivElement;
     color.style.backgroundColor = `#${rgbToCss(c.rgb)}`;

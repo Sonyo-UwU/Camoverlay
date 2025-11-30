@@ -57,6 +57,15 @@ export function getClosestColor(r: number, g: number, b: number): WplaceColor {
     return otherColor;
 }
 
+export function getColor(r: number, g: number, b: number): WplaceColor {
+    const id = rgbToId(r, g, b);
+    const color = rgbColorMap.get(id);
+    if (color !== undefined)
+        return color;
+
+    return otherColor;
+}
+
 const colorPalette: Omit<WplaceColor, 'id'>[] = [
     { name: "Transparent"     , rgb: [222, 250, 206] },
     { name: "Black"           , rgb: [  0,   0,   0] },

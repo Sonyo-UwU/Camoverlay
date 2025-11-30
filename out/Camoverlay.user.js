@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.5.3
+// @version      0.5.4
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -90,6 +90,13 @@ function getClosestColor(r, g, b) {
     if (closeEnough(r, g, b, ...color2.rgb))
       return color2;
   }
+  return otherColor;
+}
+function getColor(r, g, b) {
+  const id = rgbToId(r, g, b);
+  const color = rgbColorMap.get(id);
+  if (color !== void 0)
+    return color;
   return otherColor;
 }
 var colorPalette = [
@@ -239,10 +246,21 @@ var Template = class _Template {
   overlaps(tile) {
     return this.overlappedTiles.includes(tile);
   }
-  drawOnTile(tile, ctx) {
+  drawOnTile(tile, ctx, noColorFilter) {
     if (!this.enabled || this.bitmap === null || !this.overlaps(tile.toIndex()))
       return;
     ctx.drawImage(this.bitmap, (this.coords.tx * 1e3 + this.coords.px - tile.x * 1e3) * Manager.patternSize, (this.coords.ty * 1e3 + this.coords.py - tile.y * 1e3) * Manager.patternSize);
+    if (noColorFilter)
+      return;
+    const imageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
+    for (let y = 1; y < 1e3 * Manager.patternSize; y += Manager.patternSize)
+      for (let x = 1; x < 1e3 * Manager.patternSize; x += Manager.patternSize) {
+        const pixelIndex = (y * ctx.canvas.width + x) * 4;
+        const color = getColor(imageData.data[pixelIndex + 0], imageData.data[pixelIndex + 1], imageData.data[pixelIndex + 2]);
+        if (!Manager.enabledColors.get(color.id))
+          imageData.data[pixelIndex + 3] = 0;
+      }
+    ctx.putImageData(imageData, 0, 0);
   }
   toJSON(_) {
     return {
@@ -270,7 +288,8 @@ var ManagerClass = class _ManagerClass {
   patternSize = 3;
   templates;
   tilesInfo;
-  lastClickedCoords = null;
+  enabledColors;
+  lastClickedCoords;
   setInputCoords(value) {
     if (value !== null)
       setInputCoords(value);
@@ -289,6 +308,8 @@ var ManagerClass = class _ManagerClass {
   constructor() {
     this.templates = [];
     this.tilesInfo = /* @__PURE__ */ new Map();
+    this.enabledColors = /* @__PURE__ */ new Map();
+    this.lastClickedCoords = null;
   }
   static #loadValue(key) {
     return JSON.parse(GM_getValue(key, null));
@@ -366,6 +387,7 @@ var ManagerClass = class _ManagerClass {
     const list = document.getElementById("ca-color-list");
     while (list.firstChild)
       list.firstChild.remove();
+    this.enabledColors.clear();
     const colorCounts = /* @__PURE__ */ new Map();
     for (const template of this.templates) {
       if (template.enabled)
@@ -411,13 +433,28 @@ var ManagerClass = class _ManagerClass {
     });
   }
   async drawOnTile(tile, blob) {
+    let allDisabled = true;
+    let allEnabled = true;
+    for (const [_, enabled] of Manager.enabledColors) {
+      if (enabled) {
+        allDisabled = false;
+        if (!allEnabled)
+          break;
+      } else {
+        allEnabled = false;
+        if (!allDisabled)
+          break;
+      }
+    }
+    if (allDisabled)
+      return blob;
     const canvas = new OffscreenCanvas(this.patternSize * 1e3, this.patternSize * 1e3);
     const ctx = canvas.getContext("2d");
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(await createImageBitmap(blob), 0, 0, canvas.width, canvas.height);
     for (const template of this.templates) {
       if (template.enabled)
-        template.drawOnTile(tile, ctx);
+        template.drawOnTile(tile, ctx, allEnabled);
     }
     return await canvas.convertToBlob();
   }
@@ -686,6 +723,11 @@ function addColorRow(colorId, count) {
   const row = document.getElementById("ca-color-template").content.cloneNode(true);
   const enable = row.querySelector("input");
   enable.checked = true;
+  Manager.enabledColors.set(colorId, true);
+  enable.addEventListener("change", (e) => {
+    Manager.enabledColors.set(colorId, e.target.checked);
+    Manager.tilesInfo.clear();
+  });
   const color = row.querySelector(".ca-color-display");
   color.style.backgroundColor = `#${rgbToCss(c.rgb)}`;
   row.querySelector(".ca-color-count").textContent = count.toString();
