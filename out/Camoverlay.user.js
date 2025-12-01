@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.5.10
+// @version      0.5.11
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -556,9 +556,38 @@ div#ca-overlay {
     vertical-align: middle;
 }
 
+.ca-icon-button {
+    border: white 1px solid;
+    height: 1.5em;
+    width: 1.5em;
+    padding: 0 !important; /* Overrides the padding in "#ca-overlay button" */
+    line-height: 1em;
+    text-align: center;
+    vertical-align: middle;
+}
+.ca-icon-button svg {
+    width: 50%;
+    margin: 0 auto;
+    fill: #111;
+}
+
 #ca-coords {
     display: flex;
     justify-content: space-between;
+}
+
+.ca-coords-input {
+    appearance: auto;
+    -moz-appearance: textfield;
+    width: 5.5ch;
+    background-color: rgba(0, 0, 0, 0.2);
+    padding: 0 0.5ch;
+    font-size: small;
+}
+.ca-coords-input::-webkit-outer-spin-button,
+.ca-coords-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
 }
 
 #ca-copy-coords-button > svg {
@@ -684,35 +713,6 @@ div#ca-overlay {
 #ca-bottom {
     display: flex;
     justify-content: space-between;
-}
-
-.ca-icon-button {
-    border: white 1px solid;
-    height: 1.5em;
-    width: 1.5em;
-    padding: 0 !important; /* Overrides the padding in "#ca-overlay button" */
-    line-height: 1em;
-    text-align: center;
-    vertical-align: middle;
-}
-.ca-icon-button svg {
-    width: 50%;
-    margin: 0 auto;
-    fill: #111;
-}
-
-.ca-coords-input {
-    appearance: auto;
-    -moz-appearance: textfield;
-    width: 5.5ch;
-    background-color: rgba(0, 0, 0, 0.2);
-    padding: 0 0.5ch;
-    font-size: small;
-}
-.ca-coords-input::-webkit-outer-spin-button,
-.ca-coords-input::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
 }
 `);
 }
