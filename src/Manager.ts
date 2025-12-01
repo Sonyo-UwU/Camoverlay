@@ -89,7 +89,7 @@ class ManagerClass {
             addTemplateRow(template);
         }
 
-        this.updateColorList();
+        this.rebuildColorList();
         displayStatus('Loaded ' + this.templates.length + ' templates');
     }
 
@@ -124,7 +124,7 @@ class ManagerClass {
         this.storeTemplates();
 
         addTemplateRow(template);
-        this.updateColorList();
+        this.rebuildColorList();
         displayStatus('Created template at ' + template.coords.toString() + ': ' + template.totalPixelCount + ' pixels');
         return template;
     }
@@ -139,10 +139,10 @@ class ManagerClass {
         this.storeTemplates();
 
         removeTemplateRow(template.name);
-        this.updateColorList();
+        this.rebuildColorList();
     }
 
-    updateColorList() {
+    rebuildColorList() {
         const list = document.getElementById('ca-color-list')!;
         while (list.firstChild)
             list.firstChild!.remove();

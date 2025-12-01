@@ -120,7 +120,7 @@ export function addTemplateRow(template: Template) {
     enable.addEventListener('change', e => {
         template.enabled = (e.target as HTMLInputElement).checked;
         Manager.resetTiles(template.overlappedTiles);
-        Manager.updateColorList();
+        Manager.rebuildColorList();
     });
 
     const del = row.querySelector('.ca-template-delete') as HTMLButtonElement;

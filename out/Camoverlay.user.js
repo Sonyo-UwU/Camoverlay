@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.5.11
+// @version      0.5.12
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -352,7 +352,7 @@ var ManagerClass = class _ManagerClass {
       this.templates.push(template);
       addTemplateRow(template);
     }
-    this.updateColorList();
+    this.rebuildColorList();
     displayStatus("Loaded " + this.templates.length + " templates");
   }
   storeTemplates() {
@@ -379,7 +379,7 @@ var ManagerClass = class _ManagerClass {
     this.templates.push(template);
     this.storeTemplates();
     addTemplateRow(template);
-    this.updateColorList();
+    this.rebuildColorList();
     displayStatus("Created template at " + template.coords.toString() + ": " + template.totalPixelCount + " pixels");
     return template;
   }
@@ -391,9 +391,9 @@ var ManagerClass = class _ManagerClass {
     this.templates.splice(index, 1);
     this.storeTemplates();
     removeTemplateRow(template.name);
-    this.updateColorList();
+    this.rebuildColorList();
   }
-  updateColorList() {
+  rebuildColorList() {
     const list = document.getElementById("ca-color-list");
     while (list.firstChild)
       list.firstChild.remove();
@@ -799,7 +799,7 @@ function addTemplateRow(template) {
   enable.addEventListener("change", (e) => {
     template.enabled = e.target.checked;
     Manager.resetTiles(template.overlappedTiles);
-    Manager.updateColorList();
+    Manager.rebuildColorList();
   });
   const del = row.querySelector(".ca-template-delete");
   del.addEventListener("click", () => {
