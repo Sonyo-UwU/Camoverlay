@@ -7,6 +7,23 @@ type StoredTemplate = Omit<JsonifiedValue<Omit<Template, 'toJSON'>>, 'overlapped
     colorsInfo: [WplaceColorId, number][]
 };
 
+declare const LZString: {
+    compressToBase64(input: string): string;
+    decompressFromBase64(input: string): string;
+    
+    compressToUTF16(input: string): string;
+    decompressFromUTF16(compressed: string): string;
+    
+    compressToUint8Array(uncompressed: string): Uint8Array;
+    decompressFromUint8Array(compressed: Uint8Array): string;
+    
+    compressToEncodedURIComponent(input: string): string;
+    decompressFromEncodedURIComponent(compressed: string): string;
+    
+    compress(input: string): string;
+    decompress(compressed: string): string;
+};
+
 export default class Template {
     name: string;
     coords: PixelCoords;
@@ -70,7 +87,7 @@ export default class Template {
         for (let i = 0; i < template.imageData.length; i++) {
             binary += String.fromCharCode(template.imageData[i]!);
         }
-        template.base64Data = btoa(binary); // Binary to ASCII
+        template.base64Data = LZString.compress(btoa(binary)); // Binary to ASCII
 
 
         template.#computeOverlappedTiles();
@@ -81,7 +98,7 @@ export default class Template {
     static async fromStorage(stored: StoredTemplate): Promise<Template> {
         const template = new Template(stored.name, PixelCoords.copy(stored.coords), stored.width, stored.height);
 
-        const binary = atob(stored.base64Data); // ASCII to Binary
+        const binary = atob(LZString.decompress(stored.base64Data)); // ASCII to Binary
         const array = new Uint8ClampedArray(binary.length);
         for (let i = 0; i < binary.length; i++) {
             array[i] = binary.charCodeAt(i);

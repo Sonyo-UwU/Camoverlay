@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.5.7
+// @version      0.5.8
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -11,6 +11,7 @@
 // @downloadURL  https://raw.githubusercontent.com/Sonyo-UwU/Camoverlay/main/out/Camoverlay.user.js
 // @match        https://wplace.live/*
 // @run-at       document-body
+// @require      https://cdn.jsdelivr.net/gh/pieroxy/lz-string/libs/lz-string.min.js
 // @grant        GM_addStyle
 // @grant        GM_getValue
 // @grant        GM_setValue
@@ -221,13 +222,13 @@ var Template = class _Template {
     for (let i = 0; i < template.imageData.length; i++) {
       binary += String.fromCharCode(template.imageData[i]);
     }
-    template.base64Data = btoa(binary);
+    template.base64Data = LZString.compress(btoa(binary));
     template.#computeOverlappedTiles();
     return template;
   }
   static async fromStorage(stored) {
     const template = new _Template(stored.name, PixelCoords.copy(stored.coords), stored.width, stored.height);
-    const binary = atob(stored.base64Data);
+    const binary = atob(LZString.decompress(stored.base64Data));
     const array = new Uint8ClampedArray(binary.length);
     for (let i = 0; i < binary.length; i++) {
       array[i] = binary.charCodeAt(i);

@@ -27,12 +27,6 @@ export type JsonifiedValue<T> = T extends string | number | null | boolean
     : T extends object ? JsonifiedObject<T>
     : never;
 
-/*
-export type NonFunctionKeys<T> = {
-    [P in { [K in keyof T]: T[K] extends Function ? never : K; }[keyof T]]: T[P];
-};
-*/
-
 export type UserData = {
     allianceId: number,
     allianceRole: string,
