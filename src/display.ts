@@ -38,7 +38,8 @@ export function displayUserData(data: UserData) {
     if (username !== null) {
         username.innerText = data.name;
         document.getElementById('ca-user-droplets')!.innerText = data.droplets.toLocaleString();
-        document.getElementById('ca-user-level')!.innerText = nextLevelPixels.toLocaleString();
+        document.getElementById('ca-user-level')!.innerText = Math.floor(data.level + 1).toLocaleString();
+        document.getElementById('ca-user-pixels')!.innerText = nextLevelPixels.toLocaleString();
     }
 }
 
