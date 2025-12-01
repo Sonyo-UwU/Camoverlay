@@ -82,6 +82,17 @@ div#ca-overlay {
     vertical-align: middle;
 }
 
+#ca-coords {
+    display: flex;
+    justify-content: space-between;
+}
+
+#ca-copy-coords-button > svg {
+    width: 70%;
+    transition-property: fill;
+    transition-duration: 250ms;
+}
+
 #ca-color-list {
     background-color: #00000022;
     border-color: black;
@@ -111,7 +122,9 @@ div#ca-overlay {
     filter: hue-rotate(130deg);
 }
 .ca-color-display {
+    border-color: #FFF8;
     border-radius: 0.3em;
+    border-width: 1px;
     height: 1.2em;
     width: 1.2em;
 }
@@ -218,7 +231,6 @@ div#ca-overlay {
     appearance: auto;
     -moz-appearance: textfield;
     width: 5.5ch;
-    margin-left: 1ch;
     background-color: rgba(0, 0, 0, 0.2);
     padding: 0 0.5ch;
     font-size: small;

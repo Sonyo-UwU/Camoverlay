@@ -31,6 +31,23 @@ export function addListeners() {
         Manager.setInputCoords(Manager.lastClickedCoords);
     });
 
+    document.getElementById('ca-copy-coords-button')!.addEventListener('click', async () => {
+        const coords = Manager.getInputCoords();
+        if (coords === null)
+            return;
+
+        const s = `${coords.tx} ${coords.ty} ${coords.px} ${coords.py}`;
+
+        await navigator.clipboard.writeText(s);
+
+        // Animation
+        const svg = document.getElementById('ca-copy-coords-button')?.firstElementChild as HTMLElement | undefined;
+        if (svg !== undefined) {
+            svg.style.fill = '#2b8f1f';
+            setTimeout(() => svg.style.fill = '', 500);
+        }
+    });
+
     document.getElementById('ca-select-button')!.addEventListener('click', () => {
         document.getElementById('ca-file-input')!.click();
     });
