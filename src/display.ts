@@ -59,6 +59,13 @@ export function addColorRow(colorId: WplaceColorId, count: number, enabled: bool
 
     const color = row.querySelector('.ca-color-display') as HTMLDivElement;
     color.style.backgroundColor = `#${rgbToCss(c.rgb)}`;
+    color.addEventListener('click', e => {
+        [...document.getElementsByClassName('ca-color-row')].forEach(r => (r.firstElementChild as HTMLInputElement).checked = false);
+        ((e.target as HTMLDivElement).previousElementSibling! as HTMLInputElement).checked = true;
+        Manager.enabledColors.forEach((_, key) => Manager.enabledColors.set(key, key === colorId));
+        Manager.tilesInfo.clear();
+        Manager.storeGlobal();
+    });
 
     //const paint = row.querySelector('button')!;
 
