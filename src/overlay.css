@@ -121,9 +121,11 @@ div#ca-overlay {
 }
 
 #ca-copy-coords-button > svg {
-    width: 70%;
+    fill: white;
+    stroke: #111;
     transition-property: fill;
     transition-duration: 250ms;
+    width: 70%;
 }
 
 #ca-color-list {
