@@ -90,6 +90,7 @@ export default class Template {
                 }
 
                 progress.total++;
+                progress.unpainted++;
                 template.totalPixelCount++;
 
                 if (color !== otherColor) {
@@ -129,7 +130,7 @@ export default class Template {
             for (const [id, total] of colors) {
                 progress.set(id, {
                     total: total,
-                    unpainted: 0,
+                    unpainted: total,
                     wrong: 0
                 });
 

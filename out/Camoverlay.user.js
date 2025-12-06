@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.6.1
+// @version      0.6.2
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -227,6 +227,7 @@ var Template = class _Template {
           tile.set(color.id, progress);
         }
         progress.total++;
+        progress.unpainted++;
         template.totalPixelCount++;
         if (color !== otherColor) {
           imageData.data[pixelIndex + 0] = color.rgb[0];
@@ -258,7 +259,7 @@ var Template = class _Template {
       for (const [id, total] of colors) {
         progress.set(id, {
           total,
-          unpainted: 0,
+          unpainted: total,
           wrong: 0
         });
         template.totalPixelCount += total;
@@ -420,15 +421,17 @@ var ManagerClass = class _ManagerClass {
     for (const template of this.templates) {
       if (template.enabled)
         for (const [_, colors] of template.tiles)
-          for (const [id, progress] of colors)
-            colorCounts.set(id, (colorCounts.get(id) ?? 0) + progress.total);
+          for (const [id, progress] of colors) {
+            const [painted, total] = colorCounts.get(id) ?? [0, 0];
+            colorCounts.set(id, [painted + progress.total - progress.unpainted - progress.wrong, total + progress.total]);
+          }
     }
     for (const id of this.enabledColors.keys()) {
       if (!colorCounts.has(id))
         this.enabledColors.delete(id);
     }
-    for (const [id, count] of colorCounts.entries().toArray().sort((a, b) => b[1] - a[1])) {
-      addColorRow(id, count, this.enabledColors.get(id) ?? true);
+    for (const [id, count] of colorCounts.entries().toArray().sort((a, b) => b[1][1] - a[1][1])) {
+      addColorRow(id, count[0], count[1], this.enabledColors.get(id) ?? true);
     }
   }
   async processTile(tile, response) {
@@ -717,6 +720,7 @@ div#ca-overlay {
 .ca-color-row {
     align-content: center;
     align-items: center;
+    background: linear-gradient(90deg, #b604 var(--ca-color-progress), transparent calc(var(--ca-color-progress) + min(var(--ca-color-progress), 4%)) 100%);
     display: flex;
     flex-direction: row;
     gap: 1ch;
@@ -846,9 +850,11 @@ function displayUserData(data) {
     document.getElementById("ca-user-pixels").innerText = nextLevelPixels.toLocaleString();
   }
 }
-function addColorRow(colorId, count, enabled) {
+function addColorRow(colorId, painted, total, enabled) {
   const c = rgbColorMap.get(colorId) ?? otherColor;
   const row = document.getElementById("ca-color-template").content.cloneNode(true);
+  const div = row.firstElementChild;
+  div.style.setProperty("--ca-color-progress", painted / total * 100 + "%");
   const enable = row.querySelector("input");
   enable.checked = enabled;
   Manager.enabledColors.set(colorId, enabled);
@@ -871,9 +877,9 @@ function addColorRow(colorId, count, enabled) {
     document.getElementsByClassName("btn btn-primary btn-lg sm:btn-xl relative z-30")[0]?.click();
     setTimeout(() => {
       const container = document.getElementsByClassName("mb-4 mt-3")[0].firstElementChild;
-      for (const div of container.children) {
-        const button = div.firstElementChild;
-        const colorName = div.getAttribute("data-tip");
+      for (const div2 of container.children) {
+        const button = div2.firstElementChild;
+        const colorName = div2.getAttribute("data-tip");
         if (colorName === c.name) {
           button.click();
           return;
@@ -881,7 +887,7 @@ function addColorRow(colorId, count, enabled) {
       }
     });
   });
-  row.querySelector(".ca-color-count").textContent = count.toString();
+  row.querySelector(".ca-color-count").textContent = total.toString();
   row.querySelector(".ca-color-name").textContent = c.name;
   document.getElementById("ca-color-list").appendChild(row);
 }

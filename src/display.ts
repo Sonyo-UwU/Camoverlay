@@ -44,10 +44,13 @@ export function displayUserData(data: UserData) {
     }
 }
 
-export function addColorRow(colorId: WplaceColorId, count: number, enabled: boolean) {
+export function addColorRow(colorId: WplaceColorId, painted: number, total: number, enabled: boolean) {
     const c = rgbColorMap.get(colorId) ?? otherColor;
 
     const row = (document.getElementById('ca-color-template') as HTMLTemplateElement).content.cloneNode(true) as DocumentFragment;
+
+    const div = row.firstElementChild as HTMLDivElement;
+    div.style.setProperty('--ca-color-progress', (painted / total * 100) + '%');
 
     const enable = row.querySelector('input')!;
     enable.checked = enabled;
@@ -84,7 +87,7 @@ export function addColorRow(colorId: WplaceColorId, count: number, enabled: bool
         });
     });
 
-    row.querySelector('.ca-color-count')!.textContent = count.toString();
+    row.querySelector('.ca-color-count')!.textContent = total.toString();
     row.querySelector('.ca-color-name')!.textContent = c.name;
 
     document.getElementById('ca-color-list')!.appendChild(row);

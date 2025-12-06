@@ -147,13 +147,15 @@ class ManagerClass {
         while (list.firstChild)
             list.firstChild!.remove();
 
-        const colorCounts = new Map<WplaceColorId, number>();
-
+        const colorCounts = new Map<WplaceColorId, [number, number]>();
+        
         for (const template of this.templates) {
             if (template.enabled)
                 for (const [_, colors] of template.tiles)
-                    for (const [id, progress] of colors)
-                        colorCounts.set(id, (colorCounts.get(id) ?? 0) + progress.total);
+                    for (const [id, progress] of colors) {
+                        const [painted, total] = colorCounts.get(id) ?? [0, 0];
+                        colorCounts.set(id, [painted + progress.total - progress.unpainted - progress.wrong, total + progress.total]);
+                    }
         }
 
         for (const id of this.enabledColors.keys()) {
@@ -161,8 +163,8 @@ class ManagerClass {
                 this.enabledColors.delete(id);
         }
 
-        for (const [id, count] of colorCounts.entries().toArray().sort((a, b) => b[1] - a[1])) {
-            addColorRow(id, count, this.enabledColors.get(id) ?? true);
+        for (const [id, count] of colorCounts.entries().toArray().sort((a, b) => b[1][1] - a[1][1])) {
+            addColorRow(id, count[0], count[1], this.enabledColors.get(id) ?? true);
         }
     }
 
