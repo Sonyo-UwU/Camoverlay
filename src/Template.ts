@@ -4,7 +4,6 @@ import { JsonifiedValue, TileIndex, TileProgress, WplaceColorId } from './types'
 import { getClosestColor, getColor, otherColor } from './utils';
 
 type StoredTemplate = Omit<JsonifiedValue<Omit<Template, 'toJSON'>>, 'imageData' | 'tiles' | 'totalPixelCount'> & {
-    //colorsInfo: [WplaceColorId, number][]
     tiles: [TileIndex, [WplaceColorId, number][]][];
 };
 
@@ -28,12 +27,10 @@ declare const LZString: {
 export default class Template {
     name: string;
     coords: PixelCoords;
-    //overlappedTiles: TileIndex[];
     width: number;
     height: number;
     imageData: Uint8ClampedArray | null;
     tiles: Map<TileIndex, Map<WplaceColorId, TileProgress>>;
-    //colorsInfo: Map<WplaceColorId, number>;
     totalPixelCount: number;
     enabled: boolean;
     base64Data: string;
@@ -42,11 +39,9 @@ export default class Template {
     constructor(name: string, coords: PixelCoords, width: number, height: number) {
         this.name = name;
         this.coords = coords;
-        //this.overlappedTiles = [];
         this.width = width;
         this.height = height;
         this.imageData = null;
-        //this.colorsInfo = new Map();
         this.totalPixelCount = 0;
         this.tiles = new Map();
         this.enabled = true;
@@ -66,7 +61,6 @@ export default class Template {
         bitmap.close();
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-        debugger;
         // Create pattern and count pixels
         for (let y = 0; y < imageData.height; y++)
             for (let x = 0; x < imageData.width; x++) {
@@ -89,7 +83,6 @@ export default class Template {
                 if (progress === undefined) {
                     progress = {
                         total: 0,
-                        //painted: 0,
                         unpainted: 0,
                         wrong: 0
                     };
@@ -115,14 +108,10 @@ export default class Template {
         }
         template.base64Data = LZString.compress(btoa(binary)); // Binary to ASCII
 
-
-        //template.#computeOverlappedTiles();
-
         return template;
     }
 
     static async fromStorage(stored: StoredTemplate): Promise<Template> {
-        debugger;
         const template = new Template(stored.name, PixelCoords.copy(stored.coords), stored.width, stored.height);
 
         const binary = atob(LZString.decompress(stored.base64Data)); // ASCII to Binary
@@ -149,15 +138,11 @@ export default class Template {
             template.tiles.set(index, progress);
         }
 
-
-        //template.#computeOverlappedTiles();
-
         return template;
     }
 
     overlaps(tile: TileIndex): boolean {
         return this.tiles.has(tile);
-        //return this.overlappedTiles.includes(tile);
     }
 
     drawOnTile(tile: TileCoords, ctx: OffscreenCanvasRenderingContext2D): void {
@@ -198,21 +183,9 @@ export default class Template {
             coords: this.coords,
             width: this.width,
             height: this.height,
-            //totalPixelCount: this.totalPixelCount,
-            //colorsInfo: this.colorsInfo.entries().toArray(),
             tiles: this.tiles.entries().toArray().map(([index, colors]) => [index, colors.entries().toArray().map(([id, progress]) => [id, progress.total])]),
             enabled: this.enabled,
             base64Data: this.base64Data
         };
     }
-
-    /*#computeOverlappedTiles(): void {
-        this.overlappedTiles = [];
-
-        const end = new PixelCoords(this.coords.tx, this.coords.ty, this.coords.px + this.width, this.coords.py + this.height);
-
-        for (let i = this.coords.tx; i <= end.tx; i++)
-            for (let j = this.coords.ty; j <= end.ty; j++)
-                this.overlappedTiles.push(TileCoords.toIndex(i, j));
-    }*/
 }

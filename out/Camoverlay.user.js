@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.6.0
+// @version      0.6.1
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -178,12 +178,10 @@ for (const color of colorPalette) {
 var Template = class _Template {
   name;
   coords;
-  //overlappedTiles: TileIndex[];
   width;
   height;
   imageData;
   tiles;
-  //colorsInfo: Map<WplaceColorId, number>;
   totalPixelCount;
   enabled;
   base64Data;
@@ -207,7 +205,6 @@ var Template = class _Template {
     ctx.drawImage(bitmap, 0, 0);
     bitmap.close();
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    debugger;
     for (let y = 0; y < imageData.height; y++)
       for (let x = 0; x < imageData.width; x++) {
         const pixelIndex = (y * imageData.width + x) * 4;
@@ -224,7 +221,6 @@ var Template = class _Template {
         if (progress === void 0) {
           progress = {
             total: 0,
-            //painted: 0,
             unpainted: 0,
             wrong: 0
           };
@@ -247,7 +243,6 @@ var Template = class _Template {
     return template;
   }
   static async fromStorage(stored) {
-    debugger;
     const template = new _Template(stored.name, PixelCoords.copy(stored.coords), stored.width, stored.height);
     const binary = atob(LZString.decompress(stored.base64Data));
     const array = new Uint8ClampedArray(binary.length);
@@ -305,8 +300,6 @@ var Template = class _Template {
       coords: this.coords,
       width: this.width,
       height: this.height,
-      //totalPixelCount: this.totalPixelCount,
-      //colorsInfo: this.colorsInfo.entries().toArray(),
       tiles: this.tiles.entries().toArray().map(([index, colors]) => [index, colors.entries().toArray().map(([id, progress]) => [id, progress.total])]),
       enabled: this.enabled,
       base64Data: this.base64Data
