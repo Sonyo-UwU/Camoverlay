@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.6.3
+// @version      0.6.4
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -305,8 +305,6 @@ var Template = class _Template {
             const paintedColor = getColor(canvasImageData[canvasPixelIndex + 0], canvasImageData[canvasPixelIndex + 1], canvasImageData[canvasPixelIndex + 2]);
             if (color !== paintedColor) {
               progress.wrong++;
-            } else {
-              debugger;
             }
           }
         }
@@ -748,7 +746,7 @@ div#ca-overlay {
 .ca-color-row {
     align-content: center;
     align-items: center;
-    background: linear-gradient(90deg, #b604 var(--ca-color-progress), transparent calc(var(--ca-color-progress) + min(var(--ca-color-progress), 4%)) 100%);
+    background: linear-gradient(90deg, #b609 var(--ca-color-progress), transparent calc(var(--ca-color-progress) + min(var(--ca-color-progress), 4%)) 100%);
     display: flex;
     flex-direction: row;
     gap: 1ch;

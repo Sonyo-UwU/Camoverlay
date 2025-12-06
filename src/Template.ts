@@ -192,9 +192,6 @@ export default class Template {
                             // Wrong
                             progress.wrong++;
                         }
-                        else {
-                            debugger;
-                        }
                     }
                 }
 
