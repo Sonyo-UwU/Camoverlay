@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.6.2
+// @version      0.6.3
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -271,14 +271,16 @@ var Template = class _Template {
   overlaps(tile) {
     return this.tiles.has(tile);
   }
-  drawOnTile(tile, ctx) {
+  drawOnTile(tile, ctx, trackProgress) {
     if (!this.enabled || this.imageData === null || !this.overlaps(tile.toIndex()))
       return;
     const imageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
+    const canvasImageData = imageData.data;
     const startX = (this.coords.tx - tile.x) * 1e3;
     const endX = Math.min(startX + this.width, 1e3);
     const startY = (this.coords.ty - tile.y) * 1e3;
     const endY = Math.min(startY + this.height, 1e3);
+    const colors = /* @__PURE__ */ new Map();
     for (let y = startY; y < endY; y++)
       for (let x = startX; x < endX; x++) {
         const imagePixelIndex = (y * this.width + x) * 4;
@@ -286,13 +288,36 @@ var Template = class _Template {
         if (this.imageData[imagePixelIndex + 3] === 0)
           continue;
         const color = getColor(this.imageData[imagePixelIndex + 0], this.imageData[imagePixelIndex + 1], this.imageData[imagePixelIndex + 2]);
+        if (trackProgress) {
+          let progress = colors.get(color.id);
+          if (progress === void 0) {
+            progress = {
+              total: 0,
+              unpainted: 0,
+              wrong: 0
+            };
+            colors.set(color.id, progress);
+          }
+          progress.total++;
+          if (canvasImageData[canvasPixelIndex + 3] === 0) {
+            progress.unpainted++;
+          } else {
+            const paintedColor = getColor(canvasImageData[canvasPixelIndex + 0], canvasImageData[canvasPixelIndex + 1], canvasImageData[canvasPixelIndex + 2]);
+            if (color !== paintedColor) {
+              progress.wrong++;
+            } else {
+              debugger;
+            }
+          }
+        }
         if (Manager.enabledColors.get(color.id)) {
-          imageData.data[canvasPixelIndex + 0] = this.imageData[imagePixelIndex + 0];
-          imageData.data[canvasPixelIndex + 1] = this.imageData[imagePixelIndex + 1];
-          imageData.data[canvasPixelIndex + 2] = this.imageData[imagePixelIndex + 2];
-          imageData.data[canvasPixelIndex + 3] = this.imageData[imagePixelIndex + 3];
+          canvasImageData[canvasPixelIndex + 0] = this.imageData[imagePixelIndex + 0];
+          canvasImageData[canvasPixelIndex + 1] = this.imageData[imagePixelIndex + 1];
+          canvasImageData[canvasPixelIndex + 2] = this.imageData[imagePixelIndex + 2];
+          canvasImageData[canvasPixelIndex + 3] = this.imageData[imagePixelIndex + 3];
         }
       }
+    this.tiles.set(tile.toIndex(), colors);
     ctx.putImageData(imageData, 0, 0);
   }
   toJSON(_) {
@@ -433,6 +458,7 @@ var ManagerClass = class _ManagerClass {
     for (const [id, count] of colorCounts.entries().toArray().sort((a, b) => b[1][1] - a[1][1])) {
       addColorRow(id, count[0], count[1], this.enabledColors.get(id) ?? true);
     }
+    console.log("Build color list");
   }
   async processTile(tile, response) {
     const lastModified = new Date(response.headers.get("last-modified") ?? 0).getTime();
@@ -456,8 +482,10 @@ var ManagerClass = class _ManagerClass {
     }
     if (tileInfo.blob === null || tileInfo.lastModified < lastModified) {
       const blob = await response.blob();
-      const modifiedBlob = await this.drawOnTile(tile, blob);
+      const modifiedBlob = await this.drawOnTile(tile, blob, tileInfo.lastModified < lastModified);
       tileInfo.blob = modifiedBlob;
+      if (tileInfo.lastModified < lastModified)
+        this.rebuildColorList();
       tileInfo.lastModified = lastModified;
     }
     return new Response(tileInfo.blob, {
@@ -466,7 +494,7 @@ var ManagerClass = class _ManagerClass {
       statusText: response.statusText
     });
   }
-  async drawOnTile(tile, blob) {
+  async drawOnTile(tile, blob, trackProgress) {
     let allDisabled = true;
     for (const enabled of Manager.enabledColors.values()) {
       if (enabled) {
@@ -482,7 +510,7 @@ var ManagerClass = class _ManagerClass {
     ctx.drawImage(await createImageBitmap(blob), 0, 0, canvas.width, canvas.height);
     for (const template of this.templates) {
       if (template.enabled)
-        template.drawOnTile(tile, ctx);
+        template.drawOnTile(tile, ctx, trackProgress);
     }
     return await canvas.convertToBlob();
   }

@@ -166,6 +166,8 @@ class ManagerClass {
         for (const [id, count] of colorCounts.entries().toArray().sort((a, b) => b[1][1] - a[1][1])) {
             addColorRow(id, count[0], count[1], this.enabledColors.get(id) ?? true);
         }
+
+        console.log("Build color list");
     }
 
     async processTile(tile: TileCoords, response: Response): Promise<Response> {
@@ -199,8 +201,12 @@ class ManagerClass {
         // Update if necessary
         if (tileInfo.blob === null || tileInfo.lastModified < lastModified) {
             const blob = await response.blob();
-            const modifiedBlob = await this.drawOnTile(tile, blob);
+            const modifiedBlob = await this.drawOnTile(tile, blob, tileInfo.lastModified < lastModified);
             tileInfo.blob = modifiedBlob;
+
+            if (tileInfo.lastModified < lastModified)
+                this.rebuildColorList();
+
             tileInfo.lastModified = lastModified;
         }
 
@@ -213,7 +219,7 @@ class ManagerClass {
         });
     }
 
-    async drawOnTile(tile: TileCoords, blob: Blob): Promise<Blob> {
+    async drawOnTile(tile: TileCoords, blob: Blob, trackProgress: boolean): Promise<Blob> {
         let allDisabled = true;
         for (const enabled of Manager.enabledColors.values()) {
             if (enabled) {
@@ -234,7 +240,7 @@ class ManagerClass {
 
         for (const template of this.templates) {
             if (template.enabled)
-                template.drawOnTile(tile, ctx);
+                template.drawOnTile(tile, ctx, trackProgress);
         }
 
         return await canvas.convertToBlob();

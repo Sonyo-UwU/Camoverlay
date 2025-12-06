@@ -146,17 +146,20 @@ export default class Template {
         return this.tiles.has(tile);
     }
 
-    drawOnTile(tile: TileCoords, ctx: OffscreenCanvasRenderingContext2D): void {
+    drawOnTile(tile: TileCoords, ctx: OffscreenCanvasRenderingContext2D, trackProgress: boolean): void {
         if (!this.enabled || this.imageData === null || !this.overlaps(tile.toIndex()))
             return;
 
         const imageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
+        const canvasImageData = imageData.data;
 
         const startX = (this.coords.tx - tile.x) * 1000;
         const endX = Math.min(startX + this.width, 1000);
         const startY = (this.coords.ty - tile.y) * 1000;
         const endY = Math.min(startY + this.height, 1000);
 
+        const colors = new Map<WplaceColorId, TileProgress>();
+        
         for (let y = startY; y < endY; y++)
             for (let x = startX; x < endX; x++) {
                 const imagePixelIndex = (y * this.width + x) * 4;
@@ -167,14 +170,43 @@ export default class Template {
 
                 const color = getColor(this.imageData[imagePixelIndex + 0]!, this.imageData[imagePixelIndex + 1]!, this.imageData[imagePixelIndex + 2]!);
 
+                if (trackProgress) {
+                    let progress = colors.get(color.id);
+                    if (progress === undefined) {
+                        progress = {
+                            total: 0,
+                            unpainted: 0,
+                            wrong: 0
+                        };
+                        colors.set(color.id, progress);
+                    }
+
+                    progress.total++;
+                    if (canvasImageData[canvasPixelIndex + 3] === 0) {
+                        // Unpainted
+                        progress.unpainted++;
+                    }
+                    else {
+                        const paintedColor = getColor(canvasImageData[canvasPixelIndex + 0]!, canvasImageData[canvasPixelIndex + 1]!, canvasImageData[canvasPixelIndex + 2]!);
+                        if (color !== paintedColor) {
+                            // Wrong
+                            progress.wrong++;
+                        }
+                        else {
+                            debugger;
+                        }
+                    }
+                }
+
                 if (Manager.enabledColors.get(color.id)) {
-                    imageData.data[canvasPixelIndex + 0] = this.imageData[imagePixelIndex + 0]!;
-                    imageData.data[canvasPixelIndex + 1] = this.imageData[imagePixelIndex + 1]!;
-                    imageData.data[canvasPixelIndex + 2] = this.imageData[imagePixelIndex + 2]!;
-                    imageData.data[canvasPixelIndex + 3] = this.imageData[imagePixelIndex + 3]!;
+                    canvasImageData[canvasPixelIndex + 0] = this.imageData[imagePixelIndex + 0]!;
+                    canvasImageData[canvasPixelIndex + 1] = this.imageData[imagePixelIndex + 1]!;
+                    canvasImageData[canvasPixelIndex + 2] = this.imageData[imagePixelIndex + 2]!;
+                    canvasImageData[canvasPixelIndex + 3] = this.imageData[imagePixelIndex + 3]!;
                 }
             }
 
+        this.tiles.set(tile.toIndex(), colors);
         ctx.putImageData(imageData, 0, 0);
     }
 
