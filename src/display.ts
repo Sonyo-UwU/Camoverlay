@@ -141,7 +141,7 @@ export function addTemplateRow(template: Template) {
     enable.checked = template.enabled;
     enable.addEventListener('change', e => {
         template.enabled = (e.target as HTMLInputElement).checked;
-        Manager.resetTiles(template.overlappedTiles);
+        Manager.resetTiles(template.tiles.keys());
         Manager.rebuildColorList();
     });
 

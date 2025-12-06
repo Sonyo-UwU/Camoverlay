@@ -84,7 +84,7 @@ class ManagerClass {
 
         for (const storedTemplate of stored) {
             const template = await Template.fromStorage(storedTemplate);
-            this.resetTiles(template.overlappedTiles);
+            this.resetTiles(template.tiles.keys());
             this.templates.push(template);
             addTemplateRow(template);
         }
@@ -97,7 +97,7 @@ class ManagerClass {
         ManagerClass.#storeValue('templates', this.templates);
     }
 
-    resetTiles(indices: number[]): void {
+    resetTiles(indices: Iterable<number>): void {
         for (const index of indices)
             this.tilesInfo.delete(index);
     }
@@ -118,7 +118,7 @@ class ManagerClass {
         const time = performance.now() - start;
         console.log('Created template in ' + time + 'ms');
 
-        this.resetTiles(template.overlappedTiles);
+        this.resetTiles(template.tiles.keys());
 
         this.templates.push(template);
         this.storeTemplates();
@@ -134,7 +134,7 @@ class ManagerClass {
         if (template === undefined)
             return;
 
-        this.resetTiles(template.overlappedTiles);
+        this.resetTiles(template.tiles.keys());
         this.templates.splice(index, 1);
         this.storeTemplates();
 
@@ -151,8 +151,9 @@ class ManagerClass {
 
         for (const template of this.templates) {
             if (template.enabled)
-                for (const [id, count] of template.colorsInfo)
-                    colorCounts.set(id, (colorCounts.get(id) ?? 0) + count);
+                for (const [_, colors] of template.tiles)
+                    for (const [id, progress] of colors)
+                        colorCounts.set(id, (colorCounts.get(id) ?? 0) + progress.total);
         }
 
         for (const id of this.enabledColors.keys()) {
@@ -183,11 +184,8 @@ class ManagerClass {
 
 
         // Get or create TileInfo
-        let tileInfo: TileInfo;
-        if (this.tilesInfo.has(tileIndex)) {
-            tileInfo = this.tilesInfo.get(tileIndex)!;
-        }
-        else {
+        let tileInfo = this.tilesInfo.get(tileIndex);
+        if (tileInfo === undefined) {
             tileInfo = {
                 lastModified: 0,
                 blob: null

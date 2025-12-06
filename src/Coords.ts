@@ -40,6 +40,10 @@ export class PixelCoords {
         return new PixelCoords(o.tx, o.ty, o.px, o.py);
     }
 
+    toTileIndex(): TileIndex {
+        return TileCoords.toIndex(this.tx, this.ty);
+    }
+
     toString() {
         return `[${this.tx}, ${this.ty} ; ${this.px}, ${this.py}]`;
     }

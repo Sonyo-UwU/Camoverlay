@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.5.18
+// @version      0.6.0
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -50,6 +50,9 @@ var PixelCoords = class _PixelCoords {
   }
   static copy(o) {
     return new _PixelCoords(o.tx, o.ty, o.px, o.py);
+  }
+  toTileIndex() {
+    return TileCoords.toIndex(this.tx, this.ty);
   }
   toString() {
     return `[${this.tx}, ${this.ty} ; ${this.px}, ${this.py}]`;
@@ -175,25 +178,25 @@ for (const color of colorPalette) {
 var Template = class _Template {
   name;
   coords;
-  overlappedTiles;
-  imageData;
+  //overlappedTiles: TileIndex[];
   width;
   height;
-  base64Data;
-  colorsInfo;
+  imageData;
+  tiles;
+  //colorsInfo: Map<WplaceColorId, number>;
   totalPixelCount;
   enabled;
+  base64Data;
   constructor(name, coords, width, height) {
     this.name = name;
     this.coords = coords;
-    this.overlappedTiles = [];
-    this.imageData = null;
     this.width = width;
     this.height = height;
-    this.base64Data = "";
-    this.colorsInfo = /* @__PURE__ */ new Map();
+    this.imageData = null;
     this.totalPixelCount = 0;
+    this.tiles = /* @__PURE__ */ new Map();
     this.enabled = true;
+    this.base64Data = "";
   }
   static async fromFile(name, coords, file) {
     const bitmap = await createImageBitmap(file);
@@ -204,11 +207,30 @@ var Template = class _Template {
     ctx.drawImage(bitmap, 0, 0);
     bitmap.close();
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    debugger;
     for (let y = 0; y < imageData.height; y++)
       for (let x = 0; x < imageData.width; x++) {
         const pixelIndex = (y * imageData.width + x) * 4;
+        if (imageData.data[pixelIndex + 3] < 128)
+          continue;
+        const tileIndex = new PixelCoords(coords.tx, coords.ty, coords.px + x, coords.py + y).toTileIndex();
+        let tile = template.tiles.get(tileIndex);
+        if (tile === void 0) {
+          tile = /* @__PURE__ */ new Map();
+          template.tiles.set(tileIndex, tile);
+        }
         const color = getClosestColor(imageData.data[pixelIndex + 0], imageData.data[pixelIndex + 1], imageData.data[pixelIndex + 2]);
-        template.colorsInfo.set(color.id, (template.colorsInfo.get(color.id) ?? 0) + 1);
+        let progress = tile.get(color.id);
+        if (progress === void 0) {
+          progress = {
+            total: 0,
+            //painted: 0,
+            unpainted: 0,
+            wrong: 0
+          };
+          tile.set(color.id, progress);
+        }
+        progress.total++;
         template.totalPixelCount++;
         if (color !== otherColor) {
           imageData.data[pixelIndex + 0] = color.rgb[0];
@@ -216,17 +238,16 @@ var Template = class _Template {
           imageData.data[pixelIndex + 2] = color.rgb[2];
         }
       }
-    ctx.putImageData(imageData, 0, 0);
     template.imageData = imageData.data;
     let binary = "";
     for (let i = 0; i < template.imageData.length; i++) {
       binary += String.fromCharCode(template.imageData[i]);
     }
     template.base64Data = LZString.compress(btoa(binary));
-    template.#computeOverlappedTiles();
     return template;
   }
   static async fromStorage(stored) {
+    debugger;
     const template = new _Template(stored.name, PixelCoords.copy(stored.coords), stored.width, stored.height);
     const binary = atob(LZString.decompress(stored.base64Data));
     const array = new Uint8ClampedArray(binary.length);
@@ -235,13 +256,24 @@ var Template = class _Template {
     }
     template.imageData = array;
     template.base64Data = stored.base64Data;
-    template.totalPixelCount = stored.totalPixelCount;
-    template.colorsInfo = new Map(stored.colorsInfo);
-    template.#computeOverlappedTiles();
+    template.totalPixelCount = 0;
+    template.tiles = /* @__PURE__ */ new Map();
+    for (const [index, colors] of stored.tiles) {
+      const progress = /* @__PURE__ */ new Map();
+      for (const [id, total] of colors) {
+        progress.set(id, {
+          total,
+          unpainted: 0,
+          wrong: 0
+        });
+        template.totalPixelCount += total;
+      }
+      template.tiles.set(index, progress);
+    }
     return template;
   }
   overlaps(tile) {
-    return this.overlappedTiles.includes(tile);
+    return this.tiles.has(tile);
   }
   drawOnTile(tile, ctx) {
     if (!this.enabled || this.imageData === null || !this.overlaps(tile.toIndex()))
@@ -273,18 +305,12 @@ var Template = class _Template {
       coords: this.coords,
       width: this.width,
       height: this.height,
-      totalPixelCount: this.totalPixelCount,
-      colorsInfo: this.colorsInfo.entries().toArray(),
-      base64Data: this.base64Data,
-      enabled: this.enabled
+      //totalPixelCount: this.totalPixelCount,
+      //colorsInfo: this.colorsInfo.entries().toArray(),
+      tiles: this.tiles.entries().toArray().map(([index, colors]) => [index, colors.entries().toArray().map(([id, progress]) => [id, progress.total])]),
+      enabled: this.enabled,
+      base64Data: this.base64Data
     };
-  }
-  #computeOverlappedTiles() {
-    this.overlappedTiles = [];
-    const end = new PixelCoords(this.coords.tx, this.coords.ty, this.coords.px + this.width, this.coords.py + this.height);
-    for (let i = this.coords.tx; i <= end.tx; i++)
-      for (let j = this.coords.ty; j <= end.ty; j++)
-        this.overlappedTiles.push(TileCoords.toIndex(i, j));
   }
 };
 
@@ -348,7 +374,7 @@ var ManagerClass = class _ManagerClass {
       this.deleteTemplate(0);
     for (const storedTemplate of stored) {
       const template = await Template.fromStorage(storedTemplate);
-      this.resetTiles(template.overlappedTiles);
+      this.resetTiles(template.tiles.keys());
       this.templates.push(template);
       addTemplateRow(template);
     }
@@ -375,7 +401,7 @@ var ManagerClass = class _ManagerClass {
     const template = await Template.fromFile(name, coords, file);
     const time = performance.now() - start;
     console.log("Created template in " + time + "ms");
-    this.resetTiles(template.overlappedTiles);
+    this.resetTiles(template.tiles.keys());
     this.templates.push(template);
     this.storeTemplates();
     addTemplateRow(template);
@@ -387,7 +413,7 @@ var ManagerClass = class _ManagerClass {
     const template = this.templates[index];
     if (template === void 0)
       return;
-    this.resetTiles(template.overlappedTiles);
+    this.resetTiles(template.tiles.keys());
     this.templates.splice(index, 1);
     this.storeTemplates();
     removeTemplateRow(template.name);
@@ -400,8 +426,9 @@ var ManagerClass = class _ManagerClass {
     const colorCounts = /* @__PURE__ */ new Map();
     for (const template of this.templates) {
       if (template.enabled)
-        for (const [id, count] of template.colorsInfo)
-          colorCounts.set(id, (colorCounts.get(id) ?? 0) + count);
+        for (const [_, colors] of template.tiles)
+          for (const [id, progress] of colors)
+            colorCounts.set(id, (colorCounts.get(id) ?? 0) + progress.total);
     }
     for (const id of this.enabledColors.keys()) {
       if (!colorCounts.has(id))
@@ -423,10 +450,8 @@ var ManagerClass = class _ManagerClass {
     }
     if (!overlap)
       return response;
-    let tileInfo;
-    if (this.tilesInfo.has(tileIndex)) {
-      tileInfo = this.tilesInfo.get(tileIndex);
-    } else {
+    let tileInfo = this.tilesInfo.get(tileIndex);
+    if (tileInfo === void 0) {
       tileInfo = {
         lastModified: 0,
         blob: null
@@ -910,7 +935,7 @@ function addTemplateRow(template) {
   enable.checked = template.enabled;
   enable.addEventListener("change", (e) => {
     template.enabled = e.target.checked;
-    Manager.resetTiles(template.overlappedTiles);
+    Manager.resetTiles(template.tiles.keys());
     Manager.rebuildColorList();
   });
   const del = row.querySelector(".ca-template-delete");

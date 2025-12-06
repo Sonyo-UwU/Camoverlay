@@ -7,6 +7,12 @@ export type TileInfo = {
     blob: Blob | null;
 };
 
+export type TileProgress = {
+    total: number,
+    unpainted: number,
+    wrong: number;
+};
+
 export type WplaceColorId = number & { [__brand]: 0; };
 export type WplaceColor = {
     id: WplaceColorId,
