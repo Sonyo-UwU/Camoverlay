@@ -38,7 +38,7 @@ await esbuild.build({
 fs.writeFileSync(
     'out/Camoverlay.user.js',
     fs.readFileSync('out/Camoverlay.user.js', 'utf8')
-        .replace('%overlay.html%', fs.readFileSync('src/overlay.html', 'utf8').replace(/>\s*</g, '><'))
+        .replace('%overlay.html%', fs.readFileSync('src/overlay.html', 'utf8'))
         .replace('%overlay.css%', fs.readFileSync('src/overlay.css', 'utf8'))
         .replaceAll('\r\n', '\n').replaceAll('\n', '\r\n'),
     'utf8'

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.5.16
+// @version      0.5.17
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -470,7 +470,87 @@ var Manager = new ManagerClass();
 
 // dist/display.js
 function injectOverlay() {
-  document.body.appendChild(document.createElement("div")).outerHTML = `<div id="ca-overlay"><template id="ca-color-template"><div class="ca-color-row"><input type="checkbox" /><div class="ca-color-display"></div><button class="ca-icon-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M240-120q-45 0-89-22t-71-58q26 0 53-20.5t27-59.5q0-50 35-85t85-35q50 0 85 35t35 85q0 66-47 113t-113 47Zm230-240L360-470l358-358q11-11 27.5-11.5T774-828l54 54q12 12 12 28t-12 28L470-360Z"></path></svg></button><span class="ca-color-count"></span><span> • </span><span class="ca-color-name"></span></div></template><template id="ca-template-template"><div class="ca-template-row"><button class="ca-icon-button ca-template-fly" disabled>✈️</button><div><span class="ca-pixel-count"></span><span> • </span><span class="ca-template-name"></span></div><div><input type="checkbox" /><button class="ca-icon-button ca-template-delete">🗑️</button></div></div></template><div id="ca-header"><img id="ca-image-collapse" src="https://cdn.bsky.app/img/avatar/plain/did:plc:kwmxodxbf5nshavpy5r5l3jj/bafkreiaddzuq5vgrpi3aeufp7gwkbameb426d4vb4zlxvc6c4vo23wkn5a@jpeg" /><h1>Camoverlay</h1></div><hr /><div><p>Username: <b id="ca-user-name"></b></p><p>Droplets: <b id="ca-user-droplets"></b></p><p>Level <b id="ca-user-level">0</b> in <b id="ca-user-pixels">0</b> pixels</p></div><hr /><div id="ca-automation"><div id="ca-coords"><button id="ca-coords-button" class="ca-icon-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 6"><circle cx="2" cy="2" r="2"></circle><path d="M2 6 L3.7 3 L0.3 3 Z"></path><circle cx="2" cy="2" r="0.7" fill="white"></circle></svg></button><input id="ca-input-tx" class="ca-coords-input" type="number" min="0" max="2047" step="1" placeholder="Tl X" /><input id="ca-input-ty" class="ca-coords-input" type="number" min="0" max="2047" step="1" placeholder="Tl Y" /><input id="ca-input-px" class="ca-coords-input" type="number" min="0" max="999" step="1" placeholder="Px X" /><input id="ca-input-py" class="ca-coords-input" type="number" min="0" max="999" step="1" placeholder="Px Y" /><button id="ca-copy-coords-button" class="ca-icon-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 7h6v6h-6z" /><path d="M6.5 3h8.1c2.24 0 3.36 0 4.216.436a4 4 0 0 1 1.748 1.748C21 6.04 21 7.16 21 9.4v7.1M6.2 21h8.1c1.12 0 1.68 0 2.108-.218a2 2 0 0 0 .874-.874c.218-.428.218-.988.218-2.108V9.7c0-1.12 0-1.68-.218-2.108a2 2 0 0 0-.874-.874C15.98 6.5 15.42 6.5 14.3 6.5H6.2c-1.12 0-1.68 0-2.108.218a2 2 0 0 0-.874.874C3 8.02 3 8.58 3 9.7v8.1c0 1.12 0 1.68.218 2.108a2 2 0 0 0 .874.874C4.52 21 5.08 21 6.2 21" stroke-width="2" stroke-linecap="round" /></svg></button></div><div id="ca-color-list"></div><div id="ca-templates"><div id="ca-template-buttons"><input id="ca-file-input" type="file" accept="image/png" /><button id="ca-select-button">Select file</button><button id="ca-create-button">Create</button></div><div id="ca-template-list"></div></div><textarea id="ca-output" readonly placeholder="Sleeping"></textarea><div id="ca-bottom"><div><button id="ca-converter-button" class="ca-icon-button">🎨</button></div><small><span>Made by Sonyo<br>Original by SwingTheVine<br>Art by <a href="https://camomille1411en.carrd.co/" target="_blank">camomille1411</a><br></span><span id="ca-version"></span></small></div></div></div>`;
+    document.body.appendChild(document.createElement("div")).outerHTML =
+`<div id="ca-overlay">
+    <template id="ca-color-template">
+        <div class="ca-color-row">
+            <input type="checkbox" />
+            <div class="ca-color-display"></div>
+            <button class="ca-icon-button">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M240-120q-45 0-89-22t-71-58q26 0 53-20.5t27-59.5q0-50 35-85t85-35q50 0 85 35t35 85q0 66-47 113t-113 47Zm230-240L360-470l358-358q11-11 27.5-11.5T774-828l54 54q12 12 12 28t-12 28L470-360Z"></path></svg>
+            </button>
+            <span class="ca-color-count"></span>
+            <span> • </span>
+            <span class="ca-color-name"></span>
+        </div>
+    </template>
+    <template id="ca-template-template">
+        <div class="ca-template-row">
+            <button class="ca-icon-button ca-template-fly" disabled>✈️</button>
+            <div>
+                <span class="ca-pixel-count"></span>
+                <span> • </span>
+                <span class="ca-template-name"></span>
+            </div>
+            <div>
+                <input type="checkbox" />
+                <button class="ca-icon-button ca-template-delete">🗑️</button>
+            </div>
+        </div>
+    </template>
+
+    <div id="ca-header">
+        <img id="ca-image-collapse" src="https://cdn.bsky.app/img/avatar/plain/did:plc:kwmxodxbf5nshavpy5r5l3jj/bafkreiaddzuq5vgrpi3aeufp7gwkbameb426d4vb4zlxvc6c4vo23wkn5a@jpeg" />
+        <h1>Camoverlay</h1>
+    </div>
+    <hr />
+    <div>
+        <p>Username: <b id="ca-user-name"></b></p>
+        <p>Droplets: <b id="ca-user-droplets"></b></p>
+        <p>Level <b id="ca-user-level">0</b> in <b id="ca-user-pixels">0</b> pixels</p>
+    </div>
+    <hr />
+    <div id="ca-automation">
+        <div id="ca-coords">
+            <button id="ca-coords-button" class="ca-icon-button">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 6">
+                    <circle cx="2" cy="2" r="2"></circle>
+                    <path d="M2 6 L3.7 3 L0.3 3 Z"></path>
+                    <circle cx="2" cy="2" r="0.7" fill="white"></circle>
+                </svg>
+            </button>
+            <input id="ca-input-tx" class="ca-coords-input" type="number" min="0" max="2047" step="1" placeholder="Tl X" />
+            <input id="ca-input-ty" class="ca-coords-input" type="number" min="0" max="2047" step="1" placeholder="Tl Y" />
+            <input id="ca-input-px" class="ca-coords-input" type="number" min="0" max="999" step="1" placeholder="Px X" />
+            <input id="ca-input-py" class="ca-coords-input" type="number" min="0" max="999" step="1" placeholder="Px Y" />
+            <button id="ca-copy-coords-button" class="ca-icon-button">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path d="M11 7h6v6h-6z" />
+                    <path d="M6.5 3h8.1c2.24 0 3.36 0 4.216.436a4 4 0 0 1 1.748 1.748C21 6.04 21 7.16 21 9.4v7.1M6.2 21h8.1c1.12 0 1.68 0 2.108-.218a2 2 0 0 0 .874-.874c.218-.428.218-.988.218-2.108V9.7c0-1.12 0-1.68-.218-2.108a2 2 0 0 0-.874-.874C15.98 6.5 15.42 6.5 14.3 6.5H6.2c-1.12 0-1.68 0-2.108.218a2 2 0 0 0-.874.874C3 8.02 3 8.58 3 9.7v8.1c0 1.12 0 1.68.218 2.108a2 2 0 0 0 .874.874C4.52 21 5.08 21 6.2 21" stroke-width="2" stroke-linecap="round" />
+                </svg>
+            </button>
+        </div>
+        <div id="ca-color-list"></div>
+        <div id="ca-templates">
+            <div id="ca-template-buttons">
+                <input id="ca-file-input" type="file" accept="image/png" />
+                <button id="ca-select-button">Select file</button>
+                <button id="ca-create-button">Create</button>
+            </div>
+            <div id="ca-template-list"></div>
+        </div>
+        <textarea id="ca-output" readonly placeholder="Sleeping"></textarea>
+        <div id="ca-bottom">
+            <div>
+                <button id="ca-converter-button" class="ca-icon-button">🎨</button>
+            </div>
+            <small>
+                <span>Made by Sonyo<br>Original by SwingTheVine<br>Art by <a href="https://camomille1411en.carrd.co/" target="_blank">camomille1411</a><br></span>
+                <span id="ca-version"></span>
+            </small>
+        </div>
+    </div>
+</div>`.replace(/>\s*</g, "><");
   GM_addStyle(`
 #ca-overlay {
     background-color: #5D1F18E6;

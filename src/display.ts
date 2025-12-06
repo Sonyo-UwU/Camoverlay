@@ -8,7 +8,8 @@ declare function GM_addStyle(css: string): void;
 
 export function injectOverlay() {
     // Inject HTML
-    document.body.appendChild(document.createElement('div')).outerHTML = `%overlay.html%`;
+    document.body.appendChild(document.createElement('div')).outerHTML = `
+%overlay.html%`.replace(/>\s*</g, '><');
 
     // Inject CSS
     GM_addStyle(`
