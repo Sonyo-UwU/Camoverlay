@@ -222,13 +222,16 @@ div#ca-overlay {
 .ca-template-row > * {
     flex: 0 0 auto;
 }
-.ca-template-row > *:nth-child(2) {
+.ca-template-text {
     flex: unset;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
-.ca-template-row input {
+.ca-template-right {
+    display: flex;
+}
+.ca-template-right input {
     vertical-align: middle;
     margin-right: 0.5ch;
     filter: hue-rotate(70deg);

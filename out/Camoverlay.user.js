@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.5.17
+// @version      0.5.18
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -470,8 +470,8 @@ var Manager = new ManagerClass();
 
 // dist/display.js
 function injectOverlay() {
-    document.body.appendChild(document.createElement("div")).outerHTML =
-`<div id="ca-overlay">
+  document.body.appendChild(document.createElement("div")).outerHTML = `
+<div id="ca-overlay">
     <template id="ca-color-template">
         <div class="ca-color-row">
             <input type="checkbox" />
@@ -487,12 +487,12 @@ function injectOverlay() {
     <template id="ca-template-template">
         <div class="ca-template-row">
             <button class="ca-icon-button ca-template-fly" disabled>✈️</button>
-            <div>
+            <div class="ca-template-text">
                 <span class="ca-pixel-count"></span>
                 <span> • </span>
                 <span class="ca-template-name"></span>
             </div>
-            <div>
+            <div class="ca-template-right">
                 <input type="checkbox" />
                 <button class="ca-icon-button ca-template-delete">🗑️</button>
             </div>
@@ -776,13 +776,16 @@ div#ca-overlay {
 .ca-template-row > * {
     flex: 0 0 auto;
 }
-.ca-template-row > *:nth-child(2) {
+.ca-template-text {
     flex: unset;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
-.ca-template-row input {
+.ca-template-right {
+    display: flex;
+}
+.ca-template-right input {
     vertical-align: middle;
     margin-right: 0.5ch;
     filter: hue-rotate(70deg);
