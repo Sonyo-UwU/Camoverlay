@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.5.14
+// @version      0.5.15
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -762,6 +762,21 @@ function addColorRow(colorId, count, enabled) {
     Manager.enabledColors.forEach((_, key) => Manager.enabledColors.set(key, key === colorId));
     Manager.tilesInfo.clear();
     Manager.storeGlobal();
+  });
+  const paint = row.querySelector("button");
+  paint.addEventListener("click", () => {
+    document.getElementsByClassName("btn btn-primary btn-lg sm:btn-xl relative z-30")[0]?.click();
+    setTimeout(() => {
+      const container = document.getElementsByClassName("mb-4 mt-3")[0].firstElementChild;
+      for (const div of container.children) {
+        const button = div.firstElementChild;
+        const colorName = div.getAttribute("data-tip");
+        if (colorName === c.name) {
+          button.click();
+          return;
+        }
+      }
+    });
   });
   row.querySelector(".ca-color-count").textContent = count.toString();
   row.querySelector(".ca-color-name").textContent = c.name;

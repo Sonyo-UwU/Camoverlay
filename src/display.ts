@@ -67,7 +67,21 @@ export function addColorRow(colorId: WplaceColorId, count: number, enabled: bool
         Manager.storeGlobal();
     });
 
-    //const paint = row.querySelector('button')!;
+    const paint = row.querySelector('button')!;
+    paint.addEventListener('click', () => {
+        (document.getElementsByClassName('btn btn-primary btn-lg sm:btn-xl relative z-30')[0] as HTMLElement | undefined)?.click();
+        setTimeout(() => {
+            const container = document.getElementsByClassName('mb-4 mt-3')[0]!.firstElementChild!;
+            for (const div of container.children) {
+                const button = div.firstElementChild as HTMLElement;
+                const colorName = div.getAttribute('data-tip');
+                if (colorName === c.name) {
+                    button.click();
+                    return;
+                }
+            }
+        });
+    });
 
     row.querySelector('.ca-color-count')!.textContent = count.toString();
     row.querySelector('.ca-color-name')!.textContent = c.name;
