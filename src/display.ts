@@ -50,6 +50,7 @@ export function addColorRow(colorId: WplaceColorId, painted: number, total: numb
     const row = (document.getElementById('ca-color-template') as HTMLTemplateElement).content.cloneNode(true) as DocumentFragment;
 
     const div = row.firstElementChild as HTMLDivElement;
+    div.id = 'ca-color-id-' + colorId;
     div.style.setProperty('--ca-color-progress', (painted / total * 100) + '%');
 
     const enable = row.querySelector('input')!;

@@ -166,8 +166,25 @@ class ManagerClass {
         for (const [id, count] of colorCounts.entries().toArray().sort((a, b) => b[1][1] - a[1][1])) {
             addColorRow(id, count[0], count[1], this.enabledColors.get(id) ?? true);
         }
+    }
 
-        console.log("Build color list");
+    updateColorList() {
+        const colorCounts = new Map<WplaceColorId, [number, number]>();
+
+        for (const template of this.templates) {
+            if (template.enabled)
+                for (const [_, colors] of template.tiles)
+                    for (const [id, progress] of colors) {
+                        const [painted, total] = colorCounts.get(id) ?? [0, 0];
+                        colorCounts.set(id, [painted + progress.total - progress.unpainted - progress.wrong, total + progress.total]);
+                    }
+        }
+
+        for (const [id, count] of colorCounts.entries().toArray().sort((a, b) => b[1][1] - a[1][1])) {
+            const div = document.getElementById('ca-color-id-' + id);
+            if (div !== null)
+                div.style.setProperty('--ca-color-progress', (count[0] / count[1] * 100) + '%');
+        }
     }
 
     async processTile(tile: TileCoords, response: Response): Promise<Response> {
@@ -205,7 +222,7 @@ class ManagerClass {
             tileInfo.blob = modifiedBlob;
 
             if (tileInfo.lastModified < lastModified)
-                this.rebuildColorList();
+                this.updateColorList();
 
             tileInfo.lastModified = lastModified;
         }

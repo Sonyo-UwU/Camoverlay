@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.6.4
+// @version      0.6.5
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -456,7 +456,22 @@ var ManagerClass = class _ManagerClass {
     for (const [id, count] of colorCounts.entries().toArray().sort((a, b) => b[1][1] - a[1][1])) {
       addColorRow(id, count[0], count[1], this.enabledColors.get(id) ?? true);
     }
-    console.log("Build color list");
+  }
+  updateColorList() {
+    const colorCounts = /* @__PURE__ */ new Map();
+    for (const template of this.templates) {
+      if (template.enabled)
+        for (const [_, colors] of template.tiles)
+          for (const [id, progress] of colors) {
+            const [painted, total] = colorCounts.get(id) ?? [0, 0];
+            colorCounts.set(id, [painted + progress.total - progress.unpainted - progress.wrong, total + progress.total]);
+          }
+    }
+    for (const [id, count] of colorCounts.entries().toArray().sort((a, b) => b[1][1] - a[1][1])) {
+      const div = document.getElementById("ca-color-id-" + id);
+      if (div !== null)
+        div.style.setProperty("--ca-color-progress", count[0] / count[1] * 100 + "%");
+    }
   }
   async processTile(tile, response) {
     const lastModified = new Date(response.headers.get("last-modified") ?? 0).getTime();
@@ -483,7 +498,7 @@ var ManagerClass = class _ManagerClass {
       const modifiedBlob = await this.drawOnTile(tile, blob, tileInfo.lastModified < lastModified);
       tileInfo.blob = modifiedBlob;
       if (tileInfo.lastModified < lastModified)
-        this.rebuildColorList();
+        this.updateColorList();
       tileInfo.lastModified = lastModified;
     }
     return new Response(tileInfo.blob, {
@@ -880,6 +895,7 @@ function addColorRow(colorId, painted, total, enabled) {
   const c = rgbColorMap.get(colorId) ?? otherColor;
   const row = document.getElementById("ca-color-template").content.cloneNode(true);
   const div = row.firstElementChild;
+  div.id = "ca-color-id-" + colorId;
   div.style.setProperty("--ca-color-progress", painted / total * 100 + "%");
   const enable = row.querySelector("input");
   enable.checked = enabled;
