@@ -58,7 +58,6 @@ export function addListeners() {
     });
 
     document.getElementById('ca-create-button')!.addEventListener('click', e => {
-        (e.target as HTMLInputElement).disabled = true;
         const fileInput = document.getElementById('ca-file-input') as HTMLInputElement;
         if (fileInput.files!.length < 1) {
             displayStatus('Select a file to upload');
@@ -71,6 +70,7 @@ export function addListeners() {
             return;
         }
 
+        (e.target as HTMLInputElement).disabled = true;
         Manager.createTemplate(coords, fileInput.files![0]!);
         (e.target as HTMLInputElement).disabled = false;
     });

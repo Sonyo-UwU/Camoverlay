@@ -69,8 +69,12 @@ div#ca-overlay {
 #ca-overlay button:hover, #ca-overlay button:focus-visible {
     background-color: #d16458;
 }
-#ca-overlay button:active, #ca-overlay button:disabled {
+#ca-overlay button:active {
     background-color: #d68d85;
+}
+#ca-overlay button:disabled {
+    background-color: #d68d85;
+    cursor: not-allowed;
 }
 
 #ca-image-collapse {

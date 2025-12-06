@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.5.12
+// @version      0.5.13
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -543,8 +543,12 @@ div#ca-overlay {
 #ca-overlay button:hover, #ca-overlay button:focus-visible {
     background-color: #d16458;
 }
-#ca-overlay button:active, #ca-overlay button:disabled {
+#ca-overlay button:active {
     background-color: #d68d85;
+}
+#ca-overlay button:disabled {
+    background-color: #d68d85;
+    cursor: not-allowed;
 }
 
 #ca-image-collapse {
@@ -871,7 +875,6 @@ function addListeners() {
       document.getElementById("ca-select-button").innerText = e.target.files[0].name;
   });
   document.getElementById("ca-create-button").addEventListener("click", (e) => {
-    e.target.disabled = true;
     const fileInput = document.getElementById("ca-file-input");
     if (fileInput.files.length < 1) {
       displayStatus("Select a file to upload");
@@ -882,6 +885,7 @@ function addListeners() {
       displayStatus("Invalid coordonates");
       return;
     }
+    e.target.disabled = true;
     Manager.createTemplate(coords, fileInput.files[0]);
     e.target.disabled = false;
   });
