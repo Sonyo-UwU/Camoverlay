@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.6.5
+// @version      0.6.6
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -493,15 +493,19 @@ var ManagerClass = class _ManagerClass {
       };
       this.tilesInfo.set(tileIndex, tileInfo);
     }
-    if (tileInfo.blob === null || tileInfo.lastModified < lastModified) {
+    let modifiedBlob = tileInfo.blob;
+    if (modifiedBlob === null || tileInfo.lastModified < lastModified || response.type === "basic") {
       const blob = await response.blob();
-      const modifiedBlob = await this.drawOnTile(tile, blob, tileInfo.lastModified < lastModified);
-      tileInfo.blob = modifiedBlob;
-      if (tileInfo.lastModified < lastModified)
+      const trackProgress = tileInfo.lastModified < lastModified && response.type !== "basic";
+      modifiedBlob = await this.drawOnTile(tile, blob, trackProgress);
+      if (trackProgress)
         this.updateColorList();
-      tileInfo.lastModified = lastModified;
+      if (response.type !== "basic") {
+        tileInfo.blob = modifiedBlob;
+        tileInfo.lastModified = lastModified;
+      }
     }
-    return new Response(tileInfo.blob, {
+    return new Response(modifiedBlob, {
       headers: response.headers,
       status: response.status,
       statusText: response.statusText

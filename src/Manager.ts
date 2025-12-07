@@ -215,21 +215,26 @@ class ManagerClass {
         }
 
 
+        let modifiedBlob = tileInfo.blob;
         // Update if necessary
-        if (tileInfo.blob === null || tileInfo.lastModified < lastModified) {
+        if (modifiedBlob === null || tileInfo.lastModified < lastModified || response.type === 'basic') {
             const blob = await response.blob();
-            const modifiedBlob = await this.drawOnTile(tile, blob, tileInfo.lastModified < lastModified);
-            tileInfo.blob = modifiedBlob;
 
-            if (tileInfo.lastModified < lastModified)
+            const trackProgress = tileInfo.lastModified < lastModified && response.type !== 'basic';
+            modifiedBlob = await this.drawOnTile(tile, blob, trackProgress);
+
+            if (trackProgress)
                 this.updateColorList();
 
-            tileInfo.lastModified = lastModified;
+            if (response.type !== 'basic') {
+                tileInfo.blob = modifiedBlob;
+                tileInfo.lastModified = lastModified;
+            }
         }
 
 
         // Return the result
-        return new Response(tileInfo.blob, {
+        return new Response(modifiedBlob, {
             headers: response.headers,
             status: response.status,
             statusText: response.statusText

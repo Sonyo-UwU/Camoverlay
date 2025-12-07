@@ -203,7 +203,9 @@ export default class Template {
                 }
             }
 
-        this.tiles.set(tile.toIndex(), colors);
+        if (trackProgress)
+            this.tiles.set(tile.toIndex(), colors);
+
         ctx.putImageData(imageData, 0, 0);
     }
 
