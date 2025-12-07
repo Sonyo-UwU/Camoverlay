@@ -145,7 +145,7 @@ div#ca-overlay {
 .ca-color-row {
     align-content: center;
     align-items: center;
-    background: linear-gradient(90deg, #b609 var(--ca-color-progress), transparent calc(var(--ca-color-progress) + min(var(--ca-color-progress), 4%)) 100%);
+    background: linear-gradient(90deg, #b609 var(--ca-color-progress), #b109 var(--ca-color-progress) var(--ca-color-wrong), transparent var(--ca-color-wrong));
     display: flex;
     flex-direction: row;
     gap: 1ch;

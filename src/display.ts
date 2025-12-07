@@ -1,7 +1,7 @@
 ﻿import { PixelCoords } from './Coords';
 import { Manager } from './Manager';
 import Template from './Template';
-import type { UserData, WplaceColorId } from './types';
+import type { TileProgress, UserData, WplaceColorId } from './types';
 import { otherColor, rgbColorMap, rgbToCss } from './utils';
 
 declare function GM_addStyle(css: string): void;
@@ -44,14 +44,15 @@ export function displayUserData(data: UserData) {
     }
 }
 
-export function addColorRow(colorId: WplaceColorId, painted: number, total: number, enabled: boolean) {
+export function addColorRow(colorId: WplaceColorId, progress: TileProgress, enabled: boolean): void {
     const c = rgbColorMap.get(colorId) ?? otherColor;
 
     const row = (document.getElementById('ca-color-template') as HTMLTemplateElement).content.cloneNode(true) as DocumentFragment;
 
     const div = row.firstElementChild as HTMLDivElement;
     div.id = 'ca-color-id-' + colorId;
-    div.style.setProperty('--ca-color-progress', (painted / total * 100) + '%');
+    div.style.setProperty('--ca-color-progress', ((progress.total - progress.unpainted - progress.wrong) / progress.total * 100) + '%');
+    div.style.setProperty('--ca-color-wrong', ((progress.total - progress.unpainted) / progress.total * 100) + '%');
 
     const enable = row.querySelector('input')!;
     enable.checked = enabled;
@@ -88,7 +89,7 @@ export function addColorRow(colorId: WplaceColorId, painted: number, total: numb
         });
     });
 
-    row.querySelector('.ca-color-count')!.textContent = total.toString();
+    row.querySelector('.ca-color-count')!.textContent = progress.total.toString();
     row.querySelector('.ca-color-name')!.textContent = c.name;
 
     document.getElementById('ca-color-list')!.appendChild(row);

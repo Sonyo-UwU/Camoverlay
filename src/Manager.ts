@@ -1,7 +1,7 @@
 import { PixelCoords, TileCoords } from './Coords';
 import { addColorRow, addTemplateRow, displayStatus, removeTemplateRow } from './display';
 import Template from './Template';
-import { JsonifiedValue, TileIndex, TileInfo, WplaceColorId } from './types';
+import { JsonifiedValue, TileIndex, TileInfo, TileProgress, WplaceColorId } from './types';
 
 declare type StorageValues = {
     'global': { inputCoords: PixelCoords | null, enabledColors: [WplaceColorId, boolean][] },
@@ -147,43 +147,57 @@ class ManagerClass {
         while (list.firstChild)
             list.firstChild!.remove();
 
-        const colorCounts = new Map<WplaceColorId, [number, number]>();
+        const colorProgress = new Map<WplaceColorId, TileProgress>();
         
         for (const template of this.templates) {
             if (template.enabled)
                 for (const [_, colors] of template.tiles)
                     for (const [id, progress] of colors) {
-                        const [painted, total] = colorCounts.get(id) ?? [0, 0];
-                        colorCounts.set(id, [painted + progress.total - progress.unpainted - progress.wrong, total + progress.total]);
+                        let totalProgress = colorProgress.get(id);
+                        if (totalProgress === undefined) {
+                            totalProgress = { total: 0, unpainted: 0, wrong: 0 };
+                            colorProgress.set(id, totalProgress);
+                        }
+                        totalProgress.total += progress.total;
+                        totalProgress.unpainted += progress.unpainted;
+                        totalProgress.wrong += progress.wrong;
                     }
         }
 
         for (const id of this.enabledColors.keys()) {
-            if (!colorCounts.has(id))
+            if (!colorProgress.has(id))
                 this.enabledColors.delete(id);
         }
 
-        for (const [id, count] of colorCounts.entries().toArray().sort((a, b) => b[1][1] - a[1][1])) {
-            addColorRow(id, count[0], count[1], this.enabledColors.get(id) ?? true);
+        for (const [id, progress] of colorProgress.entries().toArray().sort((a, b) => b[1].total - a[1].total)) {
+            addColorRow(id, progress, this.enabledColors.get(id) ?? true);
         }
     }
 
     updateColorList() {
-        const colorCounts = new Map<WplaceColorId, [number, number]>();
+        const colorProgress = new Map<WplaceColorId, TileProgress>();
 
         for (const template of this.templates) {
             if (template.enabled)
                 for (const [_, colors] of template.tiles)
                     for (const [id, progress] of colors) {
-                        const [painted, total] = colorCounts.get(id) ?? [0, 0];
-                        colorCounts.set(id, [painted + progress.total - progress.unpainted - progress.wrong, total + progress.total]);
+                        let totalProgress = colorProgress.get(id);
+                        if (totalProgress === undefined) {
+                            totalProgress = { total: 0, unpainted: 0, wrong: 0 };
+                            colorProgress.set(id, totalProgress);
+                        }
+                        totalProgress.total += progress.total;
+                        totalProgress.unpainted += progress.unpainted;
+                        totalProgress.wrong += progress.wrong;
                     }
         }
 
-        for (const [id, count] of colorCounts.entries().toArray().sort((a, b) => b[1][1] - a[1][1])) {
+        for (const [id, progress] of colorProgress.entries()) {
             const div = document.getElementById('ca-color-id-' + id);
-            if (div !== null)
-                div.style.setProperty('--ca-color-progress', (count[0] / count[1] * 100) + '%');
+            if (div !== null) {
+                div.style.setProperty('--ca-color-progress', ((progress.total - progress.unpainted - progress.wrong) / progress.total * 100) + '%');
+                div.style.setProperty('--ca-color-wrong', ((progress.total - progress.unpainted) / progress.total * 100) + '%');
+            }
         }
     }
 
