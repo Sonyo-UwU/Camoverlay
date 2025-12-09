@@ -58,6 +58,11 @@ export function addListeners() {
     document.getElementById('ca-select-button')!.addEventListener('click', () => {
         document.getElementById('ca-file-input')!.click();
     });
+    document.getElementById('ca-select-button')!.addEventListener('contextmenu', e => {
+        document.getElementById('ca-select-button')!.textContent = 'Select file';
+        (document.getElementById('ca-file-input') as HTMLInputElement).value = '';
+        e.preventDefault();
+    });
 
     document.getElementById('ca-file-input')!.addEventListener('change', e => {
         if ((e.target as HTMLInputElement).files!.length > 0)

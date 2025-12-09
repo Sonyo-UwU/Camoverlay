@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.6.11
+// @version      0.6.12
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -938,7 +938,8 @@ div#ca-overlay {
     background-color: rgba(0, 0, 0, 0.2);
     padding: 0 0.5ch;
     margin-top: 0.5em;
-    height: 7.5em;
+    height: 3.2em;
+    resize: none;
     width: 100%;
 }
 
@@ -1151,6 +1152,11 @@ function addListeners() {
   });
   document.getElementById("ca-select-button").addEventListener("click", () => {
     document.getElementById("ca-file-input").click();
+  });
+  document.getElementById("ca-select-button").addEventListener("contextmenu", (e) => {
+    document.getElementById("ca-select-button").textContent = "Select file";
+    document.getElementById("ca-file-input").value = "";
+    e.preventDefault();
   });
   document.getElementById("ca-file-input").addEventListener("change", (e) => {
     if (e.target.files.length > 0)

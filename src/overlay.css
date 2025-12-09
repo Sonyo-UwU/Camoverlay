@@ -282,7 +282,8 @@ div#ca-overlay {
     background-color: rgba(0, 0, 0, 0.2);
     padding: 0 0.5ch;
     margin-top: 0.5em;
-    height: 7.5em;
+    height: 3.2em;
+    resize: none;
     width: 100%;
 }
 
