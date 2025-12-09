@@ -127,7 +127,8 @@ export function addTemplateRow(template: Template) {
     //const fly = row.querySelector('.ca-template-fly') as HTMLButtonElement;
 
     const count = row.querySelector('.ca-pixel-count') as HTMLSpanElement;
-    count.textContent = template.totalPixelCount.toString();
+    const painted = template.totalProgress.total - template.totalProgress.unpainted - template.totalProgress.wrong;
+    count.textContent = `${painted} / ${template.totalProgress.total} • ${Math.round(painted / template.totalProgress.total * 1000) / 10}%`;
 
     const text = row.querySelector('.ca-template-name') as HTMLSpanElement;
     text.textContent = template.name;
@@ -168,6 +169,14 @@ export function addTemplateRow(template: Template) {
     });
 
     document.getElementById('ca-template-list')!.appendChild(row);
+}
+
+export function updateTemplatePixelCount(template: Template) {
+    const count = document.getElementById(`ca-template-id-${template.name}`)?.querySelector('.ca-pixel-count');
+    if (count) {
+        const painted = template.totalProgress.total - template.totalProgress.unpainted - template.totalProgress.wrong;
+        count.textContent = `${painted} / ${template.totalProgress.total} • ${Math.round(painted / template.totalProgress.total * 1000) / 10}%`;
+    }
 }
 
 export function removeTemplateRow(name: string) {

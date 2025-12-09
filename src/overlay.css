@@ -258,12 +258,16 @@ div#ca-overlay {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    text-align: center;
+}
+.ca-template-name {
+    font-weight: bold;
 }
 .ca-template-right {
     display: flex;
 }
 .ca-template-right input {
-    vertical-align: middle;
+    height: 1.5em;
     margin-right: 0.5ch;
     filter: hue-rotate(70deg);
 }

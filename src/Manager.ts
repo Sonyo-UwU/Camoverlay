@@ -130,7 +130,7 @@ class ManagerClass {
 
         addTemplateRow(template);
         this.rebuildColorList();
-        displayStatus('Created template at ' + template.coords.toString() + ': ' + template.totalPixelCount + ' pixels');
+        displayStatus('Created template at ' + template.coords.toString() + ': ' + template.totalProgress.total + ' pixels');
         return template;
     }
 
@@ -226,7 +226,7 @@ class ManagerClass {
         if (modifiedBlob === null || tileInfo.lastModified < lastModified || response.type === 'basic') {
             const blob = await response.blob();
 
-            const trackProgress = tileInfo.lastModified < lastModified && response.type !== 'basic';
+            const trackProgress = modifiedBlob === null || (tileInfo.lastModified < lastModified && response.type !== 'basic');
             modifiedBlob = await this.drawOnTile(tile, blob, trackProgress);
 
             if (trackProgress)

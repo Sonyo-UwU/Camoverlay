@@ -1,9 +1,10 @@
 import { PixelCoords, TileCoords } from './Coords';
+import { updateTemplatePixelCount } from './display';
 import { Manager } from './Manager';
 import { JsonifiedValue, TileIndex, TileProgress, WplaceColorId } from './types';
 import { getClosestColor, getColor, otherColor } from './utils';
 
-type StoredTemplate = Omit<JsonifiedValue<Omit<Template, 'toJSON'>>, 'imageData' | 'tiles' | 'totalPixelCount'> & {
+type StoredTemplate = Omit<JsonifiedValue<Omit<Template, 'toJSON'>>, 'imageData' | 'tiles' | 'totalProgress'> & {
     tiles: [TileIndex, [WplaceColorId, number][]][];
 };
 
@@ -31,7 +32,7 @@ export default class Template {
     height: number;
     imageData: Uint8ClampedArray | null;
     tiles: Map<TileIndex, Map<WplaceColorId, TileProgress>>;
-    totalPixelCount: number;
+    totalProgress: TileProgress;
     enabled: boolean;
     base64Data: string;
 
@@ -42,7 +43,11 @@ export default class Template {
         this.width = width;
         this.height = height;
         this.imageData = null;
-        this.totalPixelCount = 0;
+        this.totalProgress = {
+            total: 0,
+            unpainted: 0,
+            wrong: 0
+        };
         this.tiles = new Map();
         this.enabled = true;
         this.base64Data = '';
@@ -91,7 +96,8 @@ export default class Template {
 
                 progress.total++;
                 progress.unpainted++;
-                template.totalPixelCount++;
+                template.totalProgress.total++;
+                template.totalProgress.unpainted++;
 
                 if (color !== otherColor) {
                     imageData.data[pixelIndex + 0] = color.rgb[0];
@@ -123,7 +129,6 @@ export default class Template {
         template.imageData = array;
         template.base64Data = stored.base64Data;
 
-        template.totalPixelCount = 0;
         template.tiles = new Map();
         for (const [index, colors] of stored.tiles) {
             const progress = new Map<WplaceColorId, TileProgress>();
@@ -134,7 +139,8 @@ export default class Template {
                     wrong: 0
                 });
 
-                template.totalPixelCount += total;
+                template.totalProgress.total += total;
+                template.totalProgress.unpainted += total;
             }
             template.tiles.set(index, progress);
         }
@@ -156,6 +162,8 @@ export default class Template {
         const isFirstX = this.coords.tx === tile.x;
         const isFirstY = this.coords.ty === tile.y;
         const colors = new Map<WplaceColorId, TileProgress>();
+
+        const old = this.tiles.get(tile.toIndex())!;
 
         for (let iy = isFirstY ? 0 : (tile.y - this.coords.ty) * 1000 - this.coords.py,
                  cy = isFirstY ? this.coords.py : 0;
@@ -182,18 +190,28 @@ export default class Template {
                             wrong: 0
                         };
                         colors.set(color.id, progress);
+
+                        const oldProgress = old.get(color.id);
+                        if (oldProgress !== undefined) {
+                            this.totalProgress.total -= oldProgress.total;
+                            this.totalProgress.unpainted -= oldProgress.unpainted;
+                            this.totalProgress.wrong -= oldProgress.wrong;
+                        }
                     }
 
                     progress.total++;
+                    this.totalProgress.total++;
                     if (canvasImageData[canvasPixelIndex + 3] === 0) {
                         // Unpainted
                         progress.unpainted++;
+                        this.totalProgress.unpainted++;
                     }
                     else {
                         const paintedColor = getColor(canvasImageData[canvasPixelIndex + 0]!, canvasImageData[canvasPixelIndex + 1]!, canvasImageData[canvasPixelIndex + 2]!);
                         if (color !== paintedColor) {
                             // Wrong
                             progress.wrong++;
+                            this.totalProgress.wrong++;
                         }
                     }
                 }
@@ -206,8 +224,10 @@ export default class Template {
                 }
             }
 
-        if (trackProgress)
+        if (trackProgress) {
             this.tiles.set(tile.toIndex(), colors);
+            updateTemplatePixelCount(this);
+        }
 
         ctx.putImageData(imageData, 0, 0);
     }
