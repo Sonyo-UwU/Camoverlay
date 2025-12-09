@@ -21,6 +21,11 @@ export function parseTileCoordsFromURL(url: string): TileCoords {
     );
 }
 
+export const enum ColorSortingOptions {
+    Total = 'Total',
+    Remaining = 'Remaining'
+};
+
 
 function twoHexDigits(n: number): string {
     return n < 16 ? '0' + n.toString(16) : n.toString(16);

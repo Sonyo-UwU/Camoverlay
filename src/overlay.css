@@ -77,6 +77,25 @@ div#ca-overlay {
     cursor: not-allowed;
 }
 
+#ca-overlay select {
+    border: white 1px solid;
+    border-radius: 0.5em;
+    background-color: #ab2314;
+    font-size: small;
+}
+#ca-overlay select:hover, #ca-overlay select:open {
+    background-color: #b14438;
+}
+
+#ca-overlay select:active {
+    background-color: #b66d65;
+}
+
+#ca-overlay select:disabled {
+    background-color: #b66d65;
+    cursor: not-allowed;
+}
+
 #ca-image-collapse {
     border-radius: 12px;
     cursor: pointer;
@@ -128,6 +147,17 @@ div#ca-overlay {
     width: 70%;
 }
 
+#ca-sorting {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.5em;
+}
+#ca-sorting > select {
+    flex: 1 0 auto;
+    text-align: center;
+    margin-left: 1ch;
+}
+
 #ca-color-list {
     background-color: #00000022;
     border-color: black;
@@ -148,7 +178,7 @@ div#ca-overlay {
     background: linear-gradient(90deg, #b609 var(--ca-color-progress), #b109 var(--ca-color-progress) var(--ca-color-wrong), transparent var(--ca-color-wrong));
     display: flex;
     flex-direction: row;
-    gap: 1ch;
+    gap: 0.5ch;
     justify-content: start;
 }
 .ca-color-row > * {

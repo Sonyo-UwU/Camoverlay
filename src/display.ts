@@ -2,7 +2,7 @@
 import { Manager } from './Manager';
 import Template from './Template';
 import type { TileProgress, UserData, WplaceColorId } from './types';
-import { otherColor, rgbColorMap, rgbToCss } from './utils';
+import { ColorSortingOptions, otherColor, rgbColorMap, rgbToCss } from './utils';
 
 declare function GM_addStyle(css: string): void;
 
@@ -89,7 +89,19 @@ export function addColorRow(colorId: WplaceColorId, progress: TileProgress, enab
         });
     });
 
-    row.querySelector('.ca-color-count')!.textContent = progress.total.toString();
+    switch (Manager.colorSorting) {
+        case ColorSortingOptions.Total:
+            row.querySelector('.ca-color-count')!.textContent = progress.total.toString();
+            break;
+        case ColorSortingOptions.Remaining:
+            row.querySelector('.ca-color-count')!.textContent = (progress.unpainted + progress.wrong).toString();
+            break;
+
+        default:
+            const n: never = Manager.colorSorting;
+            n;
+            break;
+    }
     row.querySelector('.ca-color-name')!.textContent = c.name;
 
     document.getElementById('ca-color-list')!.appendChild(row);

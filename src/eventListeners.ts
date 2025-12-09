@@ -1,6 +1,7 @@
 import { PixelCoords } from './Coords';
 import { displayStatus } from './display';
 import { Manager } from './Manager';
+import { ColorSortingOptions } from './utils';
 
 
 export function addListeners() {
@@ -46,6 +47,12 @@ export function addListeners() {
             svg.style.fill = '#2b8f1f';
             setTimeout(() => svg.style.fill = '', 500);
         }
+    });
+
+    document.getElementById('ca-sort-select')!.addEventListener('change', e => {
+        Manager.colorSorting = (e.target as HTMLSelectElement).value as ColorSortingOptions;
+        Manager.storeGlobal();
+        Manager.rebuildColorList();
     });
 
     document.getElementById('ca-select-button')!.addEventListener('click', () => {

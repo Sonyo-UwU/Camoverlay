@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.6.8
+// @version      0.6.9
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -337,6 +337,7 @@ var ManagerClass = class _ManagerClass {
   tilesInfo;
   enabledColors;
   lastClickedCoords;
+  colorSorting;
   setInputCoords(value) {
     document.getElementById("ca-input-tx").value = value?.tx.toString() ?? "";
     document.getElementById("ca-input-ty").value = value?.ty.toString() ?? "";
@@ -359,6 +360,7 @@ var ManagerClass = class _ManagerClass {
     this.tilesInfo = /* @__PURE__ */ new Map();
     this.enabledColors = /* @__PURE__ */ new Map();
     this.lastClickedCoords = null;
+    this.colorSorting = "Total";
   }
   static #loadValue(key) {
     return JSON.parse(GM_getValue(key, null));
@@ -374,11 +376,13 @@ var ManagerClass = class _ManagerClass {
       this.lastClickedCoords = PixelCoords.copy(stored.inputCoords);
       this.setInputCoords(this.lastClickedCoords);
     }
+    this.colorSorting = stored.colorSorting || "Total";
     this.enabledColors = new Map(stored.enabledColors);
   }
   storeGlobal(overrides) {
     _ManagerClass.#storeValue("global", {
       inputCoords: overrides?.inputCoords ?? this.getInputCoords(),
+      colorSorting: this.colorSorting,
       enabledColors: this.enabledColors.entries().toArray()
     });
   }
@@ -458,32 +462,20 @@ var ManagerClass = class _ManagerClass {
       if (!colorProgress.has(id))
         this.enabledColors.delete(id);
     }
-    for (const [id, progress] of colorProgress.entries().toArray().sort((a, b) => b[1].total - a[1].total)) {
+    const colorsArray = colorProgress.entries().toArray();
+    switch (Manager.colorSorting) {
+      case "Total":
+        colorsArray.sort((a, b) => b[1].total - a[1].total);
+        break;
+      case "Remaining":
+        colorsArray.sort((a, b) => b[1].unpainted + b[1].wrong - a[1].unpainted - a[1].wrong);
+        break;
+      default:
+        const n = Manager.colorSorting;
+        n;
+    }
+    for (const [id, progress] of colorsArray) {
       addColorRow(id, progress, this.enabledColors.get(id) ?? true);
-    }
-  }
-  updateColorList() {
-    const colorProgress = /* @__PURE__ */ new Map();
-    for (const template of this.templates) {
-      if (template.enabled)
-        for (const [_, colors] of template.tiles)
-          for (const [id, progress] of colors) {
-            let totalProgress = colorProgress.get(id);
-            if (totalProgress === void 0) {
-              totalProgress = { total: 0, unpainted: 0, wrong: 0 };
-              colorProgress.set(id, totalProgress);
-            }
-            totalProgress.total += progress.total;
-            totalProgress.unpainted += progress.unpainted;
-            totalProgress.wrong += progress.wrong;
-          }
-    }
-    for (const [id, progress] of colorProgress.entries()) {
-      const div = document.getElementById("ca-color-id-" + id);
-      if (div !== null) {
-        div.style.setProperty("--ca-color-progress", (progress.total - progress.unpainted - progress.wrong) / progress.total * 100 + "%");
-        div.style.setProperty("--ca-color-wrong", (progress.total - progress.unpainted) / progress.total * 100 + "%");
-      }
     }
   }
   async processTile(tile, response) {
@@ -512,7 +504,7 @@ var ManagerClass = class _ManagerClass {
       const trackProgress = tileInfo.lastModified < lastModified && response.type !== "basic";
       modifiedBlob = await this.drawOnTile(tile, blob, trackProgress);
       if (trackProgress)
-        this.updateColorList();
+        this.rebuildColorList();
       if (response.type !== "basic") {
         tileInfo.blob = modifiedBlob;
         tileInfo.lastModified = lastModified;
@@ -608,6 +600,13 @@ function injectOverlay() {
                     <path d="M6.5 3h8.1c2.24 0 3.36 0 4.216.436a4 4 0 0 1 1.748 1.748C21 6.04 21 7.16 21 9.4v7.1M6.2 21h8.1c1.12 0 1.68 0 2.108-.218a2 2 0 0 0 .874-.874c.218-.428.218-.988.218-2.108V9.7c0-1.12 0-1.68-.218-2.108a2 2 0 0 0-.874-.874C15.98 6.5 15.42 6.5 14.3 6.5H6.2c-1.12 0-1.68 0-2.108.218a2 2 0 0 0-.874.874C3 8.02 3 8.58 3 9.7v8.1c0 1.12 0 1.68.218 2.108a2 2 0 0 0 .874.874C4.52 21 5.08 21 6.2 21" stroke-width="2" stroke-linecap="round" />
                 </svg>
             </button>
+        </div>
+        <div id="ca-sorting">
+            Sort:
+            <select id="ca-sort-select">
+                <option value="Total">Total pixels</option>
+                <option value="Remaining">Remaining pixels</option>
+            </select>
         </div>
         <div id="ca-color-list"></div>
         <div id="ca-templates">
@@ -710,6 +709,25 @@ div#ca-overlay {
     cursor: not-allowed;
 }
 
+#ca-overlay select {
+    border: white 1px solid;
+    border-radius: 0.5em;
+    background-color: #ab2314;
+    font-size: small;
+}
+#ca-overlay select:hover, #ca-overlay select:open {
+    background-color: #b14438;
+}
+
+#ca-overlay select:active {
+    background-color: #b66d65;
+}
+
+#ca-overlay select:disabled {
+    background-color: #b66d65;
+    cursor: not-allowed;
+}
+
 #ca-image-collapse {
     border-radius: 12px;
     cursor: pointer;
@@ -761,6 +779,17 @@ div#ca-overlay {
     width: 70%;
 }
 
+#ca-sorting {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.5em;
+}
+#ca-sorting > select {
+    flex: 1 0 auto;
+    text-align: center;
+    margin-left: 1ch;
+}
+
 #ca-color-list {
     background-color: #00000022;
     border-color: black;
@@ -781,7 +810,7 @@ div#ca-overlay {
     background: linear-gradient(90deg, #b609 var(--ca-color-progress), #b109 var(--ca-color-progress) var(--ca-color-wrong), transparent var(--ca-color-wrong));
     display: flex;
     flex-direction: row;
-    gap: 1ch;
+    gap: 0.5ch;
     justify-content: start;
 }
 .ca-color-row > * {
@@ -947,7 +976,18 @@ function addColorRow(colorId, progress, enabled) {
       }
     });
   });
-  row.querySelector(".ca-color-count").textContent = progress.total.toString();
+  switch (Manager.colorSorting) {
+    case "Total":
+      row.querySelector(".ca-color-count").textContent = progress.total.toString();
+      break;
+    case "Remaining":
+      row.querySelector(".ca-color-count").textContent = (progress.unpainted + progress.wrong).toString();
+      break;
+    default:
+      const n = Manager.colorSorting;
+      n;
+      break;
+  }
   row.querySelector(".ca-color-name").textContent = c.name;
   document.getElementById("ca-color-list").appendChild(row);
 }
@@ -1058,6 +1098,11 @@ function addListeners() {
       svg.style.fill = "#2b8f1f";
       setTimeout(() => svg.style.fill = "", 500);
     }
+  });
+  document.getElementById("ca-sort-select").addEventListener("change", (e) => {
+    Manager.colorSorting = e.target.value;
+    Manager.storeGlobal();
+    Manager.rebuildColorList();
   });
   document.getElementById("ca-select-button").addEventListener("click", () => {
     document.getElementById("ca-file-input").click();

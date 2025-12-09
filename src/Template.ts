@@ -155,16 +155,6 @@ export default class Template {
 
         const isFirstX = this.coords.tx === tile.x;
         const isFirstY = this.coords.ty === tile.y;
-
-        /*
-        const tileRelativeX = (this.coords.tx - tile.x) * 1000 + this.coords.px;
-        const tileRelativeY = (this.coords.ty - tile.y) * 1000 + this.coords.py;
-
-        const startX = Math.max(-tileRelativeX, 0);
-        const endX = Math.min(this.width, 1000 - startX);
-        const startY = Math.max(-tileRelativeY, 0);
-        const endY = Math.min(this.height, 1000 - startY);
-        */
         const colors = new Map<WplaceColorId, TileProgress>();
 
         for (let iy = isFirstY ? 0 : (tile.y - this.coords.ty) * 1000 - this.coords.py,

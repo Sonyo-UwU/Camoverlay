@@ -2,9 +2,10 @@ import { PixelCoords, TileCoords } from './Coords';
 import { addColorRow, addTemplateRow, displayStatus, removeTemplateRow } from './display';
 import Template from './Template';
 import { JsonifiedValue, TileIndex, TileInfo, TileProgress, WplaceColorId } from './types';
+import { ColorSortingOptions } from './utils';
 
 declare type StorageValues = {
-    'global': { inputCoords: PixelCoords | null, enabledColors: [WplaceColorId, boolean][] },
+    'global': { inputCoords: PixelCoords | null, colorSorting: ColorSortingOptions, enabledColors: [WplaceColorId, boolean][] },
     'templates': Template[];
 };
 
@@ -17,6 +18,7 @@ class ManagerClass {
     tilesInfo: Map<TileIndex, TileInfo>;
     enabledColors: Map<WplaceColorId, boolean>;
     lastClickedCoords: PixelCoords | null;
+    colorSorting: ColorSortingOptions;
 
     setInputCoords(value: PixelCoords | null) {
         (document.getElementById('ca-input-tx') as HTMLInputElement).value = value?.tx.toString() ?? '';
@@ -44,6 +46,7 @@ class ManagerClass {
         this.tilesInfo = new Map();
         this.enabledColors = new Map();
         this.lastClickedCoords = null;
+        this.colorSorting = ColorSortingOptions.Total;
     }
 
     static #loadValue<K extends keyof StorageValues>(key: K): JsonifiedValue<StorageValues[K]> | null {
@@ -64,12 +67,14 @@ class ManagerClass {
             this.setInputCoords(this.lastClickedCoords);
         }
 
+        this.colorSorting = stored.colorSorting || ColorSortingOptions.Total;
         this.enabledColors = new Map(stored.enabledColors);
     }
 
     storeGlobal(overrides?: Partial<StorageValues['global']>): void {
         ManagerClass.#storeValue('global', {
             inputCoords: overrides?.inputCoords ?? this.getInputCoords(),
+            colorSorting: this.colorSorting,
             enabledColors: this.enabledColors.entries().toArray()
         });
     }
@@ -169,35 +174,22 @@ class ManagerClass {
                 this.enabledColors.delete(id);
         }
 
-        for (const [id, progress] of colorProgress.entries().toArray().sort((a, b) => b[1].total - a[1].total)) {
+        const colorsArray = colorProgress.entries().toArray();
+        switch (Manager.colorSorting) {
+            case ColorSortingOptions.Total:
+                colorsArray.sort((a, b) => b[1].total - a[1].total);
+                break;
+            case ColorSortingOptions.Remaining:
+                colorsArray.sort((a, b) => b[1].unpainted + b[1].wrong - a[1].unpainted - a[1].wrong);
+                break;
+
+            default:
+                const n: never = Manager.colorSorting;
+                n;
+        }
+
+        for (const [id, progress] of colorsArray) {
             addColorRow(id, progress, this.enabledColors.get(id) ?? true);
-        }
-    }
-
-    updateColorList() {
-        const colorProgress = new Map<WplaceColorId, TileProgress>();
-
-        for (const template of this.templates) {
-            if (template.enabled)
-                for (const [_, colors] of template.tiles)
-                    for (const [id, progress] of colors) {
-                        let totalProgress = colorProgress.get(id);
-                        if (totalProgress === undefined) {
-                            totalProgress = { total: 0, unpainted: 0, wrong: 0 };
-                            colorProgress.set(id, totalProgress);
-                        }
-                        totalProgress.total += progress.total;
-                        totalProgress.unpainted += progress.unpainted;
-                        totalProgress.wrong += progress.wrong;
-                    }
-        }
-
-        for (const [id, progress] of colorProgress.entries()) {
-            const div = document.getElementById('ca-color-id-' + id);
-            if (div !== null) {
-                div.style.setProperty('--ca-color-progress', ((progress.total - progress.unpainted - progress.wrong) / progress.total * 100) + '%');
-                div.style.setProperty('--ca-color-wrong', ((progress.total - progress.unpainted) / progress.total * 100) + '%');
-            }
         }
     }
 
@@ -238,7 +230,7 @@ class ManagerClass {
             modifiedBlob = await this.drawOnTile(tile, blob, trackProgress);
 
             if (trackProgress)
-                this.updateColorList();
+                this.rebuildColorList();
 
             if (response.type !== 'basic') {
                 tileInfo.blob = modifiedBlob;
