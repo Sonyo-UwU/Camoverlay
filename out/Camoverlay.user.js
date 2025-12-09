@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.6.7
+// @version      0.6.8
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -276,15 +276,13 @@ var Template = class _Template {
       return;
     const imageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
     const canvasImageData = imageData.data;
-    const startX = (this.coords.tx - tile.x) * 1e3;
-    const endX = Math.min(startX + this.width, 1e3);
-    const startY = (this.coords.ty - tile.y) * 1e3;
-    const endY = Math.min(startY + this.height, 1e3);
+    const isFirstX = this.coords.tx === tile.x;
+    const isFirstY = this.coords.ty === tile.y;
     const colors = /* @__PURE__ */ new Map();
-    for (let y = startY; y < endY; y++)
-      for (let x = startX; x < endX; x++) {
-        const imagePixelIndex = (y * this.width + x) * 4;
-        const canvasPixelIndex = (((y + this.coords.py) * Manager.patternSize + 1) * ctx.canvas.width + (x + this.coords.px) * Manager.patternSize + 1) * 4;
+    for (let iy = isFirstY ? 0 : (tile.y - this.coords.ty) * 1e3 - this.coords.py, cy = isFirstY ? this.coords.py : 0; iy < this.height && cy < 1e3; iy++, cy++)
+      for (let ix = isFirstX ? 0 : (tile.x - this.coords.tx) * 1e3 - this.coords.px, cx = isFirstX ? this.coords.px : 0; ix < this.width && cx < 1e3; ix++, cx++) {
+        const imagePixelIndex = (iy * this.width + ix) * 4;
+        const canvasPixelIndex = ((cy * Manager.patternSize + 1) * ctx.canvas.width + cx * Manager.patternSize + 1) * 4;
         if (this.imageData[imagePixelIndex + 3] === 0)
           continue;
         const color = getColor(this.imageData[imagePixelIndex + 0], this.imageData[imagePixelIndex + 1], this.imageData[imagePixelIndex + 2]);

@@ -153,17 +153,30 @@ export default class Template {
         const imageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
         const canvasImageData = imageData.data;
 
-        const startX = (this.coords.tx - tile.x) * 1000;
-        const endX = Math.min(startX + this.width, 1000);
-        const startY = (this.coords.ty - tile.y) * 1000;
-        const endY = Math.min(startY + this.height, 1000);
+        const isFirstX = this.coords.tx === tile.x;
+        const isFirstY = this.coords.ty === tile.y;
 
+        /*
+        const tileRelativeX = (this.coords.tx - tile.x) * 1000 + this.coords.px;
+        const tileRelativeY = (this.coords.ty - tile.y) * 1000 + this.coords.py;
+
+        const startX = Math.max(-tileRelativeX, 0);
+        const endX = Math.min(this.width, 1000 - startX);
+        const startY = Math.max(-tileRelativeY, 0);
+        const endY = Math.min(this.height, 1000 - startY);
+        */
         const colors = new Map<WplaceColorId, TileProgress>();
-        
-        for (let y = startY; y < endY; y++)
-            for (let x = startX; x < endX; x++) {
-                const imagePixelIndex = (y * this.width + x) * 4;
-                const canvasPixelIndex = (((y + this.coords.py) * Manager.patternSize + 1) * ctx.canvas.width + (x + this.coords.px) * Manager.patternSize + 1) * 4;
+
+        for (let iy = isFirstY ? 0 : (tile.y - this.coords.ty) * 1000 - this.coords.py,
+                 cy = isFirstY ? this.coords.py : 0;
+                 iy < this.height && cy < 1000;
+                 iy++, cy++)
+            for (let ix = isFirstX ? 0 : (tile.x - this.coords.tx) * 1000 - this.coords.px,
+                     cx = isFirstX ? this.coords.px : 0;
+                     ix < this.width && cx < 1000;
+                     ix++, cx++) {
+                const imagePixelIndex = (iy * this.width + ix) * 4;
+                const canvasPixelIndex = ((cy * Manager.patternSize + 1) * ctx.canvas.width + cx * Manager.patternSize + 1) * 4;
 
                 if (this.imageData[imagePixelIndex + 3]! === 0)
                     continue;
