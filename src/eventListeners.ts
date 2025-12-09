@@ -73,7 +73,7 @@ export function addListeners() {
 
         const coords = Manager.getInputCoords();
         if (coords === null) {
-            displayStatus('Invalid coordonates');
+            displayStatus('Invalid coordinates');
             return;
         }
 

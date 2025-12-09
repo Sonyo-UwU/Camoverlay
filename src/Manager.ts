@@ -182,6 +182,9 @@ class ManagerClass {
             case ColorSortingOptions.Remaining:
                 colorsArray.sort((a, b) => b[1].unpainted + b[1].wrong - a[1].unpainted - a[1].wrong);
                 break;
+            case ColorSortingOptions.Wrong:
+                colorsArray.sort((a, b) => b[1].wrong - a[1].wrong);
+                break;
 
             default:
                 const n: never = Manager.colorSorting;
@@ -226,13 +229,11 @@ class ManagerClass {
         if (modifiedBlob === null || tileInfo.lastModified < lastModified || response.type === 'basic') {
             const blob = await response.blob();
 
-            const trackProgress = modifiedBlob === null || (tileInfo.lastModified < lastModified && response.type !== 'basic');
+            const trackProgress = response.type !== 'basic' || modifiedBlob === null;
             modifiedBlob = await this.drawOnTile(tile, blob, trackProgress);
 
-            if (trackProgress)
+            if (trackProgress) {
                 this.rebuildColorList();
-
-            if (response.type !== 'basic') {
                 tileInfo.blob = modifiedBlob;
                 tileInfo.lastModified = lastModified;
             }

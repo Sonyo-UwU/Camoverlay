@@ -96,6 +96,9 @@ export function addColorRow(colorId: WplaceColorId, progress: TileProgress, enab
         case ColorSortingOptions.Remaining:
             row.querySelector('.ca-color-count')!.textContent = (progress.unpainted + progress.wrong).toString();
             break;
+        case ColorSortingOptions.Wrong:
+            row.querySelector('.ca-color-count')!.textContent = (progress.wrong).toString();
+            break;
 
         default:
             const n: never = Manager.colorSorting;
@@ -125,10 +128,6 @@ export function addTemplateRow(template: Template) {
     row.firstElementChild!.id = `ca-template-id-${template.name}`;
 
     //const fly = row.querySelector('.ca-template-fly') as HTMLButtonElement;
-
-    const count = row.querySelector('.ca-pixel-count') as HTMLSpanElement;
-    const painted = template.totalProgress.total - template.totalProgress.unpainted - template.totalProgress.wrong;
-    count.textContent = `${painted} / ${template.totalProgress.total} • ${Math.round(painted / template.totalProgress.total * 1000) / 10}%`;
 
     const text = row.querySelector('.ca-template-name') as HTMLSpanElement;
     text.textContent = template.name;
@@ -169,13 +168,18 @@ export function addTemplateRow(template: Template) {
     });
 
     document.getElementById('ca-template-list')!.appendChild(row);
+    updateTemplatePixelCount(template);
 }
 
 export function updateTemplatePixelCount(template: Template) {
-    const count = document.getElementById(`ca-template-id-${template.name}`)?.querySelector('.ca-pixel-count');
-    if (count) {
+    const row = document.getElementById(`ca-template-id-${template.name}`);
+    if (row) {
+        const count = row.querySelector('.ca-pixel-count')!;
         const painted = template.totalProgress.total - template.totalProgress.unpainted - template.totalProgress.wrong;
-        count.textContent = `${painted} / ${template.totalProgress.total} • ${Math.round(painted / template.totalProgress.total * 1000) / 10}%`;
+        count.textContent = `${painted} / ${template.totalProgress.total} (${Math.round(painted / template.totalProgress.total * 1000) / 10}%)`;
+
+        const wrong = row.querySelector('.ca-wrong-count')!;
+        wrong.textContent = template.totalProgress.wrong > 0 ? ` • ${template.totalProgress.wrong}❌` : '';
     }
 }
 

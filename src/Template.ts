@@ -163,8 +163,6 @@ export default class Template {
         const isFirstY = this.coords.ty === tile.y;
         const colors = new Map<WplaceColorId, TileProgress>();
 
-        const old = this.tiles.get(tile.toIndex())!;
-
         for (let iy = isFirstY ? 0 : (tile.y - this.coords.ty) * 1000 - this.coords.py,
                  cy = isFirstY ? this.coords.py : 0;
                  iy < this.height && cy < 1000;
@@ -190,28 +188,18 @@ export default class Template {
                             wrong: 0
                         };
                         colors.set(color.id, progress);
-
-                        const oldProgress = old.get(color.id);
-                        if (oldProgress !== undefined) {
-                            this.totalProgress.total -= oldProgress.total;
-                            this.totalProgress.unpainted -= oldProgress.unpainted;
-                            this.totalProgress.wrong -= oldProgress.wrong;
-                        }
                     }
 
                     progress.total++;
-                    this.totalProgress.total++;
                     if (canvasImageData[canvasPixelIndex + 3] === 0) {
                         // Unpainted
                         progress.unpainted++;
-                        this.totalProgress.unpainted++;
                     }
                     else {
-                        const paintedColor = getColor(canvasImageData[canvasPixelIndex + 0]!, canvasImageData[canvasPixelIndex + 1]!, canvasImageData[canvasPixelIndex + 2]!);
+                        const paintedColor = getClosestColor(canvasImageData[canvasPixelIndex + 0]!, canvasImageData[canvasPixelIndex + 1]!, canvasImageData[canvasPixelIndex + 2]!);
                         if (color !== paintedColor) {
                             // Wrong
                             progress.wrong++;
-                            this.totalProgress.wrong++;
                         }
                     }
                 }
@@ -226,10 +214,23 @@ export default class Template {
 
         if (trackProgress) {
             this.tiles.set(tile.toIndex(), colors);
+            this.updateTotalProgress();
             updateTemplatePixelCount(this);
         }
 
         ctx.putImageData(imageData, 0, 0);
+    }
+
+    updateTotalProgress() {
+        this.totalProgress.total = 0;
+        this.totalProgress.unpainted = 0;
+        this.totalProgress.wrong = 0;
+        for (const colors of this.tiles.values())
+            for (const progress of colors.values()) {
+                this.totalProgress.total += progress.total;
+                this.totalProgress.unpainted += progress.unpainted;
+                this.totalProgress.wrong += progress.wrong;
+            }
     }
 
     toJSON(_: string | number): StoredTemplate {

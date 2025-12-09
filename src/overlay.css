@@ -243,22 +243,24 @@ div#ca-overlay {
     display: none;
 }
 .ca-template-row {
-    display: flex;
-    justify-content: space-between;
     background-color: #FF000033;
     border-radius: 1em;
-    gap: 1ch;
     margin-bottom: 3px;
+    text-align: center;
 }
-.ca-template-row > * {
+.ca-template-flex {
+    display: flex;
+    justify-content: space-between;
+    gap: 1ch;
+}
+.ca-template-flex > * {
     flex: 0 0 auto;
 }
-.ca-template-text {
+.ca-template-name {
     flex: unset;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    text-align: center;
 }
 .ca-template-name {
     font-weight: bold;
@@ -270,6 +272,9 @@ div#ca-overlay {
     height: 1.5em;
     margin-right: 0.5ch;
     filter: hue-rotate(70deg);
+}
+.ca-template-counts {
+    padding: 0 1ch;
 }
 
 #ca-output {

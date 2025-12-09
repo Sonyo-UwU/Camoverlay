@@ -23,7 +23,8 @@ export function parseTileCoordsFromURL(url: string): TileCoords {
 
 export const enum ColorSortingOptions {
     Total = 'Total',
-    Remaining = 'Remaining'
+    Remaining = 'Remaining',
+    Wrong = 'Wrong'
 };
 
 

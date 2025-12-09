@@ -13,15 +13,17 @@
     </template>
     <template id="ca-template-template">
         <div class="ca-template-row">
-            <button class="ca-icon-button ca-template-fly" disabled>✈️</button>
-            <div class="ca-template-text">
+            <div class="ca-template-flex">
+                <button class="ca-icon-button ca-template-fly" disabled>✈️</button>
                 <span class="ca-template-name"></span>
-                <br>
-                <span class="ca-pixel-count"></span>
+                <div class="ca-template-right">
+                    <input type="checkbox" />
+                    <button class="ca-icon-button ca-template-delete">🗑️</button>
+                </div>
             </div>
-            <div class="ca-template-right">
-                <input type="checkbox" />
-                <button class="ca-icon-button ca-template-delete">🗑️</button>
+            <div class="ca-template-counts">
+                <span class="ca-pixel-count"></span>
+                <span class="ca-wrong-count"></span>
             </div>
         </div>
     </template>
@@ -62,6 +64,7 @@
             <select id="ca-sort-select">
                 <option value="Total">Total pixels</option>
                 <option value="Remaining">Remaining pixels</option>
+                <option value="Wrong">Wrong pixels</option>
             </select>
         </div>
         <div id="ca-color-list"></div>

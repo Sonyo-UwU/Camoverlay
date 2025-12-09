@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.6.10
+// @version      0.6.11
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -284,7 +284,6 @@ var Template = class _Template {
     const isFirstX = this.coords.tx === tile.x;
     const isFirstY = this.coords.ty === tile.y;
     const colors = /* @__PURE__ */ new Map();
-    const old = this.tiles.get(tile.toIndex());
     for (let iy = isFirstY ? 0 : (tile.y - this.coords.ty) * 1e3 - this.coords.py, cy = isFirstY ? this.coords.py : 0; iy < this.height && cy < 1e3; iy++, cy++)
       for (let ix = isFirstX ? 0 : (tile.x - this.coords.tx) * 1e3 - this.coords.px, cx = isFirstX ? this.coords.px : 0; ix < this.width && cx < 1e3; ix++, cx++) {
         const imagePixelIndex = (iy * this.width + ix) * 4;
@@ -301,23 +300,14 @@ var Template = class _Template {
               wrong: 0
             };
             colors.set(color.id, progress);
-            const oldProgress = old.get(color.id);
-            if (oldProgress !== void 0) {
-              this.totalProgress.total -= oldProgress.total;
-              this.totalProgress.unpainted -= oldProgress.unpainted;
-              this.totalProgress.wrong -= oldProgress.wrong;
-            }
           }
           progress.total++;
-          this.totalProgress.total++;
           if (canvasImageData[canvasPixelIndex + 3] === 0) {
             progress.unpainted++;
-            this.totalProgress.unpainted++;
           } else {
-            const paintedColor = getColor(canvasImageData[canvasPixelIndex + 0], canvasImageData[canvasPixelIndex + 1], canvasImageData[canvasPixelIndex + 2]);
+            const paintedColor = getClosestColor(canvasImageData[canvasPixelIndex + 0], canvasImageData[canvasPixelIndex + 1], canvasImageData[canvasPixelIndex + 2]);
             if (color !== paintedColor) {
               progress.wrong++;
-              this.totalProgress.wrong++;
             }
           }
         }
@@ -330,9 +320,21 @@ var Template = class _Template {
       }
     if (trackProgress) {
       this.tiles.set(tile.toIndex(), colors);
+      this.updateTotalProgress();
       updateTemplatePixelCount(this);
     }
     ctx.putImageData(imageData, 0, 0);
+  }
+  updateTotalProgress() {
+    this.totalProgress.total = 0;
+    this.totalProgress.unpainted = 0;
+    this.totalProgress.wrong = 0;
+    for (const colors of this.tiles.values())
+      for (const progress of colors.values()) {
+        this.totalProgress.total += progress.total;
+        this.totalProgress.unpainted += progress.unpainted;
+        this.totalProgress.wrong += progress.wrong;
+      }
   }
   toJSON(_) {
     return {
@@ -487,6 +489,9 @@ var ManagerClass = class _ManagerClass {
       case "Remaining":
         colorsArray.sort((a, b) => b[1].unpainted + b[1].wrong - a[1].unpainted - a[1].wrong);
         break;
+      case "Wrong":
+        colorsArray.sort((a, b) => b[1].wrong - a[1].wrong);
+        break;
       default:
         const n = Manager.colorSorting;
         n;
@@ -518,11 +523,10 @@ var ManagerClass = class _ManagerClass {
     let modifiedBlob = tileInfo.blob;
     if (modifiedBlob === null || tileInfo.lastModified < lastModified || response.type === "basic") {
       const blob = await response.blob();
-      const trackProgress = modifiedBlob === null || tileInfo.lastModified < lastModified && response.type !== "basic";
+      const trackProgress = response.type !== "basic" || modifiedBlob === null;
       modifiedBlob = await this.drawOnTile(tile, blob, trackProgress);
-      if (trackProgress)
+      if (trackProgress) {
         this.rebuildColorList();
-      if (response.type !== "basic") {
         tileInfo.blob = modifiedBlob;
         tileInfo.lastModified = lastModified;
       }
@@ -574,15 +578,17 @@ function injectOverlay() {
     </template>
     <template id="ca-template-template">
         <div class="ca-template-row">
-            <button class="ca-icon-button ca-template-fly" disabled>✈️</button>
-            <div class="ca-template-text">
+            <div class="ca-template-flex">
+                <button class="ca-icon-button ca-template-fly" disabled>✈️</button>
                 <span class="ca-template-name"></span>
-                <br>
-                <span class="ca-pixel-count"></span>
+                <div class="ca-template-right">
+                    <input type="checkbox" />
+                    <button class="ca-icon-button ca-template-delete">🗑️</button>
+                </div>
             </div>
-            <div class="ca-template-right">
-                <input type="checkbox" />
-                <button class="ca-icon-button ca-template-delete">🗑️</button>
+            <div class="ca-template-counts">
+                <span class="ca-pixel-count"></span>
+                <span class="ca-wrong-count"></span>
             </div>
         </div>
     </template>
@@ -623,6 +629,7 @@ function injectOverlay() {
             <select id="ca-sort-select">
                 <option value="Total">Total pixels</option>
                 <option value="Remaining">Remaining pixels</option>
+                <option value="Wrong">Wrong pixels</option>
             </select>
         </div>
         <div id="ca-color-list"></div>
@@ -892,22 +899,24 @@ div#ca-overlay {
     display: none;
 }
 .ca-template-row {
-    display: flex;
-    justify-content: space-between;
     background-color: #FF000033;
     border-radius: 1em;
-    gap: 1ch;
     margin-bottom: 3px;
+    text-align: center;
 }
-.ca-template-row > * {
+.ca-template-flex {
+    display: flex;
+    justify-content: space-between;
+    gap: 1ch;
+}
+.ca-template-flex > * {
     flex: 0 0 auto;
 }
-.ca-template-text {
+.ca-template-name {
     flex: unset;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    text-align: center;
 }
 .ca-template-name {
     font-weight: bold;
@@ -919,6 +928,9 @@ div#ca-overlay {
     height: 1.5em;
     margin-right: 0.5ch;
     filter: hue-rotate(70deg);
+}
+.ca-template-counts {
+    padding: 0 1ch;
 }
 
 #ca-output {
@@ -1004,6 +1016,9 @@ function addColorRow(colorId, progress, enabled) {
     case "Remaining":
       row.querySelector(".ca-color-count").textContent = (progress.unpainted + progress.wrong).toString();
       break;
+    case "Wrong":
+      row.querySelector(".ca-color-count").textContent = progress.wrong.toString();
+      break;
     default:
       const n = Manager.colorSorting;
       n;
@@ -1025,9 +1040,6 @@ function setNewName(s, template) {
 function addTemplateRow(template) {
   const row = document.getElementById("ca-template-template").content.cloneNode(true);
   row.firstElementChild.id = `ca-template-id-${template.name}`;
-  const count = row.querySelector(".ca-pixel-count");
-  const painted = template.totalProgress.total - template.totalProgress.unpainted - template.totalProgress.wrong;
-  count.textContent = `${painted} / ${template.totalProgress.total} \u2022 ${Math.round(painted / template.totalProgress.total * 1e3) / 10}%`;
   const text = row.querySelector(".ca-template-name");
   text.textContent = template.name;
   text.addEventListener("click", (e) => {
@@ -1064,12 +1076,16 @@ function addTemplateRow(template) {
     Manager.deleteTemplate(Manager.templates.indexOf(template));
   });
   document.getElementById("ca-template-list").appendChild(row);
+  updateTemplatePixelCount(template);
 }
 function updateTemplatePixelCount(template) {
-  const count = document.getElementById(`ca-template-id-${template.name}`)?.querySelector(".ca-pixel-count");
-  if (count) {
+  const row = document.getElementById(`ca-template-id-${template.name}`);
+  if (row) {
+    const count = row.querySelector(".ca-pixel-count");
     const painted = template.totalProgress.total - template.totalProgress.unpainted - template.totalProgress.wrong;
-    count.textContent = `${painted} / ${template.totalProgress.total} \u2022 ${Math.round(painted / template.totalProgress.total * 1e3) / 10}%`;
+    count.textContent = `${painted} / ${template.totalProgress.total} (${Math.round(painted / template.totalProgress.total * 1e3) / 10}%)`;
+    const wrong = row.querySelector(".ca-wrong-count");
+    wrong.textContent = template.totalProgress.wrong > 0 ? ` \u2022 ${template.totalProgress.wrong}\u274C` : "";
   }
 }
 function removeTemplateRow(name) {
@@ -1148,7 +1164,7 @@ function addListeners() {
     }
     const coords = Manager.getInputCoords();
     if (coords === null) {
-      displayStatus("Invalid coordonates");
+      displayStatus("Invalid coordinates");
       return;
     }
     e.target.disabled = true;
