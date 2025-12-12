@@ -156,6 +156,7 @@ export function addTemplateRow(template: Template) {
 
         // Prevent Wplace space shortcut
         e.stopPropagation();
+        e.stopImmediatePropagation();
     }, { capture: true });
     text.addEventListener('blur', e => {
         const s = e.target as HTMLSpanElement;
