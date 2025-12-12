@@ -4,7 +4,9 @@
             <input type="checkbox" />
             <div class="ca-color-display"></div>
             <button class="ca-icon-button">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M240-120q-45 0-89-22t-71-58q26 0 53-20.5t27-59.5q0-50 35-85t85-35q50 0 85 35t35 85q0 66-47 113t-113 47Zm230-240L360-470l358-358q11-11 27.5-11.5T774-828l54 54q12 12 12 28t-12 28L470-360Z"></path></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
+                    <path d="M240-120q-45 0-89-22t-71-58q26 0 53-20.5t27-59.5q0-50 35-85t85-35q50 0 85 35t35 85q0 66-47 113t-113 47Zm230-240L360-470l358-358q11-11 27.5-11.5T774-828l54 54q12 12 12 28t-12 28L470-360Z"></path>
+                </svg>
             </button>
             <span class="ca-color-count"></span>
             <span> • </span>
@@ -66,6 +68,15 @@
                 <option value="Remaining">Remaining pixels</option>
                 <option value="Wrong">Wrong pixels</option>
             </select>
+        </div>
+        <div id="ca-color-list-buttons">
+            <button id="ca-enable-all">Enable All</button>
+            <button id="ca-disable-all">Disable All</button>
+            <button id="ca-enable-selected" class="ca-icon-button">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
+                    <path d="M120-120v-190l358-358-58-56 58-56 76 76 124-124q5-5 12.5-8t15.5-3q8 0 15 3t13 8l94 94q5 6 8 13t3 15q0 8-3 15.5t-8 12.5L705-555l76 78-57 57-56-58-358 358H120Zm80-80h78l332-334-76-76-334 332v78Zm447-410 96-96-37-37-96 96 37 37Zm0 0-37-37 37 37Z"></path>
+                </svg>
+            </button>
         </div>
         <div id="ca-color-list"></div>
         <div id="ca-templates">

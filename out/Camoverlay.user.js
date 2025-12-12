@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.6.14
+// @version      0.6.15
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -569,7 +569,9 @@ function injectOverlay() {
             <input type="checkbox" />
             <div class="ca-color-display"></div>
             <button class="ca-icon-button">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M240-120q-45 0-89-22t-71-58q26 0 53-20.5t27-59.5q0-50 35-85t85-35q50 0 85 35t35 85q0 66-47 113t-113 47Zm230-240L360-470l358-358q11-11 27.5-11.5T774-828l54 54q12 12 12 28t-12 28L470-360Z"></path></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
+                    <path d="M240-120q-45 0-89-22t-71-58q26 0 53-20.5t27-59.5q0-50 35-85t85-35q50 0 85 35t35 85q0 66-47 113t-113 47Zm230-240L360-470l358-358q11-11 27.5-11.5T774-828l54 54q12 12 12 28t-12 28L470-360Z"></path>
+                </svg>
             </button>
             <span class="ca-color-count"></span>
             <span> • </span>
@@ -631,6 +633,15 @@ function injectOverlay() {
                 <option value="Remaining">Remaining pixels</option>
                 <option value="Wrong">Wrong pixels</option>
             </select>
+        </div>
+        <div id="ca-color-list-buttons">
+            <button id="ca-enable-all">Enable All</button>
+            <button id="ca-disable-all">Disable All</button>
+            <button id="ca-enable-selected" class="ca-icon-button">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
+                    <path d="M120-120v-190l358-358-58-56 58-56 76 76 124-124q5-5 12.5-8t15.5-3q8 0 15 3t13 8l94 94q5 6 8 13t3 15q0 8-3 15.5t-8 12.5L705-555l76 78-57 57-56-58-358 358H120Zm80-80h78l332-334-76-76-334 332v78Zm447-410 96-96-37-37-96 96 37 37Zm0 0-37-37 37 37Z"></path>
+                </svg>
+            </button>
         </div>
         <div id="ca-color-list"></div>
         <div id="ca-templates">
@@ -801,6 +812,17 @@ div#ca-overlay {
     transition-property: fill;
     transition-duration: 250ms;
     width: 70%;
+}
+
+#ca-color-list-buttons {
+    display: flex;
+    font-size: 80%;
+    gap: 0.75ch;
+    justify-content: space-between;
+    margin-top: 0.5em;
+}
+#ca-enable-selected svg {
+    width: 80%;
 }
 
 #ca-sorting {
@@ -1064,13 +1086,15 @@ function addTemplateRow(template) {
       s.scrollTo(0, 0);
       s.textContent = template.name;
     }
-  });
+    e.stopPropagation();
+  }, { capture: true });
   text.addEventListener("blur", (e) => {
     const s = e.target;
     s.removeAttribute("contenteditable");
     s.scrollTo(0, 0);
     setNewName(s, template);
   });
+  text.addEventListener("keypress", (e) => e.stopPropagation(), { capture: true });
   const enable = row.querySelector("input");
   enable.checked = template.enabled;
   enable.addEventListener("change", (e) => {
@@ -1150,6 +1174,50 @@ function addListeners() {
       svg.style.fill = "#2b8f1f";
       setTimeout(() => svg.style.fill = "", 500);
     }
+  });
+  document.getElementById("ca-enable-all").addEventListener("click", () => {
+    Manager.enabledColors.keys().forEach((id) => {
+      Manager.enabledColors.set(id, true);
+      (document.getElementById("ca-color-id-" + id)?.firstElementChild).checked = true;
+    });
+    Manager.tilesInfo.clear();
+    Manager.storeGlobal();
+  });
+  document.getElementById("ca-disable-all").addEventListener("click", () => {
+    Manager.enabledColors.keys().forEach((id) => {
+      Manager.enabledColors.set(id, false);
+      (document.getElementById("ca-color-id-" + id)?.firstElementChild).checked = false;
+    });
+    Manager.tilesInfo.clear();
+    Manager.storeGlobal();
+  });
+  document.getElementById("ca-enable-selected").addEventListener("click", () => {
+    const background = document.getElementsByClassName("mb-4 mt-3")[0]?.getElementsByClassName("border-primary")[0]?.style.background;
+    if (background === void 0) {
+      displayStatus(`No color selected`);
+      return;
+    }
+    let rgb = background.slice(4, -1).split(", ").map(Number);
+    if (rgb.length !== 3)
+      rgb = [222, 250, 206];
+    const color = getColor(rgb[0], rgb[1], rgb[2]);
+    let inPalette = false;
+    Manager.enabledColors.keys().forEach((id) => {
+      const checkbox = document.getElementById("ca-color-id-" + id)?.firstElementChild;
+      if (id === color.id) {
+        inPalette = true;
+        Manager.enabledColors.set(id, true);
+        checkbox.checked = true;
+        checkbox.scrollIntoView({ "behavior": "smooth", "block": "center" });
+      } else {
+        Manager.enabledColors.set(id, false);
+        checkbox.checked = false;
+      }
+    });
+    if (!inPalette)
+      displayStatus(`${color.name} is not in palette`);
+    Manager.tilesInfo.clear();
+    Manager.storeGlobal();
   });
   document.getElementById("ca-sort-select").addEventListener("change", (e) => {
     Manager.colorSorting = e.target.value;

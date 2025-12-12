@@ -153,13 +153,18 @@ export function addTemplateRow(template: Template) {
             s.scrollTo(0, 0);
             s.textContent = template.name;
         }
-    });
+
+        // Prevent Wplace space shortcut
+        e.stopPropagation();
+    }, { capture: true });
     text.addEventListener('blur', e => {
         const s = e.target as HTMLSpanElement;
         s.removeAttribute('contenteditable');
         s.scrollTo(0, 0);
         setNewName(s, template);
     });
+    // Prevent Wplace I and E shortcuts when typing
+    text.addEventListener('keypress', e => e.stopPropagation(), { capture: true });
 
     const enable = row.querySelector('input')!;
     enable.checked = template.enabled;

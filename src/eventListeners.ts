@@ -1,7 +1,7 @@
 import { PixelCoords } from './Coords';
 import { displayStatus } from './display';
 import { Manager } from './Manager';
-import { ColorSortingOptions } from './utils';
+import { ColorSortingOptions, getColor } from './utils';
 
 
 export function addListeners() {
@@ -47,6 +47,65 @@ export function addListeners() {
             svg.style.fill = '#2b8f1f';
             setTimeout(() => svg.style.fill = '', 500);
         }
+    });
+
+    document.getElementById('ca-enable-all')!.addEventListener('click', () => {
+        Manager.enabledColors.keys().forEach(id => {
+            Manager.enabledColors.set(id, true);
+            (document.getElementById('ca-color-id-' + id)?.firstElementChild as HTMLInputElement).checked = true;
+        });
+
+        Manager.tilesInfo.clear();
+        Manager.storeGlobal();
+    });
+    document.getElementById('ca-disable-all')!.addEventListener('click', () => {
+        Manager.enabledColors.keys().forEach(id => {
+            Manager.enabledColors.set(id, false);
+            (document.getElementById('ca-color-id-' + id)?.firstElementChild as HTMLInputElement).checked = false;
+        });
+
+        Manager.tilesInfo.clear();
+        Manager.storeGlobal();
+    });
+
+    document.getElementById('ca-enable-selected')!.addEventListener('click', () => {
+        const background = (document.getElementsByClassName('mb-4 mt-3')[0]?.getElementsByClassName('border-primary')[0] as HTMLElement | undefined)?.style.background;
+        if (background === undefined) {
+            displayStatus(`No color selected`);
+            return;
+        }
+
+        let rgb = background.slice(4, -1).split(', ').map(Number);
+
+        // Transparent is selected
+        if (rgb.length !== 3)
+            rgb = [222, 250, 206];
+
+        const color = getColor(rgb[0]!, rgb[1]!, rgb[2]!);
+
+        let inPalette = false;
+
+        // Update palette
+        Manager.enabledColors.keys().forEach(id => {
+            const checkbox = document.getElementById('ca-color-id-' + id)?.firstElementChild as HTMLInputElement;
+
+            if (id === color.id) {
+                inPalette = true;
+                Manager.enabledColors.set(id, true);
+                checkbox.checked = true;
+                checkbox.scrollIntoView({ 'behavior': 'smooth', 'block': 'center' });
+            }
+            else {
+                Manager.enabledColors.set(id, false);
+                checkbox.checked = false;
+            }
+        });
+
+        if (!inPalette)
+            displayStatus(`${color.name} is not in palette`);
+
+        Manager.tilesInfo.clear();
+        Manager.storeGlobal();
     });
 
     document.getElementById('ca-sort-select')!.addEventListener('change', e => {

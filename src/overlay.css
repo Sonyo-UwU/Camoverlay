@@ -147,6 +147,17 @@ div#ca-overlay {
     width: 70%;
 }
 
+#ca-color-list-buttons {
+    display: flex;
+    font-size: 80%;
+    gap: 0.75ch;
+    justify-content: space-between;
+    margin-top: 0.5em;
+}
+#ca-enable-selected svg {
+    width: 80%;
+}
+
 #ca-sorting {
     display: flex;
     justify-content: space-between;
