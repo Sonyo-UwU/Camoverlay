@@ -40,9 +40,13 @@ unsafeWindow.fetch = async function (input: Parameters<typeof window.fetch>[0], 
         if (json.status && json.status.toString()[0] !== '2') {
             // Not logged in / server down
             displayStatus('Could not fetch user data, are you logged in?');
+            document.querySelectorAll('.ca-color-row button').forEach(b => (b as HTMLButtonElement).style.display = 'none');
+            Manager.loggedIn = false;
         }
         else {
             displayUserData(json);
+            document.querySelectorAll('.ca-color-row button').forEach(b => (b as HTMLButtonElement).style.display = '');
+            Manager.loggedIn = true;
         }
     }
 

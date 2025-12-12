@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.0.0
+// @version      1.0.1
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -358,6 +358,7 @@ var ManagerClass = class _ManagerClass {
   lastClickedCoords;
   colorSorting;
   flyCoords;
+  loggedIn;
   setInputCoords(value) {
     document.getElementById("ca-input-tx").value = value?.tx.toString() ?? "";
     document.getElementById("ca-input-ty").value = value?.ty.toString() ?? "";
@@ -382,6 +383,7 @@ var ManagerClass = class _ManagerClass {
     this.lastClickedCoords = null;
     this.colorSorting = "Total";
     this.flyCoords = null;
+    this.loggedIn = false;
   }
   static #loadValue(key) {
     return JSON.parse(GM_getValue(key, null));
@@ -1045,6 +1047,8 @@ function addColorRow(colorId, progress, enabled) {
     Manager.storeGlobal();
   });
   const paint = row.querySelector("button");
+  if (!Manager.loggedIn)
+    paint.style.display = "none";
   paint.addEventListener("click", () => {
     document.getElementsByClassName("btn btn-primary btn-lg sm:btn-xl relative z-30")[0]?.click();
     setTimeout(() => {
@@ -1188,7 +1192,8 @@ function addListeners() {
         document.getElementById("ca-disable-all").click();
         break;
       case "i":
-        document.getElementsByClassName("btn btn-primary btn-lg sm:btn-xl relative z-30")[0]?.click();
+        if (Manager.loggedIn)
+          document.getElementsByClassName("btn btn-primary btn-lg sm:btn-xl relative z-30")[0]?.click();
         break;
       case "Escape":
         document.querySelector('[d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"]')?.parentElement?.parentElement?.click();
@@ -1338,8 +1343,12 @@ unsafeWindow.fetch = async function(input, init) {
     const json = await response.clone().json();
     if (json.status && json.status.toString()[0] !== "2") {
       displayStatus("Could not fetch user data, are you logged in?");
+      document.querySelectorAll(".ca-color-row button").forEach((b) => b.style.display = "none");
+      Manager.loggedIn = false;
     } else {
       displayUserData(json);
+      document.querySelectorAll(".ca-color-row button").forEach((b) => b.style.display = "");
+      Manager.loggedIn = true;
     }
   } else if (contentType.includes("application/json") && url.includes("/pixel")) {
     if (method === "GET") {

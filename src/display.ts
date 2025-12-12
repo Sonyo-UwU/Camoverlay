@@ -74,6 +74,8 @@ export function addColorRow(colorId: WplaceColorId, progress: TileProgress, enab
     });
 
     const paint = row.querySelector('button')!;
+    if (!Manager.loggedIn)
+        paint.style.display = 'none';
     paint.addEventListener('click', () => {
         (document.getElementsByClassName('btn btn-primary btn-lg sm:btn-xl relative z-30')[0] as HTMLElement | undefined)?.click();
         setTimeout(() => {

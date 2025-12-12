@@ -20,7 +20,8 @@ export function addListeners() {
                 document.getElementById('ca-disable-all')!.click();
                 break;
             case 'i':
-                (document.getElementsByClassName('btn btn-primary btn-lg sm:btn-xl relative z-30')[0] as HTMLElement | undefined)?.click();
+                if (Manager.loggedIn)
+                    (document.getElementsByClassName('btn btn-primary btn-lg sm:btn-xl relative z-30')[0] as HTMLElement | undefined)?.click();
                 break;
             case 'Escape':
                 document.querySelector('[d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"]')?.parentElement?.parentElement?.click();

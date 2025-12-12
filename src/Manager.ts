@@ -20,6 +20,7 @@ class ManagerClass {
     lastClickedCoords: PixelCoords | null;
     colorSorting: ColorSortingOptions;
     flyCoords: PixelCoords | null;
+    loggedIn: boolean;
 
     setInputCoords(value: PixelCoords | null) {
         (document.getElementById('ca-input-tx') as HTMLInputElement).value = value?.tx.toString() ?? '';
@@ -49,6 +50,7 @@ class ManagerClass {
         this.lastClickedCoords = null;
         this.colorSorting = ColorSortingOptions.Total;
         this.flyCoords = null;
+        this.loggedIn = false;
     }
 
     static #loadValue<K extends keyof StorageValues>(key: K): JsonifiedValue<StorageValues[K]> | null {
