@@ -143,14 +143,21 @@ export function addTemplateRow(template: Template) {
             e.preventDefault();
             const s = e.target as HTMLSpanElement;
             s.removeAttribute('contenteditable');
-            s.parentElement!.scrollTo(0, 0);
+            s.scrollTo(0, 0);
             setNewName(s, template);
+        }
+        else if (e.key === 'Escape') {
+            e.preventDefault();
+            const s = e.target as HTMLSpanElement;
+            s.removeAttribute('contenteditable');
+            s.scrollTo(0, 0);
+            s.textContent = template.name;
         }
     });
     text.addEventListener('blur', e => {
         const s = e.target as HTMLSpanElement;
         s.removeAttribute('contenteditable');
-        s.parentElement!.scrollTo(0, 0);
+        s.scrollTo(0, 0);
         setNewName(s, template);
     });
 
