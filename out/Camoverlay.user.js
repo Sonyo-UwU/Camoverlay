@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.6.12
+// @version      0.6.13
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -831,7 +831,7 @@ div#ca-overlay {
 .ca-color-row {
     align-content: center;
     align-items: center;
-    background: linear-gradient(90deg, #b609 var(--ca-color-progress), #b109 var(--ca-color-progress) var(--ca-color-wrong), transparent var(--ca-color-wrong));
+    background: linear-gradient(90deg, #F003 var(--ca-color-progress), #4F0303AA var(--ca-color-progress) var(--ca-color-wrong), transparent var(--ca-color-wrong));
     display: flex;
     flex-direction: row;
     gap: 0.5ch;
