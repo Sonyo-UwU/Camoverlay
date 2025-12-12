@@ -21,11 +21,18 @@ document.getElementById('ca-version')!.innerText = 'version ' + GM_info.script.v
 // Override fetch
 const originalFetch = unsafeWindow.fetch;
 unsafeWindow.fetch = async function (input: Parameters<typeof window.fetch>[0], init?: Parameters<typeof window.fetch>[1]): ReturnType<typeof window.fetch> {
+    const url = input instanceof Request ? input.url : input as string;
+    const method = init?.method ?? 'GET';
+
+    // Fly
+    if (Manager.flyCoords !== null && url.endsWith('tile/random')) {
+        return new Response(JSON.stringify({ pixel: { x: Manager.flyCoords.px, y: Manager.flyCoords.py }, tile: { x: Manager.flyCoords.tx, y: Manager.flyCoords.ty } }));
+    }
+
+
     const response = await originalFetch(input, init);
 
-    const url = input instanceof Request ? input.url : input as string;
     const contentType = response.headers.get('content-type') ?? '';
-    const method = init?.method ?? 'GET';
 
     // Me
     if (contentType.includes('application/json') && url.includes('/me') && method === 'GET') {

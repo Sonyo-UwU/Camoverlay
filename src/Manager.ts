@@ -19,6 +19,7 @@ class ManagerClass {
     enabledColors: Map<WplaceColorId, boolean>;
     lastClickedCoords: PixelCoords | null;
     colorSorting: ColorSortingOptions;
+    flyCoords: PixelCoords | null;
 
     setInputCoords(value: PixelCoords | null) {
         (document.getElementById('ca-input-tx') as HTMLInputElement).value = value?.tx.toString() ?? '';
@@ -47,6 +48,7 @@ class ManagerClass {
         this.enabledColors = new Map();
         this.lastClickedCoords = null;
         this.colorSorting = ColorSortingOptions.Total;
+        this.flyCoords = null;
     }
 
     static #loadValue<K extends keyof StorageValues>(key: K): JsonifiedValue<StorageValues[K]> | null {
@@ -273,6 +275,13 @@ class ManagerClass {
         }
 
         return await canvas.convertToBlob();
+    }
+
+    flyTo(coords: PixelCoords) {
+        Manager.flyCoords = coords;
+        (document.getElementsByClassName('btn btn-sm btn-ghost btn-circle tooltip tooltip-bottom before:-translate-x-1/3')[0] as HTMLElement)?.click();
+        Manager.flyCoords = null;
+        setTimeout(() => (document.getElementsByClassName('group relative')[0]?.lastElementChild?.firstElementChild as HTMLElement | undefined)?.click());
     }
 }
 

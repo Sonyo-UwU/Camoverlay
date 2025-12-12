@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.6.18
+// @version      1.0.0
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -357,6 +357,7 @@ var ManagerClass = class _ManagerClass {
   enabledColors;
   lastClickedCoords;
   colorSorting;
+  flyCoords;
   setInputCoords(value) {
     document.getElementById("ca-input-tx").value = value?.tx.toString() ?? "";
     document.getElementById("ca-input-ty").value = value?.ty.toString() ?? "";
@@ -380,6 +381,7 @@ var ManagerClass = class _ManagerClass {
     this.enabledColors = /* @__PURE__ */ new Map();
     this.lastClickedCoords = null;
     this.colorSorting = "Total";
+    this.flyCoords = null;
   }
   static #loadValue(key) {
     return JSON.parse(GM_getValue(key, null));
@@ -557,6 +559,12 @@ var ManagerClass = class _ManagerClass {
     }
     return await canvas.convertToBlob();
   }
+  flyTo(coords) {
+    Manager.flyCoords = coords;
+    document.getElementsByClassName("btn btn-sm btn-ghost btn-circle tooltip tooltip-bottom before:-translate-x-1/3")[0]?.click();
+    Manager.flyCoords = null;
+    setTimeout(() => document.getElementsByClassName("group relative")[0]?.lastElementChild?.firstElementChild?.click());
+  }
 };
 var Manager = new ManagerClass();
 
@@ -581,7 +589,7 @@ function injectOverlay() {
     <template id="ca-template-template">
         <div class="ca-template-row">
             <div class="ca-template-flex">
-                <button class="ca-icon-button ca-template-fly" disabled>✈️</button>
+                <button class="ca-icon-button ca-template-fly">✈️</button>
                 <span class="ca-template-name"></span>
                 <div class="ca-template-right">
                     <input type="checkbox" />
@@ -1082,6 +1090,10 @@ function setNewName(s, template) {
 function addTemplateRow(template) {
   const row = document.getElementById("ca-template-template").content.cloneNode(true);
   row.firstElementChild.id = `ca-template-id-${template.name}`;
+  const fly = row.querySelector(".ca-template-fly");
+  fly.addEventListener("click", () => {
+    Manager.flyTo(new PixelCoords(template.coords.tx, template.coords.ty, template.coords.px + template.width / 2, template.coords.py + template.height / 2));
+  });
   const text = row.querySelector(".ca-template-name");
   text.textContent = template.name;
   text.addEventListener("click", (e) => {
@@ -1315,10 +1327,13 @@ await Manager.loadTemplates();
 document.getElementById("ca-version").innerText = "version " + GM_info.script.version;
 var originalFetch = unsafeWindow.fetch;
 unsafeWindow.fetch = async function(input, init) {
-  const response = await originalFetch(input, init);
   const url = input instanceof Request ? input.url : input;
-  const contentType = response.headers.get("content-type") ?? "";
   const method = init?.method ?? "GET";
+  if (Manager.flyCoords !== null && url.endsWith("tile/random")) {
+    return new Response(JSON.stringify({ pixel: { x: Manager.flyCoords.px, y: Manager.flyCoords.py }, tile: { x: Manager.flyCoords.tx, y: Manager.flyCoords.ty } }));
+  }
+  const response = await originalFetch(input, init);
+  const contentType = response.headers.get("content-type") ?? "";
   if (contentType.includes("application/json") && url.includes("/me") && method === "GET") {
     const json = await response.clone().json();
     if (json.status && json.status.toString()[0] !== "2") {

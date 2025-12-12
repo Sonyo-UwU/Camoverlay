@@ -127,7 +127,10 @@ export function addTemplateRow(template: Template) {
 
     row.firstElementChild!.id = `ca-template-id-${template.name}`;
 
-    //const fly = row.querySelector('.ca-template-fly') as HTMLButtonElement;
+    const fly = row.querySelector('.ca-template-fly') as HTMLButtonElement;
+    fly.addEventListener('click', () => {
+        Manager.flyTo(new PixelCoords(template.coords.tx, template.coords.ty, template.coords.px + template.width / 2, template.coords.py + template.height / 2));
+    });
 
     const text = row.querySelector('.ca-template-name') as HTMLSpanElement;
     text.textContent = template.name;
