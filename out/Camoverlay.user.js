@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.0.1
+// @version      1.0.2
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -24,8 +24,8 @@ var TileCoords = class _TileCoords {
   x;
   y;
   constructor(x, y) {
-    this.x = x % 2048;
-    this.y = y % 2048;
+    this.x = Math.floor(x) % 2048;
+    this.y = Math.floor(y) % 2048;
   }
   static toIndex(x, y) {
     return x * 1e4 + y;
@@ -43,10 +43,10 @@ var PixelCoords = class _PixelCoords {
   px;
   py;
   constructor(tx, ty, px, py) {
-    this.tx = (tx + Math.floor(px / 1e3)) % 2048;
-    this.ty = (ty + Math.floor(py / 1e3)) % 2048;
-    this.px = px % 1e3;
-    this.py = py % 1e3;
+    this.tx = (Math.floor(tx) + Math.floor(px / 1e3)) % 2048;
+    this.ty = (Math.floor(ty) + Math.floor(py / 1e3)) % 2048;
+    this.px = Math.floor(px) % 1e3;
+    this.py = Math.floor(py) % 1e3;
   }
   static copy(o) {
     return new _PixelCoords(o.tx, o.ty, o.px, o.py);

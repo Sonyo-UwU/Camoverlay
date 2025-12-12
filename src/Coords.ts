@@ -5,8 +5,8 @@ export class TileCoords {
     readonly y: number;
 
     constructor(x: number, y: number) {
-        this.x = x % 2048;
-        this.y = y % 2048;
+        this.x = Math.floor(x) % 2048;
+        this.y = Math.floor(y) % 2048;
     }
 
     static toIndex(x: number, y: number): TileIndex {
@@ -29,11 +29,11 @@ export class PixelCoords {
     readonly py: number;
 
     constructor(tx: number, ty: number, px: number, py: number) {
-        this.tx = (tx + Math.floor(px / 1000)) % 2048;
-        this.ty = (ty + Math.floor(py / 1000)) % 2048;
+        this.tx = (Math.floor(tx) + Math.floor(px / 1000)) % 2048;
+        this.ty = (Math.floor(ty) + Math.floor(py / 1000)) % 2048;
 
-        this.px = px % 1000;
-        this.py = py % 1000;
+        this.px = Math.floor(px) % 1000;
+        this.py = Math.floor(py) % 1000;
     }
 
     static copy(o: JsonifiedValue<PixelCoords>): PixelCoords {
