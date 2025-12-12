@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.6.17
+// @version      0.6.18
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -637,21 +637,18 @@ function injectOverlay() {
         <div id="ca-color-list-buttons">
             <button id="ca-enable-all" class="tooltip">
                 <div class="tooltip-content">
-                    Enable all colors
                     <kbd class="kbd kbd-xs text-base-content touchscreen:hidden ml-0.5 rounded-md">A</kbd>
                 </div>
                 Enable All
             </button>
             <button id="ca-disable-all" class="tooltip">
                 <div class="tooltip-content">
-                    Disable all colors
                     <kbd class="kbd kbd-xs text-base-content touchscreen:hidden ml-0.5 rounded-md">D</kbd>
                 </div>
                 Disable All
             </button>
             <button id="ca-enable-selected" class="ca-icon-button tooltip">
                 <div class="tooltip-content">
-                    Enale selected color
                     <kbd class="kbd kbd-xs text-base-content touchscreen:hidden ml-0.5 rounded-md">V</kbd>
                 </div>
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
@@ -875,7 +872,7 @@ div#ca-overlay {
 .ca-color-row {
     align-content: center;
     align-items: center;
-    background: linear-gradient(90deg, #F003 var(--ca-color-progress), #4F0303AA var(--ca-color-progress) var(--ca-color-wrong), transparent var(--ca-color-wrong));
+    background: linear-gradient(90deg, #F003 var(--ca-color-progress), #4F0333AA var(--ca-color-progress) var(--ca-color-wrong), transparent var(--ca-color-wrong));
     display: flex;
     flex-direction: row;
     gap: 0.5ch;
