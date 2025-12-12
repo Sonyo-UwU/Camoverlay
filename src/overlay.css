@@ -4,7 +4,6 @@
     color: white;
     max-height: 100%;
     max-width: 300px;
-    overflow: hidden;
     padding: 10px;
     position: absolute;
     right: 75px;
@@ -94,6 +93,13 @@ div#ca-overlay {
 #ca-overlay select:disabled {
     background-color: #b66d65;
     cursor: not-allowed;
+}
+
+#ca-overlay .tooltip-content {
+    font-size: 90%;
+}
+#ca-overlay .tooltip-content > kbd {
+    margin-left: 0;
 }
 
 #ca-image-collapse {

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      0.6.15
+// @version      0.6.16
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -635,9 +635,25 @@ function injectOverlay() {
             </select>
         </div>
         <div id="ca-color-list-buttons">
-            <button id="ca-enable-all">Enable All</button>
-            <button id="ca-disable-all">Disable All</button>
-            <button id="ca-enable-selected" class="ca-icon-button">
+            <button id="ca-enable-all" class="tooltip">
+                <div class="tooltip-content">
+                    Enable all colors
+                    <kbd class="kbd kbd-xs text-base-content touchscreen:hidden ml-0.5 rounded-md">A</kbd>
+                </div>
+                Enable All
+            </button>
+            <button id="ca-disable-all" class="tooltip">
+                <div class="tooltip-content">
+                    Disable all colors
+                    <kbd class="kbd kbd-xs text-base-content touchscreen:hidden ml-0.5 rounded-md">D</kbd>
+                </div>
+                Disable All
+            </button>
+            <button id="ca-enable-selected" class="ca-icon-button tooltip">
+                <div class="tooltip-content">
+                    Enale selected color
+                    <kbd class="kbd kbd-xs text-base-content touchscreen:hidden ml-0.5 rounded-md">V</kbd>
+                </div>
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
                     <path d="M120-120v-190l358-358-58-56 58-56 76 76 124-124q5-5 12.5-8t15.5-3q8 0 15 3t13 8l94 94q5 6 8 13t3 15q0 8-3 15.5t-8 12.5L705-555l76 78-57 57-56-58-358 358H120Zm80-80h78l332-334-76-76-334 332v78Zm447-410 96-96-37-37-96 96 37 37Zm0 0-37-37 37 37Z"></path>
                 </svg>
@@ -671,7 +687,6 @@ function injectOverlay() {
     color: white;
     max-height: 100%;
     max-width: 300px;
-    overflow: hidden;
     padding: 10px;
     position: absolute;
     right: 75px;
@@ -761,6 +776,13 @@ div#ca-overlay {
 #ca-overlay select:disabled {
     background-color: #b66d65;
     cursor: not-allowed;
+}
+
+#ca-overlay .tooltip-content {
+    font-size: 90%;
+}
+#ca-overlay .tooltip-content > kbd {
+    margin-left: 0;
 }
 
 #ca-image-collapse {
@@ -1142,8 +1164,32 @@ function displayTileCoords(coords) {
 
 // dist/eventListeners.js
 function addListeners() {
+  document.addEventListener("keydown", (e) => {
+    if (e.ctrlKey || e.altKey)
+      return;
+    switch (e.key) {
+      case "v":
+        document.getElementById("ca-enable-selected").click();
+        break;
+      case "a":
+        document.getElementById("ca-enable-all").click();
+        break;
+      case "d":
+        document.getElementById("ca-disable-all").click();
+        break;
+    }
+  });
   document.getElementById("ca-image-collapse").addEventListener("click", () => {
-    document.getElementById("ca-overlay").classList.toggle("collapsed");
+    const overlay = document.getElementById("ca-overlay");
+    if (overlay.classList.contains("collapsed")) {
+      overlay.classList.remove("collapsed");
+      setTimeout(() => {
+        overlay.style.overflow = "";
+      }, 500);
+    } else {
+      overlay.style.overflow = "hidden";
+      overlay.classList.add("collapsed");
+    }
   });
   function pasted(e) {
     const values = e.clipboardData?.getData("text").split(" ").filter((n) => n).map(Number).filter((n) => !isNaN(n));

@@ -5,8 +5,36 @@ import { ColorSortingOptions, getColor } from './utils';
 
 
 export function addListeners() {
+    document.addEventListener('keydown', e => {
+        if (e.ctrlKey || e.altKey)
+            return;
+
+        switch (e.key) {
+            case 'v':
+                document.getElementById('ca-enable-selected')!.click();
+                break;
+            case 'a':
+                document.getElementById('ca-enable-all')!.click();
+                break;
+            case 'd':
+                document.getElementById('ca-disable-all')!.click();
+                break;
+        }
+    });
+
+
     document.getElementById('ca-image-collapse')!.addEventListener('click', () => {
-        document.getElementById('ca-overlay')!.classList.toggle('collapsed');
+        const overlay = document.getElementById('ca-overlay')!;
+        if (overlay.classList.contains('collapsed')) {
+            overlay.classList.remove('collapsed');
+            setTimeout(() => {
+                overlay.style.overflow = '';
+            }, 500);
+        }
+        else {
+            overlay.style.overflow = 'hidden';
+            overlay.classList.add('collapsed');
+        }
     });
 
     function pasted(e: ClipboardEvent) {
