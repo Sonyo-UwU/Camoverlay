@@ -92,7 +92,7 @@ export function addColorRow(colorId: WplaceColorId, progress: TileProgress): voi
     paint.addEventListener('dblclick', () => {
         const coords = Manager.colorsInfo.get(colorId)?.unpainted;
         if (coords)
-            Manager.flyTo(coords);
+            Manager.flyTo(coords, 16.5);
     });
 
     switch (Manager.colorSorting) {

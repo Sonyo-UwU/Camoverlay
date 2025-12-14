@@ -26,12 +26,6 @@ unsafeWindow.fetch = async function (input: Parameters<typeof window.fetch>[0], 
     const url = input instanceof Request ? input.url : input as string;
     const method = init?.method ?? 'GET';
 
-    // Fly
-    if (Manager.flyCoords !== null && url.endsWith('tile/random')) {
-        return new Response(JSON.stringify({ pixel: { x: Manager.flyCoords.px + 0.5, y: Manager.flyCoords.py + 0.5 }, tile: { x: Manager.flyCoords.tx, y: Manager.flyCoords.ty } }));
-    }
-
-
     const response = await originalFetch(input, init);
 
     const contentType = response.headers.get('content-type') ?? '';

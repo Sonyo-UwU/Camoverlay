@@ -83,6 +83,10 @@ export type UserData = {
     timeoutUntil: string;
 };
 
+export type WplaceMap = {
+    flyTo: (e: { center: [number, number], zoom: number; }, o?: never) => void;
+};
+
 export type ScriptGetInfo = {
     container?: { // 5.3+ | Firefox only
         id: string,

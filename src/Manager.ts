@@ -1,7 +1,7 @@
 import { PixelCoords, TileCoords } from './Coords';
 import { addColorRow, addTemplateRow, displayStatus, removeTemplateRow } from './display';
 import Template from './Template';
-import { ColorInfo, JsonifiedValue, TileIndex, TileInfo, TileProgress, WplaceColorId } from './types';
+import { ColorInfo, JsonifiedValue, TileIndex, TileInfo, TileProgress, WplaceColorId, WplaceMap } from './types';
 import { ColorSortingOptions } from './utils';
 
 declare type StorageValues = {
@@ -19,10 +19,10 @@ class ManagerClass {
     colorsInfo: Map<WplaceColorId, ColorInfo>;
     lastClickedCoords: PixelCoords | null;
     colorSorting: ColorSortingOptions;
-    flyCoords: PixelCoords | null;
+    //flyCoords: PixelCoords | null;
     loggedIn: boolean;
     settings: { wrongHighlight: boolean; };
-    wplaceMap: { } | null;
+    wplaceMap: WplaceMap | null;
 
     setInputCoords(value: PixelCoords | null) {
         (document.getElementById('ca-input-tx') as HTMLInputElement).value = value?.tx.toString() ?? '';
@@ -51,7 +51,7 @@ class ManagerClass {
         this.colorsInfo = new Map();
         this.lastClickedCoords = null;
         this.colorSorting = ColorSortingOptions.Total;
-        this.flyCoords = null;
+        //this.flyCoords = null;
         this.loggedIn = false;
         this.settings = {
             wrongHighlight: false
@@ -287,11 +287,12 @@ class ManagerClass {
         return await canvas.convertToBlob();
     }
 
-    flyTo(coords: PixelCoords) {
-        Manager.flyCoords = coords;
+    flyTo(coords: PixelCoords, zoom: number = 13) {
+        Manager.wplaceMap?.flyTo({ center: coords.toGeoCoords(), zoom: zoom });
+        /*Manager.flyCoords = coords;
         (document.getElementsByClassName('btn btn-sm btn-ghost btn-circle tooltip tooltip-bottom before:-translate-x-1/3')[0] as HTMLElement)?.click();
         Manager.flyCoords = null;
-        setTimeout(() => (document.getElementsByClassName('group relative')[0]?.lastElementChild?.firstElementChild as HTMLElement | undefined)?.click());
+        setTimeout(() => (document.getElementsByClassName('group relative')[0]?.lastElementChild?.firstElementChild as HTMLElement | undefined)?.click());*/
     }
 }
 

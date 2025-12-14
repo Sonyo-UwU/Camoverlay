@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.2.0
+// @version      1.2.1
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -50,6 +50,15 @@ var PixelCoords = class _PixelCoords {
   }
   static copy(o) {
     return new _PixelCoords(o.tx, o.ty, o.px, o.py);
+  }
+  toGeoCoords(center = true) {
+    const offset = center ? 0.5 : 0;
+    const relativeX = (this.tx * 1e3 + this.px + offset) / (2048 * 1e3);
+    const relativeY = 1 - (this.ty * 1e3 + this.py + offset) / (2048 * 1e3);
+    return [
+      relativeX * 360 - 180,
+      360 * Math.atan(Math.exp((relativeY * 2 - 1) * Math.PI)) / Math.PI - 90
+    ];
   }
   toTileIndex() {
     return TileCoords.toIndex(this.tx, this.ty);
@@ -370,7 +379,7 @@ var ManagerClass = class _ManagerClass {
   colorsInfo;
   lastClickedCoords;
   colorSorting;
-  flyCoords;
+  //flyCoords: PixelCoords | null;
   loggedIn;
   settings;
   wplaceMap;
@@ -397,7 +406,6 @@ var ManagerClass = class _ManagerClass {
     this.colorsInfo = /* @__PURE__ */ new Map();
     this.lastClickedCoords = null;
     this.colorSorting = "Total";
-    this.flyCoords = null;
     this.loggedIn = false;
     this.settings = {
       wrongHighlight: false
@@ -582,11 +590,8 @@ var ManagerClass = class _ManagerClass {
     }
     return await canvas.convertToBlob();
   }
-  flyTo(coords) {
-    Manager.flyCoords = coords;
-    document.getElementsByClassName("btn btn-sm btn-ghost btn-circle tooltip tooltip-bottom before:-translate-x-1/3")[0]?.click();
-    Manager.flyCoords = null;
-    setTimeout(() => document.getElementsByClassName("group relative")[0]?.lastElementChild?.firstElementChild?.click());
+  flyTo(coords, zoom = 13) {
+    Manager.wplaceMap?.flyTo({ center: coords.toGeoCoords(), zoom });
   }
 };
 var Manager = new ManagerClass();
@@ -1109,7 +1114,7 @@ function addColorRow(colorId, progress) {
   paint.addEventListener("dblclick", () => {
     const coords = Manager.colorsInfo.get(colorId)?.unpainted;
     if (coords)
-      Manager.flyTo(coords);
+      Manager.flyTo(coords, 16.5);
   });
   switch (Manager.colorSorting) {
     case "Total":
@@ -1423,9 +1428,6 @@ var originalFetch = unsafeWindow.fetch;
 unsafeWindow.fetch = async function(input, init) {
   const url = input instanceof Request ? input.url : input;
   const method = init?.method ?? "GET";
-  if (Manager.flyCoords !== null && url.endsWith("tile/random")) {
-    return new Response(JSON.stringify({ pixel: { x: Manager.flyCoords.px + 0.5, y: Manager.flyCoords.py + 0.5 }, tile: { x: Manager.flyCoords.tx, y: Manager.flyCoords.ty } }));
-  }
   const response = await originalFetch(input, init);
   const contentType = response.headers.get("content-type") ?? "";
   if (contentType.includes("application/json") && url.includes("/me") && method === "GET") {

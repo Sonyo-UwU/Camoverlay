@@ -40,6 +40,16 @@ export class PixelCoords {
         return new PixelCoords(o.tx, o.ty, o.px, o.py);
     }
 
+    toGeoCoords(center = true): [number, number] {
+        const offset = center ? 0.5 : 0;
+        const relativeX = (this.tx * 1000 + this.px + offset) / (2048 * 1000);
+        const relativeY = 1 - (this.ty * 1000 + this.py + offset) / (2048 * 1000);
+        return [
+            relativeX * 360 - 180,
+            360 * Math.atan(Math.exp((relativeY * 2 - 1) * Math.PI)) / Math.PI - 90
+        ];
+    }
+
     toTileIndex(): TileIndex {
         return TileCoords.toIndex(this.tx, this.ty);
     }
