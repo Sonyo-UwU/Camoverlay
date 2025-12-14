@@ -2,7 +2,7 @@ import { PixelCoords, TileCoords } from './Coords';
 import { addColorRow, addTemplateRow, displayStatus, removeTemplateRow } from './display';
 import Template from './Template';
 import { ColorInfo, JsonifiedValue, TileIndex, TileInfo, TileProgress, WplaceColorId, WplaceMap } from './types';
-import { ColorSortingOptions } from './utils';
+import { ColorSortingOptions, computeHue, computeLuminance, rgbColorMap } from './utils';
 
 declare type StorageValues = {
     'global': { inputCoords: PixelCoords | null, colorSorting: ColorSortingOptions, enabledColors: [WplaceColorId, boolean][] },
@@ -78,6 +78,8 @@ class ManagerClass {
         }
 
         this.colorSorting = stored.colorSorting || ColorSortingOptions.Total;
+        (document.getElementById('ca-sort-select') as HTMLSelectElement).value = this.colorSorting;
+
         this.colorsInfo = new Map(stored.enabledColors.map(([id, enabled]) => [id, { enabled: enabled, unpainted: null }]));
     }
 
@@ -194,6 +196,15 @@ class ManagerClass {
                 break;
             case ColorSortingOptions.Wrong:
                 colorsArray.sort((a, b) => b[1].wrong - a[1].wrong);
+                break;
+            case ColorSortingOptions.Original:
+                colorsArray.sort((a, b) => rgbColorMap.get(a[0])!.wplaceOrder - rgbColorMap.get(b[0])!.wplaceOrder);
+                break;
+            case ColorSortingOptions.Luminance:
+                colorsArray.sort((a, b) => computeLuminance(a[0]) - computeLuminance(b[0]));
+                break;
+            case ColorSortingOptions.Hue:
+                colorsArray.sort((a, b) => computeHue(b[0]) - computeHue(a[0]));
                 break;
 
             default:

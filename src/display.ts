@@ -97,13 +97,16 @@ export function addColorRow(colorId: WplaceColorId, progress: TileProgress): voi
 
     switch (Manager.colorSorting) {
         case ColorSortingOptions.Total:
+        case ColorSortingOptions.Original:
+        case ColorSortingOptions.Luminance:
+        case ColorSortingOptions.Hue:
             row.querySelector('.ca-color-count')!.textContent = progress.total.toString();
             break;
         case ColorSortingOptions.Remaining:
             row.querySelector('.ca-color-count')!.textContent = (progress.unpainted + progress.wrong).toString();
             break;
         case ColorSortingOptions.Wrong:
-            row.querySelector('.ca-color-count')!.textContent = (progress.wrong).toString();
+            row.querySelector('.ca-color-count')!.textContent = progress.wrong.toString();
             break;
 
         default:

@@ -22,8 +22,10 @@ export type TileProgress = {
 
 export type WplaceColorId = number & { [__brand]: 0; };
 export type WplaceColor = {
+    internalId: number,
     id: WplaceColorId,
     name: string,
+    wplaceOrder: number,
     rgb: [number, number, number];
 };
 

@@ -201,12 +201,15 @@ export default class Template {
                         if (colorInfo.unpainted === null)
                             colorInfo.unpainted = new PixelCoords(tile.x, tile.y, cx, cy);
                     }
-                    else {
-                        if (color !== paintedColor) {
-                            // Wrong
-                            progress.wrong++;
-                            colorInfo.unpainted = new PixelCoords(tile.x, tile.y, cx, cy);
-                        }
+                    else if (color !== paintedColor) {
+                        // Wrong
+                        progress.wrong++;
+                        colorInfo.unpainted = new PixelCoords(tile.x, tile.y, cx, cy);
+                    }
+                    else if (colorInfo.unpainted?.tx === tile.x && colorInfo.unpainted?.ty === tile.y &&
+                        // Correct
+                        colorInfo.unpainted?.px === cx && colorInfo.unpainted?.py === cy) {
+                        colorInfo.unpainted = null;
                     }
                 }
 
