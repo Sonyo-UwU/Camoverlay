@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.0.4
+// @version      1.1.0
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -292,6 +292,7 @@ var Template = class _Template {
           continue;
         const color = getColor(this.imageData[imagePixelIndex + 0], this.imageData[imagePixelIndex + 1], this.imageData[imagePixelIndex + 2]);
         const paintedColor = getClosestColor(canvasImageData[canvasPixelIndex + 0], canvasImageData[canvasPixelIndex + 1], canvasImageData[canvasPixelIndex + 2]);
+        const colorInfo = Manager.colorsInfo.get(color.id);
         if (trackProgress) {
           let progress = colors.get(color.id);
           if (progress === void 0) {
@@ -305,13 +306,16 @@ var Template = class _Template {
           progress.total++;
           if (canvasImageData[canvasPixelIndex + 3] === 0) {
             progress.unpainted++;
+            if (colorInfo.unpainted === null)
+              colorInfo.unpainted = new PixelCoords(tile.x, tile.y, cx, cy);
           } else {
             if (color !== paintedColor) {
               progress.wrong++;
+              colorInfo.unpainted = new PixelCoords(tile.x, tile.y, cx, cy);
             }
           }
         }
-        if (Manager.enabledColors.get(color.id)) {
+        if (colorInfo.enabled) {
           if (Manager.settings.wrongHighlight && canvasImageData[canvasPixelIndex + 3] !== 0 && color !== paintedColor) {
             for (const [dx, dy] of [[0, 1], [1, 0], [2, 1], [1, 2]]) {
               const idx = ((cy * Manager.patternSize + dy) * ctx.canvas.width + cx * Manager.patternSize + dx) * 4;
@@ -363,7 +367,7 @@ var ManagerClass = class _ManagerClass {
   patternSize = 3;
   templates;
   tilesInfo;
-  enabledColors;
+  colorsInfo;
   lastClickedCoords;
   colorSorting;
   flyCoords;
@@ -389,7 +393,7 @@ var ManagerClass = class _ManagerClass {
   constructor() {
     this.templates = [];
     this.tilesInfo = /* @__PURE__ */ new Map();
-    this.enabledColors = /* @__PURE__ */ new Map();
+    this.colorsInfo = /* @__PURE__ */ new Map();
     this.lastClickedCoords = null;
     this.colorSorting = "Total";
     this.flyCoords = null;
@@ -413,13 +417,13 @@ var ManagerClass = class _ManagerClass {
       this.setInputCoords(this.lastClickedCoords);
     }
     this.colorSorting = stored.colorSorting || "Total";
-    this.enabledColors = new Map(stored.enabledColors);
+    this.colorsInfo = new Map(stored.enabledColors.map(([id, enabled]) => [id, { enabled, unpainted: null }]));
   }
   storeGlobal(overrides) {
     _ManagerClass.#storeValue("global", {
       inputCoords: overrides?.inputCoords ?? this.getInputCoords(),
       colorSorting: this.colorSorting,
-      enabledColors: this.enabledColors.entries().toArray()
+      enabledColors: this.colorsInfo.entries().toArray().map(([id, colorInfo]) => [id, colorInfo.enabled])
     });
   }
   async loadTemplates() {
@@ -494,9 +498,9 @@ var ManagerClass = class _ManagerClass {
             totalProgress.wrong += progress.wrong;
           }
     }
-    for (const id of this.enabledColors.keys()) {
+    for (const id of this.colorsInfo.keys()) {
       if (!colorProgress.has(id))
-        this.enabledColors.delete(id);
+        this.colorsInfo.delete(id);
     }
     const colorsArray = colorProgress.entries().toArray();
     switch (Manager.colorSorting) {
@@ -514,7 +518,9 @@ var ManagerClass = class _ManagerClass {
         n;
     }
     for (const [id, progress] of colorsArray) {
-      addColorRow(id, progress, this.enabledColors.get(id) ?? true);
+      if (!this.colorsInfo.has(id))
+        this.colorsInfo.set(id, { enabled: true, unpainted: null });
+      addColorRow(id, progress);
     }
   }
   async processTile(tile, response) {
@@ -556,7 +562,7 @@ var ManagerClass = class _ManagerClass {
   }
   async drawOnTile(tile, blob, trackProgress) {
     let allDisabled = true;
-    for (const enabled of Manager.enabledColors.values()) {
+    for (const enabled of Manager.colorsInfo.values()) {
       if (enabled) {
         allDisabled = false;
         break;
@@ -1058,7 +1064,7 @@ function displayUserData(data) {
     document.getElementById("ca-user-pixels").innerText = nextLevelPixels.toLocaleString();
   }
 }
-function addColorRow(colorId, progress, enabled) {
+function addColorRow(colorId, progress) {
   const c = rgbColorMap.get(colorId) ?? otherColor;
   const row = document.getElementById("ca-color-template").content.cloneNode(true);
   const div = row.firstElementChild;
@@ -1066,10 +1072,9 @@ function addColorRow(colorId, progress, enabled) {
   div.style.setProperty("--ca-color-progress", (progress.total - progress.unpainted - progress.wrong) / progress.total * 100 + "%");
   div.style.setProperty("--ca-color-wrong", (progress.total - progress.unpainted) / progress.total * 100 + "%");
   const enable = row.querySelector("input");
-  enable.checked = enabled;
-  Manager.enabledColors.set(colorId, enabled);
+  enable.checked = Manager.colorsInfo.get(colorId).enabled;
   enable.addEventListener("change", (e) => {
-    Manager.enabledColors.set(colorId, e.target.checked);
+    Manager.colorsInfo.get(colorId).enabled = e.target.checked;
     Manager.tilesInfo.clear();
     Manager.storeGlobal();
   });
@@ -1078,7 +1083,7 @@ function addColorRow(colorId, progress, enabled) {
   color.addEventListener("click", (e) => {
     [...document.getElementsByClassName("ca-color-row")].forEach((r) => r.firstElementChild.checked = false);
     e.target.previousElementSibling.checked = true;
-    Manager.enabledColors.forEach((_, key) => Manager.enabledColors.set(key, key === colorId));
+    Manager.colorsInfo.forEach((_, key) => Manager.colorsInfo.get(key).enabled = key === colorId);
     Manager.tilesInfo.clear();
     Manager.storeGlobal();
   });
@@ -1098,6 +1103,11 @@ function addColorRow(colorId, progress, enabled) {
         }
       }
     });
+  });
+  paint.addEventListener("dblclick", () => {
+    const coords = Manager.colorsInfo.get(colorId)?.unpainted;
+    if (coords)
+      Manager.flyTo(coords);
   });
   switch (Manager.colorSorting) {
     case "Total":
@@ -1283,16 +1293,16 @@ function addListeners() {
     Manager.tilesInfo.clear();
   });
   document.getElementById("ca-enable-all").addEventListener("click", () => {
-    Manager.enabledColors.keys().forEach((id) => {
-      Manager.enabledColors.set(id, true);
+    Manager.colorsInfo.forEach((colorInfo, id) => {
+      colorInfo.enabled = true;
       (document.getElementById("ca-color-id-" + id)?.firstElementChild).checked = true;
     });
     Manager.tilesInfo.clear();
     Manager.storeGlobal();
   });
   document.getElementById("ca-disable-all").addEventListener("click", () => {
-    Manager.enabledColors.keys().forEach((id) => {
-      Manager.enabledColors.set(id, false);
+    Manager.colorsInfo.forEach((colorInfo, id) => {
+      colorInfo.enabled = false;
       (document.getElementById("ca-color-id-" + id)?.firstElementChild).checked = false;
     });
     Manager.tilesInfo.clear();
@@ -1309,15 +1319,15 @@ function addListeners() {
       rgb = [222, 250, 206];
     const color = getColor(rgb[0], rgb[1], rgb[2]);
     let inPalette = false;
-    Manager.enabledColors.keys().forEach((id) => {
+    Manager.colorsInfo.forEach((colorInfo, id) => {
       const checkbox = document.getElementById("ca-color-id-" + id)?.firstElementChild;
       if (id === color.id) {
         inPalette = true;
-        Manager.enabledColors.set(id, true);
+        colorInfo.enabled = true;
         checkbox.checked = true;
         checkbox.scrollIntoView({ "behavior": "smooth", "block": "center" });
       } else {
-        Manager.enabledColors.set(id, false);
+        colorInfo.enabled = false;
         checkbox.checked = false;
       }
     });
@@ -1375,7 +1385,7 @@ unsafeWindow.fetch = async function(input, init) {
   const url = input instanceof Request ? input.url : input;
   const method = init?.method ?? "GET";
   if (Manager.flyCoords !== null && url.endsWith("tile/random")) {
-    return new Response(JSON.stringify({ pixel: { x: Manager.flyCoords.px, y: Manager.flyCoords.py }, tile: { x: Manager.flyCoords.tx, y: Manager.flyCoords.ty } }));
+    return new Response(JSON.stringify({ pixel: { x: Manager.flyCoords.px + 0.5, y: Manager.flyCoords.py + 0.5 }, tile: { x: Manager.flyCoords.tx, y: Manager.flyCoords.ty } }));
   }
   const response = await originalFetch(input, init);
   const contentType = response.headers.get("content-type") ?? "";

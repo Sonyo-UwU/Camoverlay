@@ -180,6 +180,8 @@ export default class Template {
                 const color = getColor(this.imageData[imagePixelIndex + 0]!, this.imageData[imagePixelIndex + 1]!, this.imageData[imagePixelIndex + 2]!);
                 const paintedColor = getClosestColor(canvasImageData[canvasPixelIndex + 0]!, canvasImageData[canvasPixelIndex + 1]!, canvasImageData[canvasPixelIndex + 2]!);
 
+                const colorInfo = Manager.colorsInfo.get(color.id)!;
+
                 if (trackProgress) {
                     let progress = colors.get(color.id);
                     if (progress === undefined) {
@@ -195,25 +197,29 @@ export default class Template {
                     if (canvasImageData[canvasPixelIndex + 3] === 0) {
                         // Unpainted
                         progress.unpainted++;
+
+                        if (colorInfo.unpainted === null)
+                            colorInfo.unpainted = new PixelCoords(tile.x, tile.y, cx, cy);
                     }
                     else {
                         if (color !== paintedColor) {
                             // Wrong
                             progress.wrong++;
+                            colorInfo.unpainted = new PixelCoords(tile.x, tile.y, cx, cy);
                         }
                     }
                 }
 
-                if (Manager.enabledColors.get(color.id)) {
+                if (colorInfo.enabled) {
                     if (Manager.settings.wrongHighlight && canvasImageData[canvasPixelIndex + 3] !== 0 && color !== paintedColor) {
                         // Wrong pixel highlight
                         for (const [dx, dy] of [[0, 1], [1, 0], [2, 1], [1, 2]]) {
-                                const idx = ((cy * Manager.patternSize + dy!) * ctx.canvas.width + cx * Manager.patternSize + dx!) * 4;
-                                canvasImageData[idx + 0] = 255;
-                                canvasImageData[idx + 1] = 0;
-                                canvasImageData[idx + 2] = 0;
-                                canvasImageData[idx + 3] = 255;
-                            }
+                            const idx = ((cy * Manager.patternSize + dy!) * ctx.canvas.width + cx * Manager.patternSize + dx!) * 4;
+                            canvasImageData[idx + 0] = 255;
+                            canvasImageData[idx + 1] = 0;
+                            canvasImageData[idx + 2] = 0;
+                            canvasImageData[idx + 3] = 255;
+                        }
                     }
 
                     canvasImageData[canvasPixelIndex + 0] = this.imageData[imagePixelIndex + 0]!;

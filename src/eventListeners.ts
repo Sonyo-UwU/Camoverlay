@@ -90,8 +90,8 @@ export function addListeners() {
     });
 
     document.getElementById('ca-enable-all')!.addEventListener('click', () => {
-        Manager.enabledColors.keys().forEach(id => {
-            Manager.enabledColors.set(id, true);
+        Manager.colorsInfo.forEach((colorInfo, id) => {
+            colorInfo.enabled = true;
             (document.getElementById('ca-color-id-' + id)?.firstElementChild as HTMLInputElement).checked = true;
         });
 
@@ -99,8 +99,8 @@ export function addListeners() {
         Manager.storeGlobal();
     });
     document.getElementById('ca-disable-all')!.addEventListener('click', () => {
-        Manager.enabledColors.keys().forEach(id => {
-            Manager.enabledColors.set(id, false);
+        Manager.colorsInfo.forEach((colorInfo, id) => {
+            colorInfo.enabled = false;
             (document.getElementById('ca-color-id-' + id)?.firstElementChild as HTMLInputElement).checked = false;
         });
 
@@ -126,17 +126,17 @@ export function addListeners() {
         let inPalette = false;
 
         // Update palette
-        Manager.enabledColors.keys().forEach(id => {
+        Manager.colorsInfo.forEach((colorInfo, id) => {
             const checkbox = document.getElementById('ca-color-id-' + id)?.firstElementChild as HTMLInputElement;
 
             if (id === color.id) {
                 inPalette = true;
-                Manager.enabledColors.set(id, true);
+                colorInfo.enabled = true;
                 checkbox.checked = true;
                 checkbox.scrollIntoView({ 'behavior': 'smooth', 'block': 'center' });
             }
             else {
-                Manager.enabledColors.set(id, false);
+                colorInfo.enabled = false;
                 checkbox.checked = false;
             }
         });

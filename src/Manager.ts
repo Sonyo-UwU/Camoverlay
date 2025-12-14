@@ -1,7 +1,7 @@
 import { PixelCoords, TileCoords } from './Coords';
 import { addColorRow, addTemplateRow, displayStatus, removeTemplateRow } from './display';
 import Template from './Template';
-import { JsonifiedValue, TileIndex, TileInfo, TileProgress, WplaceColorId } from './types';
+import { ColorInfo, JsonifiedValue, TileIndex, TileInfo, TileProgress, WplaceColorId } from './types';
 import { ColorSortingOptions } from './utils';
 
 declare type StorageValues = {
@@ -16,7 +16,7 @@ class ManagerClass {
     readonly patternSize: number = 3;
     templates: Template[];
     tilesInfo: Map<TileIndex, TileInfo>;
-    enabledColors: Map<WplaceColorId, boolean>;
+    colorsInfo: Map<WplaceColorId, ColorInfo>;
     lastClickedCoords: PixelCoords | null;
     colorSorting: ColorSortingOptions;
     flyCoords: PixelCoords | null;
@@ -47,7 +47,7 @@ class ManagerClass {
     constructor() {
         this.templates = [];
         this.tilesInfo = new Map();
-        this.enabledColors = new Map();
+        this.colorsInfo = new Map();
         this.lastClickedCoords = null;
         this.colorSorting = ColorSortingOptions.Total;
         this.flyCoords = null;
@@ -76,14 +76,14 @@ class ManagerClass {
         }
 
         this.colorSorting = stored.colorSorting || ColorSortingOptions.Total;
-        this.enabledColors = new Map(stored.enabledColors);
+        this.colorsInfo = new Map(stored.enabledColors.map(([id, enabled]) => [id, { enabled: enabled, unpainted: null }]));
     }
 
     storeGlobal(overrides?: Partial<StorageValues['global']>): void {
         ManagerClass.#storeValue('global', {
             inputCoords: overrides?.inputCoords ?? this.getInputCoords(),
             colorSorting: this.colorSorting,
-            enabledColors: this.enabledColors.entries().toArray()
+            enabledColors: this.colorsInfo.entries().toArray().map(([id, colorInfo]) => [id, colorInfo.enabled])
         });
     }
 
@@ -177,9 +177,9 @@ class ManagerClass {
                     }
         }
 
-        for (const id of this.enabledColors.keys()) {
+        for (const id of this.colorsInfo.keys()) {
             if (!colorProgress.has(id))
-                this.enabledColors.delete(id);
+                this.colorsInfo.delete(id);
         }
 
         const colorsArray = colorProgress.entries().toArray();
@@ -200,7 +200,9 @@ class ManagerClass {
         }
 
         for (const [id, progress] of colorsArray) {
-            addColorRow(id, progress, this.enabledColors.get(id) ?? true);
+            if (!this.colorsInfo.has(id))
+                this.colorsInfo.set(id, { enabled: true, unpainted: null });
+            addColorRow(id, progress);
         }
     }
 
@@ -258,7 +260,7 @@ class ManagerClass {
 
     async drawOnTile(tile: TileCoords, blob: Blob, trackProgress: boolean): Promise<Blob> {
         let allDisabled = true;
-        for (const enabled of Manager.enabledColors.values()) {
+        for (const enabled of Manager.colorsInfo.values()) {
             if (enabled) {
                 allDisabled = false;
                 break;

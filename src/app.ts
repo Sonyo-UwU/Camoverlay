@@ -26,7 +26,7 @@ unsafeWindow.fetch = async function (input: Parameters<typeof window.fetch>[0], 
 
     // Fly
     if (Manager.flyCoords !== null && url.endsWith('tile/random')) {
-        return new Response(JSON.stringify({ pixel: { x: Manager.flyCoords.px, y: Manager.flyCoords.py }, tile: { x: Manager.flyCoords.tx, y: Manager.flyCoords.ty } }));
+        return new Response(JSON.stringify({ pixel: { x: Manager.flyCoords.px + 0.5, y: Manager.flyCoords.py + 0.5 }, tile: { x: Manager.flyCoords.tx, y: Manager.flyCoords.ty } }));
     }
 
 

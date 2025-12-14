@@ -44,7 +44,7 @@ export function displayUserData(data: UserData) {
     }
 }
 
-export function addColorRow(colorId: WplaceColorId, progress: TileProgress, enabled: boolean): void {
+export function addColorRow(colorId: WplaceColorId, progress: TileProgress): void {
     const c = rgbColorMap.get(colorId) ?? otherColor;
 
     const row = (document.getElementById('ca-color-template') as HTMLTemplateElement).content.cloneNode(true) as DocumentFragment;
@@ -55,10 +55,9 @@ export function addColorRow(colorId: WplaceColorId, progress: TileProgress, enab
     div.style.setProperty('--ca-color-wrong', ((progress.total - progress.unpainted) / progress.total * 100) + '%');
 
     const enable = row.querySelector('input')!;
-    enable.checked = enabled;
-    Manager.enabledColors.set(colorId, enabled);
+    enable.checked = Manager.colorsInfo.get(colorId)!.enabled;
     enable.addEventListener('change', e => {
-        Manager.enabledColors.set(colorId, (e.target as HTMLInputElement).checked);
+        Manager.colorsInfo.get(colorId)!.enabled = (e.target as HTMLInputElement).checked;
         Manager.tilesInfo.clear();
         Manager.storeGlobal();
     });
@@ -68,7 +67,7 @@ export function addColorRow(colorId: WplaceColorId, progress: TileProgress, enab
     color.addEventListener('click', e => {
         [...document.getElementsByClassName('ca-color-row')].forEach(r => (r.firstElementChild as HTMLInputElement).checked = false);
         ((e.target as HTMLDivElement).previousElementSibling! as HTMLInputElement).checked = true;
-        Manager.enabledColors.forEach((_, key) => Manager.enabledColors.set(key, key === colorId));
+        Manager.colorsInfo.forEach((_, key) => Manager.colorsInfo.get(key)!.enabled = key === colorId);
         Manager.tilesInfo.clear();
         Manager.storeGlobal();
     });
@@ -89,6 +88,11 @@ export function addColorRow(colorId: WplaceColorId, progress: TileProgress, enab
                 }
             }
         });
+    });
+    paint.addEventListener('dblclick', () => {
+        const coords = Manager.colorsInfo.get(colorId)?.unpainted;
+        if (coords)
+            Manager.flyTo(coords);
     });
 
     switch (Manager.colorSorting) {
