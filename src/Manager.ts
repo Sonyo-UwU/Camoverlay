@@ -21,7 +21,8 @@ class ManagerClass {
     colorSorting: ColorSortingOptions;
     flyCoords: PixelCoords | null;
     loggedIn: boolean;
-    settings: { wrongHighlight: boolean };
+    settings: { wrongHighlight: boolean; };
+    wplaceMap: { } | null;
 
     setInputCoords(value: PixelCoords | null) {
         (document.getElementById('ca-input-tx') as HTMLInputElement).value = value?.tx.toString() ?? '';
@@ -55,6 +56,7 @@ class ManagerClass {
         this.settings = {
             wrongHighlight: false
         };
+        this.wplaceMap = null;
     }
 
     static #loadValue<K extends keyof StorageValues>(key: K): JsonifiedValue<StorageValues[K]> | null {
