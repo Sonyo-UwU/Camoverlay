@@ -229,6 +229,7 @@ export function displayTileCoords(coords: PixelCoords) {
     }
 }
 
+/* Snipet inspired from https://github.com/t-wy/Wplace-BlueMarble-Userscripts/tree/custom-improve */
 export async function getMapObject(): Promise<void> {
     // Hook Map.values function
     const origMapValues = Map.prototype.values;
