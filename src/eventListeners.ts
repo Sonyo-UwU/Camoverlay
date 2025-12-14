@@ -19,6 +19,21 @@ export function addListeners() {
             case 'd':
                 document.getElementById('ca-disable-all')!.click();
                 break;
+            case 'n':
+                const colorList = document.getElementById('ca-color-list')!;
+                for (let i = 0; i < colorList.childElementCount; i++) {
+                    if ((colorList.children[i]!.firstElementChild as HTMLInputElement).checked) {
+                        const nextRow = colorList.children[i + 1];
+                        if (nextRow === undefined)
+                            break;
+
+                        (nextRow.children[1] as HTMLElement).click();
+                        (nextRow.children[2] as HTMLElement).click();
+                        nextRow.scrollIntoView({ 'behavior': 'smooth', 'block': 'center' });
+                        break;
+                    }
+                }
+                break;
             case 'i':
                 if (Manager.loggedIn)
                     (document.getElementsByClassName('btn btn-primary btn-lg sm:btn-xl relative z-30')[0] as HTMLElement | undefined)?.click();

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.2.3
+// @version      1.2.4
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -1329,6 +1329,20 @@ function addListeners() {
         break;
       case "d":
         document.getElementById("ca-disable-all").click();
+        break;
+      case "n":
+        const colorList = document.getElementById("ca-color-list");
+        for (let i = 0; i < colorList.childElementCount; i++) {
+          if (colorList.children[i].firstElementChild.checked) {
+            const nextRow = colorList.children[i + 1];
+            if (nextRow === void 0)
+              break;
+            nextRow.children[1].click();
+            nextRow.children[2].click();
+            nextRow.scrollIntoView({ "behavior": "smooth", "block": "center" });
+            break;
+          }
+        }
         break;
       case "i":
         if (Manager.loggedIn)
