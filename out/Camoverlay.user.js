@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.0.2
+// @version      1.0.3
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -291,6 +291,7 @@ var Template = class _Template {
         if (this.imageData[imagePixelIndex + 3] === 0)
           continue;
         const color = getColor(this.imageData[imagePixelIndex + 0], this.imageData[imagePixelIndex + 1], this.imageData[imagePixelIndex + 2]);
+        const paintedColor = getClosestColor(canvasImageData[canvasPixelIndex + 0], canvasImageData[canvasPixelIndex + 1], canvasImageData[canvasPixelIndex + 2]);
         if (trackProgress) {
           let progress = colors.get(color.id);
           if (progress === void 0) {
@@ -305,13 +306,22 @@ var Template = class _Template {
           if (canvasImageData[canvasPixelIndex + 3] === 0) {
             progress.unpainted++;
           } else {
-            const paintedColor = getClosestColor(canvasImageData[canvasPixelIndex + 0], canvasImageData[canvasPixelIndex + 1], canvasImageData[canvasPixelIndex + 2]);
             if (color !== paintedColor) {
               progress.wrong++;
             }
           }
         }
         if (Manager.enabledColors.get(color.id)) {
+          if (canvasImageData[canvasPixelIndex + 3] !== 0 && color !== paintedColor) {
+            for (let dx = 0; dx <= 2; dx += 2)
+              for (let dy = 0; dy <= 2; dy += 2) {
+                const idx = ((cy * Manager.patternSize + dy) * ctx.canvas.width + cx * Manager.patternSize + dx) * 4;
+                canvasImageData[idx + 0] = 255;
+                canvasImageData[idx + 1] = 0;
+                canvasImageData[idx + 2] = 0;
+                canvasImageData[idx + 3] = 255;
+              }
+          }
           canvasImageData[canvasPixelIndex + 0] = this.imageData[imagePixelIndex + 0];
           canvasImageData[canvasPixelIndex + 1] = this.imageData[imagePixelIndex + 1];
           canvasImageData[canvasPixelIndex + 2] = this.imageData[imagePixelIndex + 2];
