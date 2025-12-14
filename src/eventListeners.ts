@@ -84,6 +84,11 @@ export function addListeners() {
         }
     });
 
+    document.getElementById('ca-setting-wrong-highlight')!.addEventListener('change', e => {
+        Manager.settings.wrongHighlight = (e.target as HTMLInputElement).checked;
+        Manager.tilesInfo.clear();
+    });
+
     document.getElementById('ca-enable-all')!.addEventListener('click', () => {
         Manager.enabledColors.keys().forEach(id => {
             Manager.enabledColors.set(id, true);

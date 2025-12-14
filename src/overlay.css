@@ -153,6 +153,23 @@ div#ca-overlay {
     width: 70%;
 }
 
+#ca-settings {
+    background-color: #FF000033;
+    border-radius: 0.5em;
+    font-size: 80%;
+    margin-top: 0.5em;
+    padding: 0 1ch;
+    text-align: center;
+}
+#ca-settings > div {
+    display: flex;
+    gap: 1ch;
+    width: fit-content;
+}
+#ca-settings input {
+    filter: hue-rotate(160deg);
+}
+
 #ca-color-list-buttons {
     display: flex;
     font-size: 80%;

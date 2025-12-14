@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.0.3
+// @version      1.0.4
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -312,15 +312,14 @@ var Template = class _Template {
           }
         }
         if (Manager.enabledColors.get(color.id)) {
-          if (canvasImageData[canvasPixelIndex + 3] !== 0 && color !== paintedColor) {
-            for (let dx = 0; dx <= 2; dx += 2)
-              for (let dy = 0; dy <= 2; dy += 2) {
-                const idx = ((cy * Manager.patternSize + dy) * ctx.canvas.width + cx * Manager.patternSize + dx) * 4;
-                canvasImageData[idx + 0] = 255;
-                canvasImageData[idx + 1] = 0;
-                canvasImageData[idx + 2] = 0;
-                canvasImageData[idx + 3] = 255;
-              }
+          if (Manager.settings.wrongHighlight && canvasImageData[canvasPixelIndex + 3] !== 0 && color !== paintedColor) {
+            for (const [dx, dy] of [[0, 1], [1, 0], [2, 1], [1, 2]]) {
+              const idx = ((cy * Manager.patternSize + dy) * ctx.canvas.width + cx * Manager.patternSize + dx) * 4;
+              canvasImageData[idx + 0] = 255;
+              canvasImageData[idx + 1] = 0;
+              canvasImageData[idx + 2] = 0;
+              canvasImageData[idx + 3] = 255;
+            }
           }
           canvasImageData[canvasPixelIndex + 0] = this.imageData[imagePixelIndex + 0];
           canvasImageData[canvasPixelIndex + 1] = this.imageData[imagePixelIndex + 1];
@@ -369,6 +368,7 @@ var ManagerClass = class _ManagerClass {
   colorSorting;
   flyCoords;
   loggedIn;
+  settings;
   setInputCoords(value) {
     document.getElementById("ca-input-tx").value = value?.tx.toString() ?? "";
     document.getElementById("ca-input-ty").value = value?.ty.toString() ?? "";
@@ -394,6 +394,9 @@ var ManagerClass = class _ManagerClass {
     this.colorSorting = "Total";
     this.flyCoords = null;
     this.loggedIn = false;
+    this.settings = {
+      wrongHighlight: false
+    };
   }
   static #loadValue(key) {
     return JSON.parse(GM_getValue(key, null));
@@ -646,6 +649,12 @@ function injectOverlay() {
                 </svg>
             </button>
         </div>
+        <div id="ca-settings">
+            <div>
+                <input id="ca-setting-wrong-highlight" type="checkbox">
+                Highlight wrong pixels
+            </div>
+        </div>
         <div id="ca-sorting">
             Sort:
             <select id="ca-sort-select">
@@ -851,6 +860,23 @@ div#ca-overlay {
     transition-property: fill;
     transition-duration: 250ms;
     width: 70%;
+}
+
+#ca-settings {
+    background-color: #FF000033;
+    border-radius: 0.5em;
+    font-size: 80%;
+    margin-top: 0.5em;
+    padding: 0 1ch;
+    text-align: center;
+}
+#ca-settings > div {
+    display: flex;
+    gap: 1ch;
+    width: fit-content;
+}
+#ca-settings input {
+    filter: hue-rotate(160deg);
 }
 
 #ca-color-list-buttons {
@@ -1251,6 +1277,10 @@ function addListeners() {
       svg.style.fill = "#2b8f1f";
       setTimeout(() => svg.style.fill = "", 500);
     }
+  });
+  document.getElementById("ca-setting-wrong-highlight").addEventListener("change", (e) => {
+    Manager.settings.wrongHighlight = e.target.checked;
+    Manager.tilesInfo.clear();
   });
   document.getElementById("ca-enable-all").addEventListener("click", () => {
     Manager.enabledColors.keys().forEach((id) => {

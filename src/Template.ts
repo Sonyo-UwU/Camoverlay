@@ -205,7 +205,7 @@ export default class Template {
                 }
 
                 if (Manager.enabledColors.get(color.id)) {
-                    if (canvasImageData[canvasPixelIndex + 3] !== 0 && color !== paintedColor) {
+                    if (Manager.settings.wrongHighlight && canvasImageData[canvasPixelIndex + 3] !== 0 && color !== paintedColor) {
                         // Wrong pixel highlight
                         for (const [dx, dy] of [[0, 1], [1, 0], [2, 1], [1, 2]]) {
                                 const idx = ((cy * Manager.patternSize + dy!) * ctx.canvas.width + cx * Manager.patternSize + dx!) * 4;
