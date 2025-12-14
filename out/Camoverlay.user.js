@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.2.2
+// @version      1.2.3
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -1294,20 +1294,24 @@ async function getMapObject() {
     await new Promise((resolve) => setTimeout(resolve, 500));
     canvas = document.querySelector("canvas.maplibregl-canvas");
   } while (canvas === null);
-  await new Promise((resolve) => setTimeout(resolve, 1500));
-  const ev = new MouseEvent("click", {
-    bubbles: true,
-    cancelable: true,
-    clientX: 0,
-    clientY: 0,
-    button: 0
-  });
-  canvas.dispatchEvent(ev);
-  let popup;
-  do {
-    await new Promise((resolve) => setTimeout(resolve, 50));
-    popup = document.getElementsByClassName("rounded-t-box bg-base-100 border-base-300 sm:rounded-b-box w-full border-t pt-2 sm:mb-3 sm:shadow-xl")[0]?.firstElementChild?.firstElementChild?.lastElementChild;
-  } while (popup === null);
+  let popup = null;
+  while (popup === null) {
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    const ev = new MouseEvent("click", {
+      bubbles: true,
+      cancelable: true,
+      clientX: 0,
+      clientY: 0,
+      button: 0
+    });
+    canvas.dispatchEvent(ev);
+    let i = 0;
+    do {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      popup = document.getElementsByClassName("rounded-t-box bg-base-100 border-base-300 sm:rounded-b-box w-full border-t pt-2 sm:mb-3 sm:shadow-xl")[0]?.firstElementChild?.firstElementChild?.lastElementChild ?? null;
+      i++;
+    } while (popup === null && i < 10);
+  }
   popup.click();
 }
 

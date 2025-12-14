@@ -257,23 +257,28 @@ export async function getMapObject(): Promise<void> {
         canvas = document.querySelector("canvas.maplibregl-canvas") as HTMLCanvasElement | null;
     } while (canvas === null);
 
-    await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    const ev = new MouseEvent("click", {
-        bubbles: true,
-        cancelable: true,
-        clientX: 0,
-        clientY: 0,
-        button: 0
-    });
-    canvas.dispatchEvent(ev);
+    let popup: HTMLButtonElement | null = null;
+    while (popup === null) {
+        await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    // Close popup
-    let popup;
-    do {
-        await new Promise((resolve) => setTimeout(resolve, 50));
-        popup = (document.getElementsByClassName('rounded-t-box bg-base-100 border-base-300 sm:rounded-b-box w-full border-t pt-2 sm:mb-3 sm:shadow-xl')[0]
-            ?.firstElementChild?.firstElementChild?.lastElementChild as HTMLButtonElement);
-    } while (popup === null);
+        const ev = new MouseEvent("click", {
+            bubbles: true,
+            cancelable: true,
+            clientX: 0,
+            clientY: 0,
+            button: 0
+        });
+        canvas.dispatchEvent(ev);
+
+        // Try to close popup
+        let i = 0;
+        do {
+            await new Promise((resolve) => setTimeout(resolve, 50));
+            popup = (document.getElementsByClassName('rounded-t-box bg-base-100 border-base-300 sm:rounded-b-box w-full border-t pt-2 sm:mb-3 sm:shadow-xl')[0]
+                ?.firstElementChild?.firstElementChild?.lastElementChild ?? null) as HTMLButtonElement | null;
+            i++;
+        } while (popup === null && i < 10);
+    }
     popup.click();
 }
