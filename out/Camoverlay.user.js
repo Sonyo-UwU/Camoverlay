@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.2.6
+// @version      1.2.7
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -1178,12 +1178,12 @@ function addColorRow(colorId, progress) {
   });
   switch (Manager.colorSorting) {
     case "Total":
-    case "Original":
-    case "Luminance":
-    case "Hue":
       row.querySelector(".ca-color-count").textContent = progress.total.toString();
       break;
     case "Remaining":
+    case "Original":
+    case "Luminance":
+    case "Hue":
       row.querySelector(".ca-color-count").textContent = (progress.unpainted + progress.wrong).toString();
       break;
     case "Wrong":
