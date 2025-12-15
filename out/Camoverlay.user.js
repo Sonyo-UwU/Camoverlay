@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.2.7
+// @version      1.2.8
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -24,8 +24,8 @@ var TileCoords = class _TileCoords {
   x;
   y;
   constructor(x, y) {
-    this.x = Math.floor(x) % 2048;
-    this.y = Math.floor(y) % 2048;
+    this.x = x % 2048;
+    this.y = y % 2048;
   }
   static toIndex(x, y) {
     return x * 1e4 + y;
@@ -45,8 +45,8 @@ var PixelCoords = class _PixelCoords {
   constructor(tx, ty, px, py) {
     this.tx = (Math.floor(tx) + Math.floor(px / 1e3)) % 2048;
     this.ty = (Math.floor(ty) + Math.floor(py / 1e3)) % 2048;
-    this.px = Math.floor(px) % 1e3;
-    this.py = Math.floor(py) % 1e3;
+    this.px = px % 1e3;
+    this.py = py % 1e3;
   }
   static copy(o) {
     return new _PixelCoords(o.tx, o.ty, o.px, o.py);
@@ -77,6 +77,9 @@ function parsePixelCoordsFromURL(url) {
 function parseTileCoordsFromURL(url) {
   const urlSplitted = url.split("/");
   return new TileCoords(parseInt(urlSplitted[urlSplitted.length - 2] ?? ""), parseInt(urlSplitted[urlSplitted.length - 1] ?? ""));
+}
+function getZoomLevelForPixelSize(x) {
+  return Math.log2(x / 100) + 18.6;
 }
 function twoHexDigits(n) {
   return n < 16 ? "0" + n.toString(16) : n.toString(16);
@@ -636,7 +639,7 @@ var ManagerClass = class _ManagerClass {
     return await canvas.convertToBlob();
   }
   flyTo(coords, zoom = 13) {
-    Manager.wplaceMap?.flyTo({ center: coords.toGeoCoords(), zoom });
+    Manager.wplaceMap?.flyTo({ center: coords.toGeoCoords(false), zoom });
   }
 };
 var Manager = new ManagerClass();
@@ -1212,7 +1215,12 @@ function addTemplateRow(template) {
   row.firstElementChild.id = `ca-template-id-${template.name}`;
   const fly = row.querySelector(".ca-template-fly");
   fly.addEventListener("click", () => {
-    Manager.flyTo(new PixelCoords(template.coords.tx, template.coords.ty, template.coords.px + template.width / 2, template.coords.py + template.height / 2));
+    if (Manager.wplaceMap === null)
+      return;
+    const xZoom = getZoomLevelForPixelSize(Manager.wplaceMap._canvas.width / template.width / 1.1);
+    const yZoom = getZoomLevelForPixelSize(Manager.wplaceMap._canvas.height / template.height / 1.1);
+    const finalZoom = Math.max(10.7, Math.min(18, xZoom, yZoom));
+    Manager.flyTo(new PixelCoords(template.coords.tx, template.coords.ty, template.coords.px + template.width / 2, template.coords.py + template.height / 2), finalZoom);
   });
   const text = row.querySelector(".ca-template-name");
   text.textContent = template.name;

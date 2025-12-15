@@ -21,6 +21,10 @@ export function parseTileCoordsFromURL(url: string): TileCoords {
     );
 }
 
+export function getZoomLevelForPixelSize(x: number): number {
+    return Math.log2(x / 100) + 18.6;
+}
+
 export const enum ColorSortingOptions {
     Total = 'Total',
     Remaining = 'Remaining',

@@ -305,11 +305,7 @@ class ManagerClass {
     }
 
     flyTo(coords: PixelCoords, zoom: number = 13) {
-        Manager.wplaceMap?.flyTo({ center: coords.toGeoCoords(), zoom: zoom });
-        /*Manager.flyCoords = coords;
-        (document.getElementsByClassName('btn btn-sm btn-ghost btn-circle tooltip tooltip-bottom before:-translate-x-1/3')[0] as HTMLElement)?.click();
-        Manager.flyCoords = null;
-        setTimeout(() => (document.getElementsByClassName('group relative')[0]?.lastElementChild?.firstElementChild as HTMLElement | undefined)?.click());*/
+        Manager.wplaceMap?.flyTo({ center: coords.toGeoCoords(false), zoom: zoom });
     }
 }
 
