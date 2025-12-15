@@ -119,6 +119,17 @@ export function addListeners() {
         Manager.tilesInfo.clear();
     });
 
+    document.getElementById('ca-sort-select')!.addEventListener('change', e => {
+        Manager.colorSorting = (e.target as HTMLSelectElement).value as ColorSortingOptions;
+        Manager.storeGlobal();
+        Manager.rebuildColorList();
+    });
+
+    document.getElementById('ca-sort-reverse')!.addEventListener('click', () => {
+        Manager.colorSortingReversed = !Manager.colorSortingReversed;
+        Manager.rebuildColorList();
+    });
+
     document.getElementById('ca-enable-all')!.addEventListener('click', () => {
         Manager.colorsInfo.forEach((colorInfo, id) => {
             colorInfo.enabled = true;
@@ -176,12 +187,6 @@ export function addListeners() {
 
         Manager.tilesInfo.clear();
         Manager.storeGlobal();
-    });
-
-    document.getElementById('ca-sort-select')!.addEventListener('change', e => {
-        Manager.colorSorting = (e.target as HTMLSelectElement).value as ColorSortingOptions;
-        Manager.storeGlobal();
-        Manager.rebuildColorList();
     });
 
     document.getElementById('ca-select-button')!.addEventListener('click', () => {

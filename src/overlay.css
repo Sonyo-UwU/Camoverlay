@@ -186,10 +186,17 @@ div#ca-overlay {
     justify-content: space-between;
     margin-top: 0.5em;
 }
-#ca-sorting > select {
+
+#ca-sort-select {
     flex: 1 0 auto;
     text-align: center;
-    margin-left: 1ch;
+    margin: 0 1ch;
+}
+
+#ca-sort-reverse > svg {
+    width: 65%;
+    stroke: #111;
+    stroke-width: 10px;
 }
 
 #ca-color-list {

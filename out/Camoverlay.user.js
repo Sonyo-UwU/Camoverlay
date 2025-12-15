@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.2.5
+// @version      1.2.6
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -409,7 +409,7 @@ var ManagerClass = class _ManagerClass {
   colorsInfo;
   lastClickedCoords;
   colorSorting;
-  //flyCoords: PixelCoords | null;
+  colorSortingReversed;
   loggedIn;
   settings;
   wplaceMap;
@@ -436,6 +436,7 @@ var ManagerClass = class _ManagerClass {
     this.colorsInfo = /* @__PURE__ */ new Map();
     this.lastClickedCoords = null;
     this.colorSorting = "Total";
+    this.colorSortingReversed = false;
     this.loggedIn = false;
     this.settings = {
       wrongHighlight: false
@@ -458,12 +459,14 @@ var ManagerClass = class _ManagerClass {
     }
     this.colorSorting = stored.colorSorting || "Total";
     document.getElementById("ca-sort-select").value = this.colorSorting;
+    this.colorSortingReversed = stored.colorSortingReversed;
     this.colorsInfo = new Map(stored.enabledColors.map(([id, enabled]) => [id, { enabled, unpainted: null }]));
   }
   storeGlobal(overrides) {
     _ManagerClass.#storeValue("global", {
       inputCoords: overrides?.inputCoords ?? this.getInputCoords(),
       colorSorting: this.colorSorting,
+      colorSortingReversed: this.colorSortingReversed,
       enabledColors: this.colorsInfo.entries().toArray().map(([id, colorInfo]) => [id, colorInfo.enabled])
     });
   }
@@ -567,6 +570,8 @@ var ManagerClass = class _ManagerClass {
         const n = Manager.colorSorting;
         n;
     }
+    if (this.colorSortingReversed)
+      colorsArray.reverse();
     for (const [id, progress] of colorsArray) {
       if (!this.colorsInfo.has(id))
         this.colorsInfo.set(id, { enabled: true, unpainted: null });
@@ -718,6 +723,11 @@ function injectOverlay() {
                 <option value="Luminance">Luminance</option>
                 <option value="Hue">Hue</option>
             </select>
+            <button id="ca-sort-reverse" class="ca-icon-button">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 489.389 489.389">
+                    <path d="M261.294 326.102c-8.3-7.3-21.8-6.2-29.1 2.1l-77 86.8v-346.9c0-11.4-9.4-20.8-20.8-20.8s-20.8 9.4-20.8 20.8v346.9l-77-86.8c-8.3-8.3-20.8-9.4-29.1-2.1-8.3 8.3-9.4 20.8-2.1 29.1l113.4 126.9c8.5 10.5 23.5 8.9 30.2 0l114.4-126.9c7.3-8.2 6.3-21.8-2.1-29.1m222.7-191.4-112.4-126.9c-10-10.1-22.5-10.7-31.2 0l-114.4 126.9c-7.3 8.3-6.2 21.8 2.1 29.1 12.8 10.2 25.7 3.2 29.1-2.1l77-86.8v345.9c0 11.4 9.4 20.8 20.8 20.8s20.8-8.3 20.8-19.8v-346.8l77 86.8c8.3 8.3 20.8 9.4 29.1 2.1 8.3-8.4 9.4-20.9 2.1-29.2"></path>
+                </svg>
+            </button>
         </div>
         <div id="ca-color-list-buttons">
             <button id="ca-enable-all" class="tooltip">
@@ -951,10 +961,17 @@ div#ca-overlay {
     justify-content: space-between;
     margin-top: 0.5em;
 }
-#ca-sorting > select {
+
+#ca-sort-select {
     flex: 1 0 auto;
     text-align: center;
-    margin-left: 1ch;
+    margin: 0 1ch;
+}
+
+#ca-sort-reverse > svg {
+    width: 65%;
+    stroke: #111;
+    stroke-width: 10px;
 }
 
 #ca-color-list {
@@ -1413,6 +1430,15 @@ function addListeners() {
     Manager.settings.wrongHighlight = e.target.checked;
     Manager.tilesInfo.clear();
   });
+  document.getElementById("ca-sort-select").addEventListener("change", (e) => {
+    Manager.colorSorting = e.target.value;
+    Manager.storeGlobal();
+    Manager.rebuildColorList();
+  });
+  document.getElementById("ca-sort-reverse").addEventListener("click", () => {
+    Manager.colorSortingReversed = !Manager.colorSortingReversed;
+    Manager.rebuildColorList();
+  });
   document.getElementById("ca-enable-all").addEventListener("click", () => {
     Manager.colorsInfo.forEach((colorInfo, id) => {
       colorInfo.enabled = true;
@@ -1456,11 +1482,6 @@ function addListeners() {
       displayStatus(`${color.name} is not in palette`);
     Manager.tilesInfo.clear();
     Manager.storeGlobal();
-  });
-  document.getElementById("ca-sort-select").addEventListener("change", (e) => {
-    Manager.colorSorting = e.target.value;
-    Manager.storeGlobal();
-    Manager.rebuildColorList();
   });
   document.getElementById("ca-select-button").addEventListener("click", () => {
     document.getElementById("ca-file-input").click();

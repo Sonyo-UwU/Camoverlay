@@ -5,7 +5,7 @@ import { ColorInfo, JsonifiedValue, TileIndex, TileInfo, TileProgress, WplaceCol
 import { ColorSortingOptions, computeHue, computeLuminance, rgbColorMap } from './utils';
 
 declare type StorageValues = {
-    'global': { inputCoords: PixelCoords | null, colorSorting: ColorSortingOptions, enabledColors: [WplaceColorId, boolean][] },
+    'global': { inputCoords: PixelCoords | null, colorSorting: ColorSortingOptions, colorSortingReversed: boolean, enabledColors: [WplaceColorId, boolean][] },
     'templates': Template[];
 };
 
@@ -19,7 +19,7 @@ class ManagerClass {
     colorsInfo: Map<WplaceColorId, ColorInfo>;
     lastClickedCoords: PixelCoords | null;
     colorSorting: ColorSortingOptions;
-    //flyCoords: PixelCoords | null;
+    colorSortingReversed: boolean;
     loggedIn: boolean;
     settings: { wrongHighlight: boolean; };
     wplaceMap: WplaceMap | null;
@@ -51,7 +51,7 @@ class ManagerClass {
         this.colorsInfo = new Map();
         this.lastClickedCoords = null;
         this.colorSorting = ColorSortingOptions.Total;
-        //this.flyCoords = null;
+        this.colorSortingReversed = false;
         this.loggedIn = false;
         this.settings = {
             wrongHighlight: false
@@ -80,6 +80,8 @@ class ManagerClass {
         this.colorSorting = stored.colorSorting || ColorSortingOptions.Total;
         (document.getElementById('ca-sort-select') as HTMLSelectElement).value = this.colorSorting;
 
+        this.colorSortingReversed = stored.colorSortingReversed;
+
         this.colorsInfo = new Map(stored.enabledColors.map(([id, enabled]) => [id, { enabled: enabled, unpainted: null }]));
     }
 
@@ -87,6 +89,7 @@ class ManagerClass {
         ManagerClass.#storeValue('global', {
             inputCoords: overrides?.inputCoords ?? this.getInputCoords(),
             colorSorting: this.colorSorting,
+            colorSortingReversed: this.colorSortingReversed,
             enabledColors: this.colorsInfo.entries().toArray().map(([id, colorInfo]) => [id, colorInfo.enabled])
         });
     }
@@ -211,6 +214,9 @@ class ManagerClass {
                 const n: never = Manager.colorSorting;
                 n;
         }
+
+        if (this.colorSortingReversed)
+            colorsArray.reverse();
 
         for (const [id, progress] of colorsArray) {
             if (!this.colorsInfo.has(id))
