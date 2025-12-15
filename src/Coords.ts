@@ -1,4 +1,4 @@
-import { JsonifiedValue, TileIndex } from './types';
+import { JsonifiedValue, PixelIndex, TileIndex } from './types';
 
 export class TileCoords {
     readonly x: number;
@@ -48,6 +48,18 @@ export class PixelCoords {
             relativeX * 360 - 180,
             360 * Math.atan(Math.exp((relativeY * 2 - 1) * Math.PI)) / Math.PI - 90
         ];
+    }
+
+    static toIndex(tx: number, ty: number, px: number, py: number): PixelIndex {
+        return (tx * 10000 + ty) * 1000000 + (px * 1000 + py);
+    }
+
+    static fromIndex(i: PixelIndex): PixelCoords {
+        return new PixelCoords(Math.floor(i / 10000 / 1000000), Math.floor(i / 1000000) % 10000, Math.floor(i / 1000) % 1000, i % 1000);
+    }
+
+    toIndex(): PixelIndex {
+        return PixelCoords.toIndex(this.tx, this.ty, this.px, this.py);
     }
 
     toTileIndex(): TileIndex {

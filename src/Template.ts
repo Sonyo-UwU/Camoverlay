@@ -193,23 +193,25 @@ export default class Template {
                         colors.set(color.id, progress);
                     }
 
+                    const pixelTileIndex = PixelCoords.toIndex(tile.x, tile.y, cx, cy);
+
                     progress.total++;
                     if (canvasImageData[canvasPixelIndex + 3] === 0) {
                         // Unpainted
                         progress.unpainted++;
 
-                        if (colorInfo.unpainted === null)
-                            colorInfo.unpainted = new PixelCoords(tile.x, tile.y, cx, cy);
+                        colorInfo.unpainted.add(pixelTileIndex);
                     }
                     else if (color !== paintedColor) {
                         // Wrong
                         progress.wrong++;
-                        colorInfo.unpainted = new PixelCoords(tile.x, tile.y, cx, cy);
+
+                        colorInfo.wrong.add(pixelTileIndex);
                     }
-                    else if (colorInfo.unpainted?.tx === tile.x && colorInfo.unpainted?.ty === tile.y &&
+                    else {
                         // Correct
-                        colorInfo.unpainted?.px === cx && colorInfo.unpainted?.py === cy) {
-                        colorInfo.unpainted = null;
+                        colorInfo.unpainted.delete(pixelTileIndex);
+                        colorInfo.wrong.delete(pixelTileIndex);
                     }
                 }
 

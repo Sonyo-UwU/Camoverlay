@@ -1,7 +1,7 @@
 import { PixelCoords, TileCoords } from './Coords';
 import { addColorRow, addTemplateRow, displayStatus, removeTemplateRow } from './display';
 import Template from './Template';
-import { ColorInfo, JsonifiedValue, TileIndex, TileInfo, TileProgress, WplaceColorId, WplaceMap } from './types';
+import { ColorInfo, JsonifiedValue, PixelIndex, TileIndex, TileInfo, TileProgress, WplaceColorId, WplaceMap } from './types';
 import { ColorSortingOptions, computeHue, computeLuminance, rgbColorMap } from './utils';
 
 declare type StorageValues = {
@@ -82,7 +82,7 @@ class ManagerClass {
 
         this.colorSortingReversed = stored.colorSortingReversed;
 
-        this.colorsInfo = new Map(stored.enabledColors.map(([id, enabled]) => [id, { enabled: enabled, unpainted: null }]));
+        this.colorsInfo = new Map(stored.enabledColors.map(([id, enabled]) => [id, { enabled: enabled, wrong: new Set<PixelIndex>(), unpainted: new Set<PixelIndex>() }]));
     }
 
     storeGlobal(overrides?: Partial<StorageValues['global']>): void {
@@ -220,7 +220,7 @@ class ManagerClass {
 
         for (const [id, progress] of colorsArray) {
             if (!this.colorsInfo.has(id))
-                this.colorsInfo.set(id, { enabled: true, unpainted: null });
+                this.colorsInfo.set(id, { enabled: true, wrong: new Set<PixelIndex>(), unpainted: new Set<PixelIndex>() });
             addColorRow(id, progress);
         }
     }

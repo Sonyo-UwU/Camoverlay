@@ -1,8 +1,8 @@
 ﻿import { PixelCoords } from './Coords';
 import { Manager } from './Manager';
 import Template from './Template';
-import type { TileProgress, UserData, WplaceColorId } from './types';
-import { ColorSortingOptions, getZoomLevelForPixelSize, otherColor, rgbColorMap, rgbToCss } from './utils';
+import type { PixelIndex, TileProgress, UserData, WplaceColorId } from './types';
+import { ColorSortingOptions, getZoomLevelForPixelSize, otherColor, pickRandomSet, rgbColorMap, rgbToCss } from './utils';
 
 declare function GM_addStyle(css: string): void;
 
@@ -90,9 +90,22 @@ export function addColorRow(colorId: WplaceColorId, progress: TileProgress): voi
         });
     });
     paint.addEventListener('dblclick', () => {
-        const coords = Manager.colorsInfo.get(colorId)?.unpainted;
-        if (coords)
-            Manager.flyTo(coords, 16.5);
+        const colorInfo = Manager.colorsInfo.get(colorId);
+        if (colorInfo === undefined)
+            return;
+
+        let picked: PixelIndex;
+
+        if (colorInfo.wrong.size > 0)
+            picked = pickRandomSet(colorInfo.wrong)!;
+        else if (colorInfo.unpainted.size > 0)
+            picked = pickRandomSet(colorInfo.unpainted)!;
+        else
+            return;
+
+        const coords = PixelCoords.fromIndex(picked);
+
+        Manager.flyTo(coords, 16.5);
     });
 
     switch (Manager.colorSorting) {

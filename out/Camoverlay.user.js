@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.2.8
+// @version      1.2.9
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -60,6 +60,15 @@ var PixelCoords = class _PixelCoords {
       360 * Math.atan(Math.exp((relativeY * 2 - 1) * Math.PI)) / Math.PI - 90
     ];
   }
+  static toIndex(tx, ty, px, py) {
+    return (tx * 1e4 + ty) * 1e6 + (px * 1e3 + py);
+  }
+  static fromIndex(i) {
+    return new _PixelCoords(Math.floor(i / 1e4 / 1e6), Math.floor(i / 1e6) % 1e4, Math.floor(i / 1e3) % 1e3, i % 1e3);
+  }
+  toIndex() {
+    return _PixelCoords.toIndex(this.tx, this.ty, this.px, this.py);
+  }
   toTileIndex() {
     return TileCoords.toIndex(this.tx, this.ty);
   }
@@ -80,6 +89,14 @@ function parseTileCoordsFromURL(url) {
 }
 function getZoomLevelForPixelSize(x) {
   return Math.log2(x / 100) + 18.6;
+}
+function pickRandomSet(s) {
+  const index = Math.floor(Math.random() * s.size);
+  let cntr = 0;
+  for (const key of s.values())
+    if (cntr++ === index)
+      return key;
+  return null;
 }
 function twoHexDigits(n) {
   return n < 16 ? "0" + n.toString(16) : n.toString(16);
@@ -344,17 +361,17 @@ var Template = class _Template {
             };
             colors.set(color.id, progress);
           }
+          const pixelTileIndex = PixelCoords.toIndex(tile.x, tile.y, cx, cy);
           progress.total++;
           if (canvasImageData[canvasPixelIndex + 3] === 0) {
             progress.unpainted++;
-            if (colorInfo.unpainted === null)
-              colorInfo.unpainted = new PixelCoords(tile.x, tile.y, cx, cy);
+            colorInfo.unpainted.add(pixelTileIndex);
           } else if (color !== paintedColor) {
             progress.wrong++;
-            colorInfo.unpainted = new PixelCoords(tile.x, tile.y, cx, cy);
-          } else if (colorInfo.unpainted?.tx === tile.x && colorInfo.unpainted?.ty === tile.y && // Correct
-          colorInfo.unpainted?.px === cx && colorInfo.unpainted?.py === cy) {
-            colorInfo.unpainted = null;
+            colorInfo.wrong.add(pixelTileIndex);
+          } else {
+            colorInfo.unpainted.delete(pixelTileIndex);
+            colorInfo.wrong.delete(pixelTileIndex);
           }
         }
         if (colorInfo.enabled) {
@@ -463,7 +480,7 @@ var ManagerClass = class _ManagerClass {
     this.colorSorting = stored.colorSorting || "Total";
     document.getElementById("ca-sort-select").value = this.colorSorting;
     this.colorSortingReversed = stored.colorSortingReversed;
-    this.colorsInfo = new Map(stored.enabledColors.map(([id, enabled]) => [id, { enabled, unpainted: null }]));
+    this.colorsInfo = new Map(stored.enabledColors.map(([id, enabled]) => [id, { enabled, wrong: /* @__PURE__ */ new Set(), unpainted: /* @__PURE__ */ new Set() }]));
   }
   storeGlobal(overrides) {
     _ManagerClass.#storeValue("global", {
@@ -577,7 +594,7 @@ var ManagerClass = class _ManagerClass {
       colorsArray.reverse();
     for (const [id, progress] of colorsArray) {
       if (!this.colorsInfo.has(id))
-        this.colorsInfo.set(id, { enabled: true, unpainted: null });
+        this.colorsInfo.set(id, { enabled: true, wrong: /* @__PURE__ */ new Set(), unpainted: /* @__PURE__ */ new Set() });
       addColorRow(id, progress);
     }
   }
@@ -1175,9 +1192,18 @@ function addColorRow(colorId, progress) {
     });
   });
   paint.addEventListener("dblclick", () => {
-    const coords = Manager.colorsInfo.get(colorId)?.unpainted;
-    if (coords)
-      Manager.flyTo(coords, 16.5);
+    const colorInfo = Manager.colorsInfo.get(colorId);
+    if (colorInfo === void 0)
+      return;
+    let picked;
+    if (colorInfo.wrong.size > 0)
+      picked = pickRandomSet(colorInfo.wrong);
+    else if (colorInfo.unpainted.size > 0)
+      picked = pickRandomSet(colorInfo.unpainted);
+    else
+      return;
+    const coords = PixelCoords.fromIndex(picked);
+    Manager.flyTo(coords, 16.5);
   });
   switch (Manager.colorSorting) {
     case "Total":

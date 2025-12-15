@@ -25,6 +25,22 @@ export function getZoomLevelForPixelSize(x: number): number {
     return Math.log2(x / 100) + 18.6;
 }
 
+export function pickRandomArray<T>(a: T[]): T | null {
+    if (a.length === 0)
+        return null;
+
+    return a[Math.floor(Math.random() * a.length)]!;
+}
+
+export function pickRandomSet<T>(s: Set<T>): T | null {
+    const index = Math.floor(Math.random() * s.size);
+    let cntr = 0;
+    for (const key of s.values())
+        if (cntr++ === index)
+            return key;
+    return null;
+}
+
 export const enum ColorSortingOptions {
     Total = 'Total',
     Remaining = 'Remaining',

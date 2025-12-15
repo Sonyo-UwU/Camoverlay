@@ -1,8 +1,7 @@
-import { PixelCoords } from './Coords';
-
 declare const __brand: unique symbol;
 
 export type TileIndex = number;
+export type PixelIndex = number;
 
 export type TileInfo = {
     lastModified: EpochTimeStamp,
@@ -11,7 +10,8 @@ export type TileInfo = {
 
 export type ColorInfo = {
     enabled: boolean,
-    unpainted: PixelCoords | null
+    wrong: Set<PixelIndex>,
+    unpainted: Set<PixelIndex>
 };
 
 export type TileProgress = {
