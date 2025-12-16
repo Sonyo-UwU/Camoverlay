@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.3.3
+// @version      1.3.4
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -354,7 +354,9 @@ function addListeners() {
   document.getElementById("ca-enable-all").addEventListener("click", () => {
     Manager.colorsInfo.forEach((colorInfo, id) => {
       colorInfo.enabled = true;
-      (document.getElementById("ca-color-id-" + id)?.firstElementChild).checked = true;
+      const checkbox = document.getElementById("ca-color-id-" + id)?.firstElementChild;
+      if (checkbox !== void 0)
+        checkbox.checked = true;
     });
     Manager.tilesInfo.clear();
     Manager.storeGlobal();
@@ -362,7 +364,9 @@ function addListeners() {
   document.getElementById("ca-disable-all").addEventListener("click", () => {
     Manager.colorsInfo.forEach((colorInfo, id) => {
       colorInfo.enabled = false;
-      (document.getElementById("ca-color-id-" + id)?.firstElementChild).checked = false;
+      const checkbox = document.getElementById("ca-color-id-" + id)?.firstElementChild;
+      if (checkbox !== void 0)
+        checkbox.checked = false;
     });
     Manager.tilesInfo.clear();
     Manager.storeGlobal();
@@ -383,11 +387,16 @@ function addListeners() {
       if (id === color.id) {
         inPalette = true;
         colorInfo.enabled = true;
-        checkbox.checked = true;
-        checkbox.scrollIntoView({ "behavior": "smooth", "block": "center" });
+        if (checkbox !== void 0) {
+          checkbox.checked = true;
+          checkbox.scrollIntoView({ "behavior": "smooth", "block": "center" });
+        } else {
+          displayStatus("Selected color is already completed");
+        }
       } else {
         colorInfo.enabled = false;
-        checkbox.checked = false;
+        if (checkbox !== void 0)
+          checkbox.checked = false;
       }
     });
     if (!inPalette)
@@ -748,6 +757,10 @@ var ManagerClass = class _ManagerClass {
         this.settings.colorSortingReversed = stored.settings.colorSortingReversed;
       if (stored.settings.wrongHighlight !== void 0)
         this.settings.wrongHighlight = stored.settings.wrongHighlight;
+      document.getElementById("ca-setting-wrong-highlight").checked = this.settings.wrongHighlight;
+      if (stored.settings.hideCompleted !== void 0)
+        this.settings.hideCompleted = stored.settings.hideCompleted;
+      document.getElementById("ca-setting-hide-completed").checked = this.settings.hideCompleted;
     }
     if (stored.enabledColors !== void 0)
       this.colorsInfo = new Map(stored.enabledColors.map(([id, enabled]) => [id, { enabled, wrong: /* @__PURE__ */ new Set(), unpainted: /* @__PURE__ */ new Set() }]));

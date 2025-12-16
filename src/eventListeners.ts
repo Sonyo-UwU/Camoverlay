@@ -148,7 +148,9 @@ export function addListeners() {
     document.getElementById('ca-enable-all')!.addEventListener('click', () => {
         Manager.colorsInfo.forEach((colorInfo, id) => {
             colorInfo.enabled = true;
-            (document.getElementById('ca-color-id-' + id)?.firstElementChild as HTMLInputElement).checked = true;
+            const checkbox = document.getElementById('ca-color-id-' + id)?.firstElementChild as HTMLInputElement | undefined;
+            if (checkbox !== undefined)
+                checkbox.checked = true;
         });
 
         Manager.tilesInfo.clear();
@@ -157,7 +159,9 @@ export function addListeners() {
     document.getElementById('ca-disable-all')!.addEventListener('click', () => {
         Manager.colorsInfo.forEach((colorInfo, id) => {
             colorInfo.enabled = false;
-            (document.getElementById('ca-color-id-' + id)?.firstElementChild as HTMLInputElement).checked = false;
+            const checkbox = document.getElementById('ca-color-id-' + id)?.firstElementChild as HTMLInputElement | undefined;
+            if (checkbox !== undefined)
+                checkbox.checked = false;
         });
 
         Manager.tilesInfo.clear();
@@ -183,17 +187,23 @@ export function addListeners() {
 
         // Update palette
         Manager.colorsInfo.forEach((colorInfo, id) => {
-            const checkbox = document.getElementById('ca-color-id-' + id)?.firstElementChild as HTMLInputElement;
+            const checkbox = document.getElementById('ca-color-id-' + id)?.firstElementChild as HTMLInputElement | undefined;
 
             if (id === color.id) {
                 inPalette = true;
                 colorInfo.enabled = true;
-                checkbox.checked = true;
-                checkbox.scrollIntoView({ 'behavior': 'smooth', 'block': 'center' });
+                if (checkbox !== undefined) {
+                    checkbox.checked = true;
+                    checkbox.scrollIntoView({ 'behavior': 'smooth', 'block': 'center' });
+                }
+                else {
+                    displayStatus('Selected color is already completed');
+                }
             }
             else {
                 colorInfo.enabled = false;
-                checkbox.checked = false;
+                if (checkbox !== undefined)
+                    checkbox.checked = false;
             }
         });
 

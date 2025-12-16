@@ -88,6 +88,11 @@ class ManagerClass {
 
             if (stored.settings.wrongHighlight !== undefined)
                 this.settings.wrongHighlight = stored.settings.wrongHighlight;
+            (document.getElementById('ca-setting-wrong-highlight') as HTMLInputElement).checked = this.settings.wrongHighlight;
+
+            if (stored.settings.hideCompleted !== undefined)
+                this.settings.hideCompleted = stored.settings.hideCompleted;
+            (document.getElementById('ca-setting-hide-completed') as HTMLInputElement).checked = this.settings.hideCompleted;
         }
 
         if (stored.enabledColors !== undefined)
