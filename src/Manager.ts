@@ -201,7 +201,7 @@ class ManagerClass {
         }
 
         const colorsArray = colorProgress.entries().toArray();
-        switch (Manager.settings.colorSorting) {
+        switch (this.settings.colorSorting) {
             case ColorSortingOptions.Total:
                 colorsArray.sort((a, b) => b[1].total - a[1].total);
                 break;
@@ -222,7 +222,7 @@ class ManagerClass {
                 break;
 
             default:
-                const n: never = Manager.settings.colorSorting;
+                const n: never = this.settings.colorSorting;
                 n;
         }
 
@@ -232,7 +232,7 @@ class ManagerClass {
         for (const [id, progress] of colorsArray) {
             if (!this.colorsInfo.has(id))
                 this.colorsInfo.set(id, { enabled: true, wrong: new Set<PixelIndex>(), unpainted: new Set<PixelIndex>() });
-            if (!Manager.settings.hideCompleted || progress.unpainted + progress.wrong > 0)
+            if (!this.settings.hideCompleted || (this.settings.colorSorting === ColorSortingOptions.Wrong ? 0 : progress.unpainted) + progress.wrong > 0)
                 addColorRow(id, progress);
         }
     }
@@ -291,7 +291,7 @@ class ManagerClass {
 
     async drawOnTile(tile: TileCoords, blob: Blob, trackProgress: boolean): Promise<Blob> {
         let allDisabled = true;
-        for (const enabled of Manager.colorsInfo.values()) {
+        for (const enabled of this.colorsInfo.values()) {
             if (enabled) {
                 allDisabled = false;
                 break;

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.3.2
+// @version      1.3.3
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -838,7 +838,7 @@ var ManagerClass = class _ManagerClass {
         this.colorsInfo.delete(id);
     }
     const colorsArray = colorProgress.entries().toArray();
-    switch (Manager.settings.colorSorting) {
+    switch (this.settings.colorSorting) {
       case "Total":
         colorsArray.sort((a, b) => b[1].total - a[1].total);
         break;
@@ -858,7 +858,7 @@ var ManagerClass = class _ManagerClass {
         colorsArray.sort((a, b) => computeHue(b[0]) - computeHue(a[0]));
         break;
       default:
-        const n = Manager.settings.colorSorting;
+        const n = this.settings.colorSorting;
         n;
     }
     if (this.settings.colorSortingReversed)
@@ -866,7 +866,7 @@ var ManagerClass = class _ManagerClass {
     for (const [id, progress] of colorsArray) {
       if (!this.colorsInfo.has(id))
         this.colorsInfo.set(id, { enabled: true, wrong: /* @__PURE__ */ new Set(), unpainted: /* @__PURE__ */ new Set() });
-      if (!Manager.settings.hideCompleted || progress.unpainted + progress.wrong > 0)
+      if (!this.settings.hideCompleted || (this.settings.colorSorting === "Wrong" ? 0 : progress.unpainted) + progress.wrong > 0)
         addColorRow(id, progress);
     }
   }
@@ -909,7 +909,7 @@ var ManagerClass = class _ManagerClass {
   }
   async drawOnTile(tile, blob, trackProgress) {
     let allDisabled = true;
-    for (const enabled of Manager.colorsInfo.values()) {
+    for (const enabled of this.colorsInfo.values()) {
       if (enabled) {
         allDisabled = false;
         break;
