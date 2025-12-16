@@ -195,6 +195,9 @@ export default class Template {
                 let color = getColor(this.imageData[imagePixelIndex + 0]!, this.imageData[imagePixelIndex + 1]!, this.imageData[imagePixelIndex + 2]!);
                 const paintedColor = getClosestColor(canvasImageData[canvasPixelIndex + 0]!, canvasImageData[canvasPixelIndex + 1]!, canvasImageData[canvasPixelIndex + 2]!);
 
+
+                const pixelTileIndex = PixelCoords.toIndex(tile.x, tile.y, cx, cy);
+
                 const pixelModifyIndex = this.modifyPixels.findIndex(c => c.tx === tile.x && c.ty === tile.y && c.px === cx && c.py === cy);
                 if (pixelModifyIndex !== -1) {
                     this.modifyPixels.splice(pixelModifyIndex, 1);
@@ -202,11 +205,16 @@ export default class Template {
                     if (color !== paintedColor) {
                         needToStoreTemplates = true;
 
+                        Manager.colorsInfo.get(color.id)?.unpainted.delete(pixelTileIndex);
+                        Manager.colorsInfo.get(color.id)?.wrong.delete(pixelTileIndex);
+
                         color = paintedColor;
                         this.imageData[imagePixelIndex + 0] = canvasImageData[canvasPixelIndex + 0]!;
                         this.imageData[imagePixelIndex + 1] = canvasImageData[canvasPixelIndex + 1]!;
                         this.imageData[imagePixelIndex + 2] = canvasImageData[canvasPixelIndex + 2]!;
                         this.imageData[imagePixelIndex + 3] = canvasImageData[canvasPixelIndex + 3]!;
+
+
 
                         if (this.imageData[imagePixelIndex + 3]! === 0)
                             continue;
@@ -230,8 +238,6 @@ export default class Template {
                         };
                         colors.set(color.id, progress);
                     }
-
-                    const pixelTileIndex = PixelCoords.toIndex(tile.x, tile.y, cx, cy);
 
                     progress.total++;
                     if (canvasImageData[canvasPixelIndex + 3] === 0) {

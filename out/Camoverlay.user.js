@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.3.0
+// @version      1.3.1
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -576,11 +576,14 @@ var Template = class _Template {
           continue;
         let color = getColor(this.imageData[imagePixelIndex + 0], this.imageData[imagePixelIndex + 1], this.imageData[imagePixelIndex + 2]);
         const paintedColor = getClosestColor(canvasImageData[canvasPixelIndex + 0], canvasImageData[canvasPixelIndex + 1], canvasImageData[canvasPixelIndex + 2]);
+        const pixelTileIndex = PixelCoords.toIndex(tile.x, tile.y, cx, cy);
         const pixelModifyIndex = this.modifyPixels.findIndex((c) => c.tx === tile.x && c.ty === tile.y && c.px === cx && c.py === cy);
         if (pixelModifyIndex !== -1) {
           this.modifyPixels.splice(pixelModifyIndex, 1);
           if (color !== paintedColor) {
             needToStoreTemplates = true;
+            Manager.colorsInfo.get(color.id)?.unpainted.delete(pixelTileIndex);
+            Manager.colorsInfo.get(color.id)?.wrong.delete(pixelTileIndex);
             color = paintedColor;
             this.imageData[imagePixelIndex + 0] = canvasImageData[canvasPixelIndex + 0];
             this.imageData[imagePixelIndex + 1] = canvasImageData[canvasPixelIndex + 1];
@@ -604,7 +607,6 @@ var Template = class _Template {
             };
             colors.set(color.id, progress);
           }
-          const pixelTileIndex = PixelCoords.toIndex(tile.x, tile.y, cx, cy);
           progress.total++;
           if (canvasImageData[canvasPixelIndex + 3] === 0) {
             progress.unpainted++;
