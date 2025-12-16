@@ -168,7 +168,7 @@ class ManagerClass {
             list.firstChild!.remove();
 
         const colorProgress = new Map<WplaceColorId, TileProgress>();
-        
+
         for (const template of this.templates) {
             if (template.enabled)
                 for (const [_, colors] of template.tiles)
@@ -304,8 +304,59 @@ class ManagerClass {
         return await canvas.convertToBlob();
     }
 
+    /* Snipet inspired from https://github.com/t-wy/Wplace-BlueMarble-Userscripts/tree/custom-improve */
+    async getMapObject(): Promise<void> {
+        // Hook Map.values function
+        const origMapValues = Map.prototype.values;
+        const hookedMapValues = function (this: Map<any, any>): MapIterator<any> {
+            this.forEach(v => {
+                if (v?.maps instanceof Set)
+                    (v.maps as Set<any>).forEach(x => {
+                        if (x?.flyTo) {
+                            Manager.wplaceMap = x;
+                            Map.prototype.values = origMapValues;
+                        }
+                    });
+            });
+            return origMapValues.call(this);
+        };
+        Map.prototype.values = hookedMapValues;
+
+        // Click on the canvas
+        let canvas;
+        do {
+            await new Promise((resolve) => setTimeout(resolve, 500));
+            canvas = document.querySelector("canvas.maplibregl-canvas") as HTMLCanvasElement | null;
+        } while (canvas === null);
+
+
+        let popup: HTMLButtonElement | null = null;
+        while (popup === null) {
+            await new Promise((resolve) => setTimeout(resolve, 1500));
+
+            const ev = new MouseEvent("click", {
+                bubbles: true,
+                cancelable: true,
+                clientX: 0,
+                clientY: 0,
+                button: 0
+            });
+            canvas.dispatchEvent(ev);
+
+            // Try to close popup
+            let i = 0;
+            do {
+                await new Promise((resolve) => setTimeout(resolve, 50));
+                popup = (document.getElementsByClassName('rounded-t-box bg-base-100 border-base-300 sm:rounded-b-box w-full border-t pt-2 sm:mb-3 sm:shadow-xl')[0]
+                    ?.firstElementChild?.firstElementChild?.lastElementChild ?? null) as HTMLButtonElement | null;
+                i++;
+            } while (popup === null && i < 10);
+        }
+        popup.click();
+    }
+
     flyTo(coords: PixelCoords, zoom: number = 13) {
-        Manager.wplaceMap?.flyTo({ center: coords.toGeoCoords(false), zoom: zoom });
+        this.wplaceMap?.flyTo({ center: coords.toGeoCoords(false), zoom: zoom });
     }
 }
 

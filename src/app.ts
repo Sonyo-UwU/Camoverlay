@@ -1,4 +1,4 @@
-import { displayStatus, displayTileCoords, displayUserData, getMapObject, importFont, injectOverlay } from './display';
+import { displayStatus, displayTileCoords, displayUserData, importFont, injectOverlay } from './display';
 import { addListeners } from './eventListeners';
 import { Manager } from './Manager';
 import type { ScriptGetInfo, UserData } from './types';
@@ -8,7 +8,7 @@ declare const GM_info: ScriptGetInfo;
 declare const unsafeWindow: typeof window;
 
 
-getMapObject();
+Manager.getMapObject();
 
 importFont();
 injectOverlay();
