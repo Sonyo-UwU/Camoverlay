@@ -1,5 +1,6 @@
 import { PixelCoords, TileCoords } from './Coords';
 import { addColorRow, addTemplateRow, displayStatus, removeTemplateRow } from './display';
+import { addCanvasListeners } from './eventListeners';
 import Template from './Template';
 import { ColorInfo, JsonifiedValue, PixelIndex, TileIndex, TileInfo, TileProgress, WplaceColorId, WplaceMap } from './types';
 import { ColorSortingOptions, computeHue, computeLuminance, rgbColorMap } from './utils';
@@ -324,24 +325,30 @@ class ManagerClass {
 
         // Click on the canvas
         let canvas;
+        let i = 0;
         do {
             await new Promise((resolve) => setTimeout(resolve, 500));
             canvas = document.querySelector("canvas.maplibregl-canvas") as HTMLCanvasElement | null;
-        } while (canvas === null);
+            i++;
+        } while (canvas === null && i < 20);
 
+        if (canvas === null)
+            return;
+
+        addCanvasListeners(canvas);
 
         let popup: HTMLButtonElement | null = null;
         while (popup === null) {
             await new Promise((resolve) => setTimeout(resolve, 1500));
 
-            const ev = new MouseEvent("click", {
+            const clickEvent = new MouseEvent('click', {
                 bubbles: true,
                 cancelable: true,
                 clientX: 0,
                 clientY: 0,
                 button: 0
             });
-            canvas.dispatchEvent(ev);
+            canvas.dispatchEvent(clickEvent);
 
             // Try to close popup
             let i = 0;

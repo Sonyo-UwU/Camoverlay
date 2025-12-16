@@ -20,6 +20,9 @@ export function addListeners() {
                 document.getElementById('ca-disable-all')!.click();
                 break;
             case 'n':
+                if (!Manager.loggedIn)
+                    break;
+
                 const colorList = document.getElementById('ca-color-list')!;
                 for (let i = 0; i < colorList.childElementCount; i++) {
                     if ((colorList.children[i]!.firstElementChild as HTMLInputElement).checked) {
@@ -35,6 +38,9 @@ export function addListeners() {
                 }
                 break;
             case 'N':
+                if (!Manager.loggedIn)
+                    break;
+
                 const colorListR = document.getElementById('ca-color-list')!;
                 for (let i = 0; i < colorListR.childElementCount; i++) {
                     if ((colorListR.children[i]!.firstElementChild as HTMLInputElement).checked) {
@@ -225,3 +231,37 @@ export function addListeners() {
         window.open('https://pepoafonso.github.io/color_converter_wplace/', '_blank', 'noopener noreferrer');
     });
 };
+
+export function addCanvasListeners(canvas: HTMLCanvasElement) {
+    canvas.addEventListener('auxclick', e => {
+        // Pick color with middle click
+        if (e.button === 1) {
+            if (!Manager.loggedIn)
+                return;
+
+            // Click paint button if needed
+            (document.getElementsByClassName('btn btn-primary btn-lg sm:btn-xl relative z-30')[0] as HTMLElement | undefined)?.click();
+
+            setTimeout(() => {
+                // Press the i key
+                const keypressEvent = new KeyboardEvent("keypress", {
+                    bubbles: true,
+                    cancelable: true,
+                    key: 'i',
+                    code: 'KeyI'
+                });
+                document.activeElement!.dispatchEvent(keypressEvent);
+
+                // Click canvas
+                const clickEvent = new MouseEvent('click', {
+                    bubbles: true,
+                    cancelable: true,
+                    clientX: e.clientX,
+                    clientY: e.clientY,
+                    button: 0
+                });
+                canvas.dispatchEvent(clickEvent);
+            });
+        }
+    });
+}
