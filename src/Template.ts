@@ -1,10 +1,10 @@
 import { PixelCoords, TileCoords } from './Coords';
 import { updateTemplatePixelCount } from './display';
 import { Manager } from './Manager';
-import { JsonifiedValue, TileIndex, TileProgress, WplaceColorId } from './types';
+import { JsonifiedValue, PixelIndex, TileIndex, TileProgress, WplaceColorId } from './types';
 import { getClosestColor, getColor, otherColor } from './utils';
 
-type StoredTemplate = Omit<JsonifiedValue<Omit<Template, 'toJSON'>>, 'imageData' | 'tiles' | 'totalProgress'> & {
+type StoredTemplate = Omit<JsonifiedValue<Omit<Template, 'toJSON'>>, 'imageData' | 'tiles' | 'totalProgress' | 'modifyPixels'> & {
     tiles: [TileIndex, [WplaceColorId, number][]][];
 };
 
@@ -35,6 +35,7 @@ export default class Template {
     totalProgress: TileProgress;
     enabled: boolean;
     base64Data: string;
+    modifyPixels: PixelCoords[];
 
 
     constructor(name: string, coords: PixelCoords, width: number, height: number) {
@@ -51,6 +52,7 @@ export default class Template {
         this.tiles = new Map();
         this.enabled = true;
         this.base64Data = '';
+        this.modifyPixels = [];
     }
 
     static async fromFile(name: string, coords: PixelCoords, file: File): Promise<Template> {
@@ -109,17 +111,14 @@ export default class Template {
         template.imageData = imageData.data;
 
         // Compute base64 data
-        let binary = '';
-        for (let i = 0; i < template.imageData.length; i++) {
-            binary += String.fromCharCode(template.imageData[i]!);
-        }
-        template.base64Data = LZString.compress(btoa(binary)); // Binary to ASCII
+        template.computeBase64Data();
 
         return template;
     }
 
     static async fromStorage(stored: StoredTemplate): Promise<Template> {
         const template = new Template(stored.name, PixelCoords.copy(stored.coords), stored.width, stored.height);
+        template.enabled = stored.enabled;
 
         const binary = atob(LZString.decompress(stored.base64Data)); // ASCII to Binary
         const array = new Uint8ClampedArray(binary.length);
@@ -148,13 +147,29 @@ export default class Template {
         return template;
     }
 
+    computeBase64Data() {
+        let binary = '';
+        for (let i = 0; i < this.imageData!.length; i++) {
+            binary += String.fromCharCode(this.imageData![i]!);
+        }
+        this.base64Data = LZString.compress(btoa(binary)); // Binary to ASCII
+    }
+
     overlaps(tile: TileIndex): boolean {
         return this.tiles.has(tile);
+    }
+
+    overlapsPixel(pixel: PixelCoords): boolean {
+        const ix = (pixel.tx - this.coords.tx) * 1000 - this.coords.px + pixel.px;
+        const iy = (pixel.ty - this.coords.ty) * 1000 - this.coords.py + pixel.py;
+        return ix >= 0 && ix < this.width && iy >= 0 && iy < this.height;
     }
 
     drawOnTile(tile: TileCoords, ctx: OffscreenCanvasRenderingContext2D, trackProgress: boolean): void {
         if (!this.enabled || this.imageData === null || !this.overlaps(tile.toIndex()))
             return;
+
+        let needToStoreTemplates = false;
 
         const imageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
         const canvasImageData = imageData.data;
@@ -177,8 +192,31 @@ export default class Template {
                 if (this.imageData[imagePixelIndex + 3]! === 0)
                     continue;
 
-                const color = getColor(this.imageData[imagePixelIndex + 0]!, this.imageData[imagePixelIndex + 1]!, this.imageData[imagePixelIndex + 2]!);
+                let color = getColor(this.imageData[imagePixelIndex + 0]!, this.imageData[imagePixelIndex + 1]!, this.imageData[imagePixelIndex + 2]!);
                 const paintedColor = getClosestColor(canvasImageData[canvasPixelIndex + 0]!, canvasImageData[canvasPixelIndex + 1]!, canvasImageData[canvasPixelIndex + 2]!);
+
+                const pixelModifyIndex = this.modifyPixels.findIndex(c => c.tx === tile.x && c.ty === tile.y && c.px === cx && c.py === cy);
+                if (pixelModifyIndex !== -1) {
+                    this.modifyPixels.splice(pixelModifyIndex, 1);
+
+                    if (color !== paintedColor) {
+                        needToStoreTemplates = true;
+
+                        color = paintedColor;
+                        this.imageData[imagePixelIndex + 0] = canvasImageData[canvasPixelIndex + 0]!;
+                        this.imageData[imagePixelIndex + 1] = canvasImageData[canvasPixelIndex + 1]!;
+                        this.imageData[imagePixelIndex + 2] = canvasImageData[canvasPixelIndex + 2]!;
+                        this.imageData[imagePixelIndex + 3] = canvasImageData[canvasPixelIndex + 3]!;
+
+                        if (this.imageData[imagePixelIndex + 3]! === 0)
+                            continue;
+                    }
+                }
+
+
+                if (!Manager.colorsInfo.has(color.id)) {
+                    Manager.colorsInfo.set(color.id, { enabled: true, unpainted: new Set<PixelIndex>(), wrong: new Set<PixelIndex>() });
+                }
 
                 const colorInfo = Manager.colorsInfo.get(color.id)!;
 
@@ -238,6 +276,11 @@ export default class Template {
             this.tiles.set(tile.toIndex(), colors);
             this.updateTotalProgress();
             updateTemplatePixelCount(this);
+        }
+
+        if (needToStoreTemplates) {
+            this.computeBase64Data();
+            Manager.storeTemplates();
         }
 
         ctx.putImageData(imageData, 0, 0);

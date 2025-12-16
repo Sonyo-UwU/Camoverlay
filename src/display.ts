@@ -105,7 +105,7 @@ export function addColorRow(colorId: WplaceColorId, progress: TileProgress): voi
 
         const coords = PixelCoords.fromIndex(picked);
 
-        Manager.flyTo(coords, 16.5);
+        Manager.flyTo(coords, 17.5);
     });
 
     switch (Manager.colorSorting) {
@@ -205,6 +205,7 @@ export function addTemplateRow(template: Template) {
         template.enabled = (e.target as HTMLInputElement).checked;
         Manager.resetTiles(template.tiles.keys());
         Manager.rebuildColorList();
+        Manager.storeTemplates();
     });
 
     const del = row.querySelector('.ca-template-delete') as HTMLButtonElement;
@@ -235,19 +236,37 @@ export function removeTemplateRow(name: string) {
 export function displayTileCoords(coords: PixelCoords) {
     const textCoords = `Tile X: ${coords.tx}, Tile Y: ${coords.ty} ; Pixel X: ${coords.px}, Pixel Y: ${coords.py}`;
 
-    const displayCoords = document.getElementById('ca-display-coords');
-    if (displayCoords !== null) {
-        displayCoords.textContent = textCoords;
+    const displayCoords = document.getElementsByClassName('ca-display-coords')[0];
+    if (displayCoords !== undefined)
+        displayCoords.remove();
+
+    const paintedByText = document.getElementsByClassName('text-base-content/80 mt-1 px-3 text-sm')[0];
+    if (paintedByText === undefined)
+        return;
+
+    const template = (document.getElementById('ca-coords-template') as HTMLTemplateElement).content.cloneNode(true) as DocumentFragment;
+
+    const span = template.querySelector('span')!;
+    span.textContent = textCoords;
+
+    const button = template.querySelector('button')!;
+
+    const templateToModify = Manager.templates.findLast(t => t.enabled && t.overlapsPixel(coords));
+
+    if (templateToModify === undefined) {
+        button.style.display = 'none';
+    }
+    else if (templateToModify.modifyPixels.some(c => c.tx === coords.tx && c.ty === coords.ty && c.px === coords.px && c.py === coords.py)) {
+        button.disabled = true;
     }
     else {
-        const div = document.getElementsByClassName('text-base-content/80 mt-1 px-3 text-sm')[0];
-        if (div !== undefined) {
-            const span = document.createElement('span');
-            span.id = 'ca-display-coords';
-            span.textContent = textCoords;
-            span.style.paddingInline = 'calc(var(--spacing)*3)';
-            span.style.fontSize = 'small';
-            div.insertAdjacentElement('beforebegin', span);
-        }
+        button.addEventListener('click', () => {
+            templateToModify.modifyPixels.push(coords);
+            Manager.tilesInfo.delete(coords.toTileIndex());
+            button.disabled = true;
+            (paintedByText.parentElement?.firstElementChild?.lastElementChild as HTMLButtonElement | undefined)?.click();
+        });
     }
+
+    paintedByText.parentElement?.insertBefore(template, paintedByText);
 }

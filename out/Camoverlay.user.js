@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.2.11
+// @version      1.3.0
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -284,7 +284,8 @@ function addListeners() {
           document.getElementsByClassName("btn btn-primary btn-lg sm:btn-xl relative z-30")[0]?.click();
         break;
       case "Escape":
-        document.querySelector('[d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"]')?.parentElement?.parentElement?.click();
+        const buttons = document.querySelectorAll('[d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"]');
+        buttons[buttons.length - 1]?.parentElement?.parentElement?.click();
         break;
     }
   });
@@ -456,6 +457,7 @@ var Template = class _Template {
   totalProgress;
   enabled;
   base64Data;
+  modifyPixels;
   constructor(name, coords, width, height) {
     this.name = name;
     this.coords = coords;
@@ -470,6 +472,7 @@ var Template = class _Template {
     this.tiles = /* @__PURE__ */ new Map();
     this.enabled = true;
     this.base64Data = "";
+    this.modifyPixels = [];
   }
   static async fromFile(name, coords, file) {
     const bitmap = await createImageBitmap(file);
@@ -512,15 +515,12 @@ var Template = class _Template {
         }
       }
     template.imageData = imageData.data;
-    let binary = "";
-    for (let i = 0; i < template.imageData.length; i++) {
-      binary += String.fromCharCode(template.imageData[i]);
-    }
-    template.base64Data = LZString.compress(btoa(binary));
+    template.computeBase64Data();
     return template;
   }
   static async fromStorage(stored) {
     const template = new _Template(stored.name, PixelCoords.copy(stored.coords), stored.width, stored.height);
+    template.enabled = stored.enabled;
     const binary = atob(LZString.decompress(stored.base64Data));
     const array = new Uint8ClampedArray(binary.length);
     for (let i = 0; i < binary.length; i++) {
@@ -544,12 +544,25 @@ var Template = class _Template {
     }
     return template;
   }
+  computeBase64Data() {
+    let binary = "";
+    for (let i = 0; i < this.imageData.length; i++) {
+      binary += String.fromCharCode(this.imageData[i]);
+    }
+    this.base64Data = LZString.compress(btoa(binary));
+  }
   overlaps(tile) {
     return this.tiles.has(tile);
+  }
+  overlapsPixel(pixel) {
+    const ix = (pixel.tx - this.coords.tx) * 1e3 - this.coords.px + pixel.px;
+    const iy = (pixel.ty - this.coords.ty) * 1e3 - this.coords.py + pixel.py;
+    return ix >= 0 && ix < this.width && iy >= 0 && iy < this.height;
   }
   drawOnTile(tile, ctx, trackProgress) {
     if (!this.enabled || this.imageData === null || !this.overlaps(tile.toIndex()))
       return;
+    let needToStoreTemplates = false;
     const imageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
     const canvasImageData = imageData.data;
     const isFirstX = this.coords.tx === tile.x;
@@ -561,8 +574,25 @@ var Template = class _Template {
         const canvasPixelIndex = ((cy * Manager.patternSize + 1) * ctx.canvas.width + cx * Manager.patternSize + 1) * 4;
         if (this.imageData[imagePixelIndex + 3] === 0)
           continue;
-        const color = getColor(this.imageData[imagePixelIndex + 0], this.imageData[imagePixelIndex + 1], this.imageData[imagePixelIndex + 2]);
+        let color = getColor(this.imageData[imagePixelIndex + 0], this.imageData[imagePixelIndex + 1], this.imageData[imagePixelIndex + 2]);
         const paintedColor = getClosestColor(canvasImageData[canvasPixelIndex + 0], canvasImageData[canvasPixelIndex + 1], canvasImageData[canvasPixelIndex + 2]);
+        const pixelModifyIndex = this.modifyPixels.findIndex((c) => c.tx === tile.x && c.ty === tile.y && c.px === cx && c.py === cy);
+        if (pixelModifyIndex !== -1) {
+          this.modifyPixels.splice(pixelModifyIndex, 1);
+          if (color !== paintedColor) {
+            needToStoreTemplates = true;
+            color = paintedColor;
+            this.imageData[imagePixelIndex + 0] = canvasImageData[canvasPixelIndex + 0];
+            this.imageData[imagePixelIndex + 1] = canvasImageData[canvasPixelIndex + 1];
+            this.imageData[imagePixelIndex + 2] = canvasImageData[canvasPixelIndex + 2];
+            this.imageData[imagePixelIndex + 3] = canvasImageData[canvasPixelIndex + 3];
+            if (this.imageData[imagePixelIndex + 3] === 0)
+              continue;
+          }
+        }
+        if (!Manager.colorsInfo.has(color.id)) {
+          Manager.colorsInfo.set(color.id, { enabled: true, unpainted: /* @__PURE__ */ new Set(), wrong: /* @__PURE__ */ new Set() });
+        }
         const colorInfo = Manager.colorsInfo.get(color.id);
         if (trackProgress) {
           let progress = colors.get(color.id);
@@ -608,6 +638,10 @@ var Template = class _Template {
       this.updateTotalProgress();
       updateTemplatePixelCount(this);
     }
+    if (needToStoreTemplates) {
+      this.computeBase64Data();
+      Manager.storeTemplates();
+    }
     ctx.putImageData(imageData, 0, 0);
   }
   updateTotalProgress() {
@@ -646,12 +680,13 @@ var ManagerClass = class _ManagerClass {
   loggedIn;
   settings;
   wplaceMap;
-  setInputCoords(value) {
+  setInputCoords(value, store = true) {
     document.getElementById("ca-input-tx").value = value?.tx.toString() ?? "";
     document.getElementById("ca-input-ty").value = value?.ty.toString() ?? "";
     document.getElementById("ca-input-px").value = value?.px.toString() ?? "";
     document.getElementById("ca-input-py").value = value?.py.toString() ?? "";
-    this.storeGlobal({ inputCoords: value });
+    if (store)
+      this.storeGlobal({ inputCoords: value });
   }
   getInputCoords() {
     const tx = parseInt(document.getElementById("ca-input-tx").value);
@@ -688,7 +723,7 @@ var ManagerClass = class _ManagerClass {
       return;
     if (stored.inputCoords) {
       this.lastClickedCoords = PixelCoords.copy(stored.inputCoords);
-      this.setInputCoords(this.lastClickedCoords);
+      this.setInputCoords(this.lastClickedCoords, false);
     }
     this.colorSorting = stored.colorSorting || "Total";
     document.getElementById("ca-sort-select").value = this.colorSorting;
@@ -924,6 +959,12 @@ var Manager = new ManagerClass();
 function injectOverlay() {
   document.body.appendChild(document.createElement("div")).outerHTML = `
 <div id="ca-overlay">
+    <template id="ca-coords-template">
+        <div class="ca-display-coords">
+            <span>Tile X: 1056, Tile Y: 714 ; Pixel X: 304, Pixel Y: 744</span>
+            <button class="tooltip ca-mark-as-correct" data-tip="Edit the template by marking this pixel as being correct">Mark as correct</button>
+        </div>
+    </template>
     <template id="ca-color-template">
         <div class="ca-color-row">
             <input type="checkbox" />
@@ -1052,6 +1093,28 @@ function injectOverlay() {
     </div>
 </div>`.replace(/>\s*</g, "><");
   GM_addStyle(`
+.ca-display-coords {
+    padding-inline: calc(var(--spacing)*3);
+    font-size: small;
+}
+
+.ca-mark-as-correct {
+    background-color: #cb4334;
+    border-radius: 1em;
+    padding: 0 0.75ch;
+    margin-left: 1ch;
+}
+.ca-mark-as-correct:hover, .ca-mark-as-correct:focus-visible {
+    background-color: #d16458;
+}
+.ca-mark-as-correct:active {
+    background-color: #d68d85;
+}
+.ca-mark-as-correct:disabled {
+    background-color: #d68d85;
+    cursor: not-allowed;
+}
+
 #ca-overlay {
     background-color: #5D1F18E6;
     border-radius: 8px;
@@ -1462,7 +1525,7 @@ function addColorRow(colorId, progress) {
     else
       return;
     const coords = PixelCoords.fromIndex(picked);
-    Manager.flyTo(coords, 16.5);
+    Manager.flyTo(coords, 17.5);
   });
   switch (Manager.colorSorting) {
     case "Total":
@@ -1546,6 +1609,7 @@ function addTemplateRow(template) {
     template.enabled = e.target.checked;
     Manager.resetTiles(template.tiles.keys());
     Manager.rebuildColorList();
+    Manager.storeTemplates();
   });
   const del = row.querySelector(".ca-template-delete");
   del.addEventListener("click", () => {
@@ -1569,20 +1633,30 @@ function removeTemplateRow(name) {
 }
 function displayTileCoords(coords) {
   const textCoords = `Tile X: ${coords.tx}, Tile Y: ${coords.ty} ; Pixel X: ${coords.px}, Pixel Y: ${coords.py}`;
-  const displayCoords = document.getElementById("ca-display-coords");
-  if (displayCoords !== null) {
-    displayCoords.textContent = textCoords;
+  const displayCoords = document.getElementsByClassName("ca-display-coords")[0];
+  if (displayCoords !== void 0)
+    displayCoords.remove();
+  const paintedByText = document.getElementsByClassName("text-base-content/80 mt-1 px-3 text-sm")[0];
+  if (paintedByText === void 0)
+    return;
+  const template = document.getElementById("ca-coords-template").content.cloneNode(true);
+  const span = template.querySelector("span");
+  span.textContent = textCoords;
+  const button = template.querySelector("button");
+  const templateToModify = Manager.templates.findLast((t) => t.enabled && t.overlapsPixel(coords));
+  if (templateToModify === void 0) {
+    button.style.display = "none";
+  } else if (templateToModify.modifyPixels.some((c) => c.tx === coords.tx && c.ty === coords.ty && c.px === coords.px && c.py === coords.py)) {
+    button.disabled = true;
   } else {
-    const div = document.getElementsByClassName("text-base-content/80 mt-1 px-3 text-sm")[0];
-    if (div !== void 0) {
-      const span = document.createElement("span");
-      span.id = "ca-display-coords";
-      span.textContent = textCoords;
-      span.style.paddingInline = "calc(var(--spacing)*3)";
-      span.style.fontSize = "small";
-      div.insertAdjacentElement("beforebegin", span);
-    }
+    button.addEventListener("click", () => {
+      templateToModify.modifyPixels.push(coords);
+      Manager.tilesInfo.delete(coords.toTileIndex());
+      button.disabled = true;
+      paintedByText.parentElement?.firstElementChild?.lastElementChild?.click();
+    });
   }
+  paintedByText.parentElement?.insertBefore(template, paintedByText);
 }
 
 // dist/app.js

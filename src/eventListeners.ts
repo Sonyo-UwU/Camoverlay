@@ -60,7 +60,8 @@ export function addListeners() {
                     (document.getElementsByClassName('btn btn-primary btn-lg sm:btn-xl relative z-30')[0] as HTMLElement | undefined)?.click();
                 break;
             case 'Escape':
-                document.querySelector('[d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"]')?.parentElement?.parentElement?.click();
+                const buttons = document.querySelectorAll('[d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"]');
+                buttons[buttons.length - 1]?.parentElement?.parentElement?.click();
                 break;
         }
     });

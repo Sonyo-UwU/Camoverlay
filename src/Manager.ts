@@ -25,13 +25,14 @@ class ManagerClass {
     settings: { wrongHighlight: boolean; };
     wplaceMap: WplaceMap | null;
 
-    setInputCoords(value: PixelCoords | null) {
+    setInputCoords(value: PixelCoords | null, store: boolean = true) {
         (document.getElementById('ca-input-tx') as HTMLInputElement).value = value?.tx.toString() ?? '';
         (document.getElementById('ca-input-ty') as HTMLInputElement).value = value?.ty.toString() ?? '';
         (document.getElementById('ca-input-px') as HTMLInputElement).value = value?.px.toString() ?? '';
         (document.getElementById('ca-input-py') as HTMLInputElement).value = value?.py.toString() ?? '';
-        this.storeGlobal({ inputCoords: value });
-    };
+        if (store)
+            this.storeGlobal({ inputCoords: value });
+    }
     getInputCoords(): PixelCoords | null {
         const tx = parseInt((document.getElementById('ca-input-tx') as HTMLInputElement).value);
         const ty = parseInt((document.getElementById('ca-input-ty') as HTMLInputElement).value);
@@ -43,7 +44,7 @@ class ManagerClass {
         }
 
         return new PixelCoords(tx, ty, px, py);
-    };
+    }
 
 
     constructor() {
@@ -75,7 +76,7 @@ class ManagerClass {
 
         if (stored.inputCoords) {
             this.lastClickedCoords = PixelCoords.copy(stored.inputCoords);
-            this.setInputCoords(this.lastClickedCoords);
+            this.setInputCoords(this.lastClickedCoords, false);
         }
 
         this.colorSorting = stored.colorSorting || ColorSortingOptions.Total;
