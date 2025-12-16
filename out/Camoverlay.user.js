@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.3.1
+// @version      1.3.2
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -334,14 +334,21 @@ function addListeners() {
   document.getElementById("ca-setting-wrong-highlight").addEventListener("change", (e) => {
     Manager.settings.wrongHighlight = e.target.checked;
     Manager.tilesInfo.clear();
+    Manager.storeGlobal();
+  });
+  document.getElementById("ca-setting-hide-completed").addEventListener("change", (e) => {
+    Manager.settings.hideCompleted = e.target.checked;
+    Manager.storeGlobal();
+    Manager.rebuildColorList();
   });
   document.getElementById("ca-sort-select").addEventListener("change", (e) => {
-    Manager.colorSorting = e.target.value;
+    Manager.settings.colorSorting = e.target.value;
     Manager.storeGlobal();
     Manager.rebuildColorList();
   });
   document.getElementById("ca-sort-reverse").addEventListener("click", () => {
-    Manager.colorSortingReversed = !Manager.colorSortingReversed;
+    Manager.settings.colorSortingReversed = !Manager.settings.colorSortingReversed;
+    Manager.storeGlobal();
     Manager.rebuildColorList();
   });
   document.getElementById("ca-enable-all").addEventListener("click", () => {
@@ -519,14 +526,21 @@ var Template = class _Template {
     return template;
   }
   static async fromStorage(stored) {
+    if (stored.name === void 0 || stored.coords === void 0 || stored.width === void 0 || stored.height === void 0 || stored.base64Data === void 0 || stored.tiles === void 0)
+      return null;
     const template = new _Template(stored.name, PixelCoords.copy(stored.coords), stored.width, stored.height);
-    template.enabled = stored.enabled;
-    const binary = atob(LZString.decompress(stored.base64Data));
-    const array = new Uint8ClampedArray(binary.length);
-    for (let i = 0; i < binary.length; i++) {
-      array[i] = binary.charCodeAt(i);
+    if (stored.enabled !== void 0)
+      template.enabled = stored.enabled;
+    try {
+      const binary = atob(LZString.decompress(stored.base64Data));
+      const array = new Uint8ClampedArray(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        array[i] = binary.charCodeAt(i);
+      }
+      template.imageData = array;
+    } catch {
+      return null;
     }
-    template.imageData = array;
     template.base64Data = stored.base64Data;
     template.tiles = /* @__PURE__ */ new Map();
     for (const [index, colors] of stored.tiles) {
@@ -677,8 +691,6 @@ var ManagerClass = class _ManagerClass {
   tilesInfo;
   colorsInfo;
   lastClickedCoords;
-  colorSorting;
-  colorSortingReversed;
   loggedIn;
   settings;
   wplaceMap;
@@ -705,11 +717,12 @@ var ManagerClass = class _ManagerClass {
     this.tilesInfo = /* @__PURE__ */ new Map();
     this.colorsInfo = /* @__PURE__ */ new Map();
     this.lastClickedCoords = null;
-    this.colorSorting = "Total";
-    this.colorSortingReversed = false;
     this.loggedIn = false;
     this.settings = {
-      wrongHighlight: false
+      colorSorting: "Total",
+      colorSortingReversed: false,
+      wrongHighlight: false,
+      hideCompleted: false
     };
     this.wplaceMap = null;
   }
@@ -721,22 +734,28 @@ var ManagerClass = class _ManagerClass {
   }
   loadGlobals() {
     const stored = _ManagerClass.#loadValue("global");
-    if (stored === null)
+    if (stored == null)
       return;
-    if (stored.inputCoords) {
+    if (stored.inputCoords != null) {
       this.lastClickedCoords = PixelCoords.copy(stored.inputCoords);
       this.setInputCoords(this.lastClickedCoords, false);
     }
-    this.colorSorting = stored.colorSorting || "Total";
-    document.getElementById("ca-sort-select").value = this.colorSorting;
-    this.colorSortingReversed = stored.colorSortingReversed;
-    this.colorsInfo = new Map(stored.enabledColors.map(([id, enabled]) => [id, { enabled, wrong: /* @__PURE__ */ new Set(), unpainted: /* @__PURE__ */ new Set() }]));
+    if (stored.settings !== void 0) {
+      if (stored.settings.colorSorting !== void 0)
+        this.settings.colorSorting = stored.settings.colorSorting;
+      document.getElementById("ca-sort-select").value = this.settings.colorSorting;
+      if (stored.settings.colorSortingReversed !== void 0)
+        this.settings.colorSortingReversed = stored.settings.colorSortingReversed;
+      if (stored.settings.wrongHighlight !== void 0)
+        this.settings.wrongHighlight = stored.settings.wrongHighlight;
+    }
+    if (stored.enabledColors !== void 0)
+      this.colorsInfo = new Map(stored.enabledColors.map(([id, enabled]) => [id, { enabled, wrong: /* @__PURE__ */ new Set(), unpainted: /* @__PURE__ */ new Set() }]));
   }
   storeGlobal(overrides) {
     _ManagerClass.#storeValue("global", {
       inputCoords: overrides?.inputCoords ?? this.getInputCoords(),
-      colorSorting: this.colorSorting,
-      colorSortingReversed: this.colorSortingReversed,
+      settings: this.settings,
       enabledColors: this.colorsInfo.entries().toArray().map(([id, colorInfo]) => [id, colorInfo.enabled])
     });
   }
@@ -748,6 +767,8 @@ var ManagerClass = class _ManagerClass {
       this.deleteTemplate(0);
     for (const storedTemplate of stored) {
       const template = await Template.fromStorage(storedTemplate);
+      if (template === null)
+        continue;
       this.resetTiles(template.tiles.keys());
       this.templates.push(template);
       addTemplateRow(template);
@@ -817,7 +838,7 @@ var ManagerClass = class _ManagerClass {
         this.colorsInfo.delete(id);
     }
     const colorsArray = colorProgress.entries().toArray();
-    switch (Manager.colorSorting) {
+    switch (Manager.settings.colorSorting) {
       case "Total":
         colorsArray.sort((a, b) => b[1].total - a[1].total);
         break;
@@ -837,15 +858,16 @@ var ManagerClass = class _ManagerClass {
         colorsArray.sort((a, b) => computeHue(b[0]) - computeHue(a[0]));
         break;
       default:
-        const n = Manager.colorSorting;
+        const n = Manager.settings.colorSorting;
         n;
     }
-    if (this.colorSortingReversed)
+    if (this.settings.colorSortingReversed)
       colorsArray.reverse();
     for (const [id, progress] of colorsArray) {
       if (!this.colorsInfo.has(id))
         this.colorsInfo.set(id, { enabled: true, wrong: /* @__PURE__ */ new Set(), unpainted: /* @__PURE__ */ new Set() });
-      addColorRow(id, progress);
+      if (!Manager.settings.hideCompleted || progress.unpainted + progress.wrong > 0)
+        addColorRow(id, progress);
     }
   }
   async processTile(tile, response) {
@@ -1033,6 +1055,10 @@ function injectOverlay() {
             <div>
                 <input id="ca-setting-wrong-highlight" type="checkbox">
                 Highlight wrong pixels
+            </div>
+            <div>
+                <input id="ca-setting-hide-completed" type="checkbox">
+                Hide completed colors
             </div>
         </div>
         <div id="ca-sorting">
@@ -1529,7 +1555,7 @@ function addColorRow(colorId, progress) {
     const coords = PixelCoords.fromIndex(picked);
     Manager.flyTo(coords, 17.5);
   });
-  switch (Manager.colorSorting) {
+  switch (Manager.settings.colorSorting) {
     case "Total":
       row.querySelector(".ca-color-count").textContent = progress.total.toString();
       break;
@@ -1543,7 +1569,7 @@ function addColorRow(colorId, progress) {
       row.querySelector(".ca-color-count").textContent = progress.wrong.toString();
       break;
     default:
-      const n = Manager.colorSorting;
+      const n = Manager.settings.colorSorting;
       n;
       break;
   }

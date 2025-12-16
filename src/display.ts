@@ -108,7 +108,7 @@ export function addColorRow(colorId: WplaceColorId, progress: TileProgress): voi
         Manager.flyTo(coords, 17.5);
     });
 
-    switch (Manager.colorSorting) {
+    switch (Manager.settings.colorSorting) {
         case ColorSortingOptions.Total:
             row.querySelector('.ca-color-count')!.textContent = progress.total.toString();
             break;
@@ -123,7 +123,7 @@ export function addColorRow(colorId: WplaceColorId, progress: TileProgress): voi
             break;
 
         default:
-            const n: never = Manager.colorSorting;
+            const n: never = Manager.settings.colorSorting;
             n;
             break;
     }

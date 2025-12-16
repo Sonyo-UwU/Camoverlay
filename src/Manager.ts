@@ -2,11 +2,11 @@ import { PixelCoords, TileCoords } from './Coords';
 import { addColorRow, addTemplateRow, displayStatus, removeTemplateRow } from './display';
 import { addCanvasListeners } from './eventListeners';
 import Template from './Template';
-import { ColorInfo, JsonifiedValue, PixelIndex, TileIndex, TileInfo, TileProgress, WplaceColorId, WplaceMap } from './types';
+import { ColorInfo, JsonifiedValue, PixelIndex, TileIndex, TileInfo, TileProgress, UserSettings, WplaceColorId, WplaceMap } from './types';
 import { ColorSortingOptions, computeHue, computeLuminance, rgbColorMap } from './utils';
 
 declare type StorageValues = {
-    'global': { inputCoords: PixelCoords | null, colorSorting: ColorSortingOptions, colorSortingReversed: boolean, enabledColors: [WplaceColorId, boolean][] },
+    'global': { inputCoords: PixelCoords | null, settings: UserSettings, enabledColors: [WplaceColorId, boolean][] },
     'templates': Template[];
 };
 
@@ -19,10 +19,8 @@ class ManagerClass {
     tilesInfo: Map<TileIndex, TileInfo>;
     colorsInfo: Map<WplaceColorId, ColorInfo>;
     lastClickedCoords: PixelCoords | null;
-    colorSorting: ColorSortingOptions;
-    colorSortingReversed: boolean;
     loggedIn: boolean;
-    settings: { wrongHighlight: boolean; };
+    settings: UserSettings;
     wplaceMap: WplaceMap | null;
 
     setInputCoords(value: PixelCoords | null, store: boolean = true) {
@@ -52,11 +50,12 @@ class ManagerClass {
         this.tilesInfo = new Map();
         this.colorsInfo = new Map();
         this.lastClickedCoords = null;
-        this.colorSorting = ColorSortingOptions.Total;
-        this.colorSortingReversed = false;
         this.loggedIn = false;
         this.settings = {
-            wrongHighlight: false
+            colorSorting: ColorSortingOptions.Total,
+            colorSortingReversed: false,
+            wrongHighlight: false,
+            hideCompleted: false
         };
         this.wplaceMap = null;
     }
@@ -71,27 +70,34 @@ class ManagerClass {
 
     loadGlobals(): void {
         const stored = ManagerClass.#loadValue('global');
-        if (stored === null)
+        if (stored == null)
             return;
 
-        if (stored.inputCoords) {
-            this.lastClickedCoords = PixelCoords.copy(stored.inputCoords);
+        if (stored.inputCoords != null) {
+            this.lastClickedCoords = PixelCoords.copy(stored.inputCoords as any);
             this.setInputCoords(this.lastClickedCoords, false);
         }
 
-        this.colorSorting = stored.colorSorting || ColorSortingOptions.Total;
-        (document.getElementById('ca-sort-select') as HTMLSelectElement).value = this.colorSorting;
+        if (stored.settings !== undefined) {
+            if (stored.settings.colorSorting !== undefined)
+                this.settings.colorSorting = stored.settings.colorSorting;
+            (document.getElementById('ca-sort-select') as HTMLSelectElement).value = this.settings.colorSorting;
 
-        this.colorSortingReversed = stored.colorSortingReversed;
+            if (stored.settings.colorSortingReversed !== undefined)
+                this.settings.colorSortingReversed = stored.settings.colorSortingReversed;
 
-        this.colorsInfo = new Map(stored.enabledColors.map(([id, enabled]) => [id, { enabled: enabled, wrong: new Set<PixelIndex>(), unpainted: new Set<PixelIndex>() }]));
+            if (stored.settings.wrongHighlight !== undefined)
+                this.settings.wrongHighlight = stored.settings.wrongHighlight;
+        }
+
+        if (stored.enabledColors !== undefined)
+            this.colorsInfo = new Map(stored.enabledColors.map(([id, enabled]) => [id, { enabled: enabled, wrong: new Set<PixelIndex>(), unpainted: new Set<PixelIndex>() }]));
     }
 
     storeGlobal(overrides?: Partial<StorageValues['global']>): void {
         ManagerClass.#storeValue('global', {
             inputCoords: overrides?.inputCoords ?? this.getInputCoords(),
-            colorSorting: this.colorSorting,
-            colorSortingReversed: this.colorSortingReversed,
+            settings: this.settings,
             enabledColors: this.colorsInfo.entries().toArray().map(([id, colorInfo]) => [id, colorInfo.enabled])
         });
     }
@@ -106,6 +112,9 @@ class ManagerClass {
 
         for (const storedTemplate of stored) {
             const template = await Template.fromStorage(storedTemplate);
+            if (template === null)
+                continue;
+
             this.resetTiles(template.tiles.keys());
             this.templates.push(template);
             addTemplateRow(template);
@@ -192,7 +201,7 @@ class ManagerClass {
         }
 
         const colorsArray = colorProgress.entries().toArray();
-        switch (Manager.colorSorting) {
+        switch (Manager.settings.colorSorting) {
             case ColorSortingOptions.Total:
                 colorsArray.sort((a, b) => b[1].total - a[1].total);
                 break;
@@ -213,17 +222,18 @@ class ManagerClass {
                 break;
 
             default:
-                const n: never = Manager.colorSorting;
+                const n: never = Manager.settings.colorSorting;
                 n;
         }
 
-        if (this.colorSortingReversed)
+        if (this.settings.colorSortingReversed)
             colorsArray.reverse();
 
         for (const [id, progress] of colorsArray) {
             if (!this.colorsInfo.has(id))
                 this.colorsInfo.set(id, { enabled: true, wrong: new Set<PixelIndex>(), unpainted: new Set<PixelIndex>() });
-            addColorRow(id, progress);
+            if (!Manager.settings.hideCompleted || progress.unpainted + progress.wrong > 0)
+                addColorRow(id, progress);
         }
     }
 

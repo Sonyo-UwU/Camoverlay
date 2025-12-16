@@ -124,16 +124,24 @@ export function addListeners() {
     document.getElementById('ca-setting-wrong-highlight')!.addEventListener('change', e => {
         Manager.settings.wrongHighlight = (e.target as HTMLInputElement).checked;
         Manager.tilesInfo.clear();
+        Manager.storeGlobal();
+    });
+
+    document.getElementById('ca-setting-hide-completed')!.addEventListener('change', e => {
+        Manager.settings.hideCompleted = (e.target as HTMLInputElement).checked;
+        Manager.storeGlobal();
+        Manager.rebuildColorList();
     });
 
     document.getElementById('ca-sort-select')!.addEventListener('change', e => {
-        Manager.colorSorting = (e.target as HTMLSelectElement).value as ColorSortingOptions;
+        Manager.settings.colorSorting = (e.target as HTMLSelectElement).value as ColorSortingOptions;
         Manager.storeGlobal();
         Manager.rebuildColorList();
     });
 
     document.getElementById('ca-sort-reverse')!.addEventListener('click', () => {
-        Manager.colorSortingReversed = !Manager.colorSortingReversed;
+        Manager.settings.colorSortingReversed = !Manager.settings.colorSortingReversed;
+        Manager.storeGlobal();
         Manager.rebuildColorList();
     });
 

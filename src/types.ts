@@ -1,3 +1,5 @@
+import { ColorSortingOptions } from './utils';
+
 declare const __brand: unique symbol;
 
 export type TileIndex = number;
@@ -20,6 +22,13 @@ export type TileProgress = {
     wrong: number;
 };
 
+export type UserSettings = {
+    colorSorting: ColorSortingOptions,
+    colorSortingReversed: boolean
+    wrongHighlight: boolean,
+    hideCompleted: boolean;
+};
+
 export type WplaceColorId = number & { [__brand]: 0; };
 export type WplaceColor = {
     internalId: number,
@@ -30,7 +39,7 @@ export type WplaceColor = {
 };
 
 type JsonifiedObject<T> = {
-    [Key in keyof T as[JsonifiedValue<T[Key]>] extends [never] ? never : Key]: JsonifiedValue<T[Key]>
+    [Key in keyof T as[JsonifiedValue<T[Key]>] extends [never] ? never : Key]?: JsonifiedValue<T[Key]>
 };
 type JsonifiedArray<T> = T extends [infer Head, ...infer Tail] ? [JsonifiedValue<Head>, ...JsonifiedArray<Tail>] : [];
 export type JsonifiedValue<T> = T extends string | number | null | boolean

@@ -1,4 +1,4 @@
-import { JsonifiedValue, PixelIndex, TileIndex } from './types';
+import { PixelIndex, TileIndex } from './types';
 
 export class TileCoords {
     readonly x: number;
@@ -36,7 +36,7 @@ export class PixelCoords {
         this.py = py % 1000;
     }
 
-    static copy(o: JsonifiedValue<PixelCoords>): PixelCoords {
+    static copy(o: { tx: number, ty: number, px: number, py: number }): PixelCoords {
         return new PixelCoords(o.tx, o.ty, o.px, o.py);
     }
 

@@ -4,9 +4,9 @@ import { Manager } from './Manager';
 import { JsonifiedValue, PixelIndex, TileIndex, TileProgress, WplaceColorId } from './types';
 import { getClosestColor, getColor, otherColor } from './utils';
 
-type StoredTemplate = Omit<JsonifiedValue<Omit<Template, 'toJSON'>>, 'imageData' | 'tiles' | 'totalProgress' | 'modifyPixels'> & {
+type StoredTemplate = JsonifiedValue<Omit<Template, 'toJSON' | 'imageData' | 'tiles' | 'totalProgress' | 'modifyPixels'> & {
     tiles: [TileIndex, [WplaceColorId, number][]][];
-};
+}>;
 
 declare const LZString: {
     compressToBase64(input: string): string;
@@ -116,16 +116,30 @@ export default class Template {
         return template;
     }
 
-    static async fromStorage(stored: StoredTemplate): Promise<Template> {
-        const template = new Template(stored.name, PixelCoords.copy(stored.coords), stored.width, stored.height);
-        template.enabled = stored.enabled;
+    static async fromStorage(stored: StoredTemplate): Promise<Template | null> {
+        if (stored.name === undefined ||
+            stored.coords === undefined ||
+            stored.width === undefined ||
+            stored.height === undefined ||
+            stored.base64Data === undefined ||
+            stored.tiles === undefined)
+            return null;
 
-        const binary = atob(LZString.decompress(stored.base64Data)); // ASCII to Binary
-        const array = new Uint8ClampedArray(binary.length);
-        for (let i = 0; i < binary.length; i++) {
-            array[i] = binary.charCodeAt(i);
+        const template = new Template(stored.name, PixelCoords.copy(stored.coords as any), stored.width, stored.height);
+        if (stored.enabled !== undefined)
+            template.enabled = stored.enabled;
+
+        try {
+            const binary = atob(LZString.decompress(stored.base64Data)); // ASCII to Binary
+            const array = new Uint8ClampedArray(binary.length);
+            for (let i = 0; i < binary.length; i++) {
+                array[i] = binary.charCodeAt(i);
+            }
+            template.imageData = array;
         }
-        template.imageData = array;
+        catch {
+            return null;
+        }
         template.base64Data = stored.base64Data;
 
         template.tiles = new Map();
