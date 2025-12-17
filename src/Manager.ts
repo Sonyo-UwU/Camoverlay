@@ -166,19 +166,17 @@ class ManagerClass {
                 Manager.workerCreateTemplateResolve.get(m.data.name)?.(m.data);
                 break;
             case 'TemplateFromStorage':
-                const template1 = Manager.templates.find(t => t.name === m.data.name);
-                if (template1 === undefined)
-                    break;
-
-                template1.imageData = new Uint8ClampedArray(m.data.imageData);
-                Manager.storeTemplates();
+                // Error while creating template
+                const index = Manager.templates.findIndex(t => t.name === m.data.name);
+                if (index !== -1)
+                    Manager.deleteTemplate(index);
                 break;
             case 'ComputeBase64Data':
-                const template2 = Manager.templates.find(t => t.name === m.data.name);
-                if (template2 === undefined)
+                const template = Manager.templates.find(t => t.name === m.data.name);
+                if (template === undefined)
                     break;
 
-                template2.base64Data = m.data.base64Data;
+                template.base64Data = m.data.base64Data;
                 Manager.storeTemplates();
                 break;
             case 'DrawOnTile':

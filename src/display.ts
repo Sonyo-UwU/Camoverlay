@@ -252,16 +252,17 @@ export function displayTileCoords(coords: PixelCoords) {
     const button = template.querySelector('button')!;
 
     const templateToModify = Manager.templates.findLast(t => t.enabled && t.overlapsPixel(coords));
+    const pixelIndex = coords.toIndex();
 
     if (templateToModify === undefined) {
         button.style.display = 'none';
     }
-    else if (templateToModify.modifyPixels.some(c => c.tx === coords.tx && c.ty === coords.ty && c.px === coords.px && c.py === coords.py)) {
+    else if (templateToModify.modifyPixels.includes(pixelIndex)) {
         button.disabled = true;
     }
     else {
         button.addEventListener('click', () => {
-            templateToModify.modifyPixels.push(coords);
+            templateToModify.modifyPixels.push(pixelIndex);
             Manager.tilesInfo.delete(coords.toTileIndex());
             button.disabled = true;
             (paintedByText.parentElement?.firstElementChild?.lastElementChild as HTMLButtonElement | undefined)?.click();

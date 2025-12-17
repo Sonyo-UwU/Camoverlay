@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.4.4
+// @version      1.4.5
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -454,7 +454,6 @@ var Template = class _Template {
   coords;
   width;
   height;
-  imageData;
   tiles;
   totalProgress;
   enabled;
@@ -465,7 +464,6 @@ var Template = class _Template {
     this.coords = coords;
     this.width = width;
     this.height = height;
-    this.imageData = null;
     this.totalProgress = {
       total: 0,
       unpainted: 0,
@@ -496,7 +494,6 @@ var Template = class _Template {
     if (result === null) {
       return null;
     }
-    template.imageData = new Uint8ClampedArray(result.imageData);
     template.tiles = /* @__PURE__ */ new Map();
     for (const [index, colors] of result.tiles) {
       const progress = /* @__PURE__ */ new Map();
@@ -565,7 +562,7 @@ var Template = class _Template {
     return ix >= 0 && ix < this.width && iy >= 0 && iy < this.height;
   }
   async drawOnTile(tile, ctx, trackProgress) {
-    if (!this.enabled || this.imageData === null || !this.overlaps(tile.toIndex()))
+    if (!this.enabled || !this.overlaps(tile.toIndex()))
       return;
     const imageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
     const canvasImageData = imageData.data;
@@ -582,6 +579,7 @@ var Template = class _Template {
         trackProgress,
         wrongHighlight: Manager.settings.wrongHighlight,
         enabled: Manager.colorsInfo.entries().toArray().map(([id, info]) => [id, info.enabled]),
+        modifyPixels: this.modifyPixels,
         canvasWidth: ctx.canvas.width,
         canvas: canvasImageData.buffer
       }
@@ -728,19 +726,16 @@ function workerFunction() {
       }
     templates.set(name, { imageData: imageData.data, width: canvas.width, height: canvas.height, coords });
     setTimeout(() => computeBase64Data(name));
-    const buffer = imageData.data.buffer;
     const response = {
       name: "CreateTemplate",
       data: {
         name,
-        tiles: tiles.entries().toArray().map(([index, colors]) => [index, colors.entries().toArray()]),
-        imageData: buffer
+        tiles: tiles.entries().toArray().map(([index, colors]) => [index, colors.entries().toArray()])
       }
     };
     self.postMessage(response);
   }
   function templateFromBase64Data({ name, width, height, coords, base64Data }) {
-    let result;
     try {
       const binary = atob(LZString.decompress(base64Data));
       const array = new Uint8ClampedArray(binary.length);
@@ -748,18 +743,15 @@ function workerFunction() {
         array[i] = binary.charCodeAt(i);
       }
       templates.set(name, { imageData: array, width, height, coords });
-      result = array;
     } catch {
-      result = new Uint8ClampedArray();
+      const message = {
+        name: "TemplateFromStorage",
+        data: {
+          name
+        }
+      };
+      self.postMessage(message);
     }
-    const message = {
-      name: "TemplateFromStorage",
-      data: {
-        name,
-        imageData: result.buffer
-      }
-    };
-    self.postMessage(message);
   }
   function computeBase64Data(name) {
     const imageData = templates.get(name)?.imageData;
@@ -779,7 +771,7 @@ function workerFunction() {
     };
     self.postMessage(response);
   }
-  function drawOnTile({ name, tile, patternSize, trackProgress, wrongHighlight, enabled, canvasWidth, canvas }) {
+  function drawOnTile({ name, tile, patternSize, trackProgress, wrongHighlight, enabled, modifyPixels, canvasWidth, canvas }) {
     const template = templates.get(name);
     if (template === void 0)
       return;
@@ -803,6 +795,20 @@ function workerFunction() {
         if (colorInfo === void 0) {
           colorInfo = { unpainted: { add: [], delete: [] }, wrong: { add: [], delete: [] } };
           colorsInfo.set(color.id, colorInfo);
+        }
+        if (modifyPixels.includes(pixelTileIndex)) {
+          if (color !== paintedColor) {
+            needToStoreTemplates = true;
+            colorInfo.unpainted.delete.push(pixelTileIndex);
+            colorInfo.wrong.delete.push(pixelTileIndex);
+            color = paintedColor;
+            template.imageData[imagePixelIndex + 0] = canvasImageData[canvasPixelIndex + 0];
+            template.imageData[imagePixelIndex + 1] = canvasImageData[canvasPixelIndex + 1];
+            template.imageData[imagePixelIndex + 2] = canvasImageData[canvasPixelIndex + 2];
+            template.imageData[imagePixelIndex + 3] = canvasImageData[canvasPixelIndex + 3];
+            if (template.imageData[imagePixelIndex + 3] === 0)
+              continue;
+          }
         }
         if (trackProgress) {
           let progress = colorsProgress.get(color.id);
@@ -985,17 +991,15 @@ var ManagerClass = class _ManagerClass {
         Manager.workerCreateTemplateResolve.get(m.data.name)?.(m.data);
         break;
       case "TemplateFromStorage":
-        const template1 = Manager.templates.find((t) => t.name === m.data.name);
-        if (template1 === void 0)
-          break;
-        template1.imageData = new Uint8ClampedArray(m.data.imageData);
-        Manager.storeTemplates();
+        const index = Manager.templates.findIndex((t) => t.name === m.data.name);
+        if (index !== -1)
+          Manager.deleteTemplate(index);
         break;
       case "ComputeBase64Data":
-        const template2 = Manager.templates.find((t) => t.name === m.data.name);
-        if (template2 === void 0)
+        const template = Manager.templates.find((t) => t.name === m.data.name);
+        if (template === void 0)
           break;
-        template2.base64Data = m.data.base64Data;
+        template.base64Data = m.data.base64Data;
         Manager.storeTemplates();
         break;
       case "DrawOnTile":
@@ -1912,13 +1916,14 @@ function displayTileCoords(coords) {
   span.textContent = textCoords;
   const button = template.querySelector("button");
   const templateToModify = Manager.templates.findLast((t) => t.enabled && t.overlapsPixel(coords));
+  const pixelIndex = coords.toIndex();
   if (templateToModify === void 0) {
     button.style.display = "none";
-  } else if (templateToModify.modifyPixels.some((c) => c.tx === coords.tx && c.ty === coords.ty && c.px === coords.px && c.py === coords.py)) {
+  } else if (templateToModify.modifyPixels.includes(pixelIndex)) {
     button.disabled = true;
   } else {
     button.addEventListener("click", () => {
-      templateToModify.modifyPixels.push(coords);
+      templateToModify.modifyPixels.push(pixelIndex);
       Manager.tilesInfo.delete(coords.toTileIndex());
       button.disabled = true;
       paintedByText.parentElement?.firstElementChild?.lastElementChild?.click();

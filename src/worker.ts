@@ -137,21 +137,17 @@ export function workerFunction() {
         setTimeout(() => computeBase64Data(name));
 
         // Send response
-        const buffer = imageData.data.buffer;
         const response: MessageCreateTemplate['response'] = {
             name: 'CreateTemplate',
             data: {
                 name: name,
-                tiles: tiles.entries().toArray().map(([index, colors]) => [index, colors.entries().toArray()]),
-                imageData: buffer
+                tiles: tiles.entries().toArray().map(([index, colors]) => [index, colors.entries().toArray()])
             }
         };
-        self.postMessage(response); // buffer is not transfered until all computation is moved to worker, since we need it on both sides
+        self.postMessage(response);
     }
 
     function templateFromBase64Data({ name, width, height, coords, base64Data }: MessageTemplateFromStorage['message']['data']): void {
-        let result: Uint8ClampedArray<ArrayBuffer>;
-
         try {
             const binary = atob(LZString.decompress(base64Data)); // ASCII to Binary
             const array = new Uint8ClampedArray(binary.length);
@@ -159,20 +155,16 @@ export function workerFunction() {
                 array[i] = binary.charCodeAt(i);
             }
             templates.set(name, { imageData: array, width: width, height: height, coords: coords });
-            result = array;
         }
         catch {
-            result = new Uint8ClampedArray();
+            const message: MessageTemplateFromStorage['response'] = {
+                name: 'TemplateFromStorage',
+                data: {
+                    name: name
+                }
+            };
+            self.postMessage(message);
         }
-
-        const message: MessageTemplateFromStorage['response'] = {
-            name: 'TemplateFromStorage',
-            data: {
-                name: name,
-                imageData: result.buffer
-            }
-        };
-        self.postMessage(message);
     }
 
     function computeBase64Data(name: string): void {
@@ -197,7 +189,7 @@ export function workerFunction() {
         self.postMessage(response);
     }
 
-    function drawOnTile({ name, tile, patternSize, trackProgress, wrongHighlight, enabled, canvasWidth, canvas }: MessageDrawOnTile['message']['data']): void {
+    function drawOnTile({ name, tile, patternSize, trackProgress, wrongHighlight, enabled, modifyPixels, canvasWidth, canvas }: MessageDrawOnTile['message']['data']): void {
         const template = templates.get(name);
         if (template === undefined)
             return;
@@ -234,16 +226,18 @@ export function workerFunction() {
 
 
                 const pixelTileIndex = (tile.x * 10000 + tile.y) * 1000000 + (cx * 1000 + cy) as PixelIndex;
+                let colorInfo = colorsInfo.get(color.id);
+                if (colorInfo === undefined) {
+                    colorInfo = { unpainted: { add: [], delete: [] }, wrong: { add: [], delete: [] } };
+                    colorsInfo.set(color.id, colorInfo);
+                }
 
-                /*const pixelModifyIndex = this.modifyPixels.findIndex(c => c.tx === tile.x && c.ty === tile.y && c.px === cx && c.py === cy);
-                if (pixelModifyIndex !== -1) {
-                    this.modifyPixels.splice(pixelModifyIndex, 1);
-
+                if (modifyPixels.includes(pixelTileIndex)) {
                     if (color !== paintedColor) {
                         needToStoreTemplates = true;
 
-                        Manager.colorsInfo.get(color.id)?.unpainted.delete(pixelTileIndex);
-                        Manager.colorsInfo.get(color.id)?.wrong.delete(pixelTileIndex);
+                        colorInfo.unpainted.delete.push(pixelTileIndex);
+                        colorInfo.wrong.delete.push(pixelTileIndex);
 
                         color = paintedColor;
                         template.imageData[imagePixelIndex + 0] = canvasImageData[canvasPixelIndex + 0]!;
@@ -252,18 +246,12 @@ export function workerFunction() {
                         template.imageData[imagePixelIndex + 3] = canvasImageData[canvasPixelIndex + 3]!;
 
 
-
                         if (template.imageData[imagePixelIndex + 3]! === 0)
                             continue;
                     }
-                }*/
-
-
-                let colorInfo = colorsInfo.get(color.id);
-                if (colorInfo === undefined) {
-                    colorInfo = { unpainted: { add: [], delete: [] }, wrong: { add: [], delete: [] } };
-                    colorsInfo.set(color.id, colorInfo);
                 }
+
+
 
                 if (trackProgress) {
                     let progress = colorsProgress.get(color.id);

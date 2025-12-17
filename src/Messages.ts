@@ -29,8 +29,7 @@ export type MessageCreateTemplate = Message<
     },
     {
         name: string,
-        tiles: [TileIndex, [WplaceColorId, number][]][],
-        imageData: Extract<Transferable, ArrayBuffer>;
+        tiles: [TileIndex, [WplaceColorId, number][]][];
     }>;
 
 export type MessageTemplateFromStorage = Message<
@@ -43,8 +42,8 @@ export type MessageTemplateFromStorage = Message<
         base64Data: string;
     },
     {
-        name: string,
-        imageData: Extract<Transferable, ArrayBuffer>;
+        // Send if error
+        name: string;
     }>;
 
 export type MessageComputeBase64Data = Message<
@@ -66,6 +65,7 @@ export type MessageDrawOnTile = Message<
         trackProgress: boolean,
         wrongHighlight: boolean,
         enabled: [WplaceColorId, boolean][],
+        modifyPixels: PixelIndex[],
         canvasWidth: number,
         canvas: Extract<Transferable, ArrayBuffer>;
     },

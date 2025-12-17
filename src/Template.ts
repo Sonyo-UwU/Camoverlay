@@ -13,12 +13,11 @@ export default class Template {
     coords: PixelCoords;
     width: number;
     height: number;
-    imageData: Uint8ClampedArray | null;
     tiles: Map<TileIndex, Map<WplaceColorId, TileProgress>>;
     totalProgress: TileProgress;
     enabled: boolean;
     base64Data: string;
-    modifyPixels: PixelCoords[];
+    modifyPixels: PixelIndex[];
 
 
     constructor(name: string, coords: PixelCoords, width: number, height: number) {
@@ -26,7 +25,6 @@ export default class Template {
         this.coords = coords;
         this.width = width;
         this.height = height;
-        this.imageData = null;
         this.totalProgress = {
             total: 0,
             unpainted: 0,
@@ -64,8 +62,6 @@ export default class Template {
         if (result === null) {
             return null;
         }
-
-        template.imageData = new Uint8ClampedArray(result.imageData);
 
         template.tiles = new Map();
         for (const [index, colors] of result.tiles) {
@@ -153,7 +149,7 @@ export default class Template {
     }
 
     async drawOnTile(tile: TileCoords, ctx: OffscreenCanvasRenderingContext2D, trackProgress: boolean): Promise<void> {
-        if (!this.enabled || this.imageData === null || !this.overlaps(tile.toIndex()))
+        if (!this.enabled || !this.overlaps(tile.toIndex()))
             return;
 
         const imageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -174,6 +170,7 @@ export default class Template {
                 trackProgress: trackProgress,
                 wrongHighlight: Manager.settings.wrongHighlight,
                 enabled: Manager.colorsInfo.entries().toArray().map(([id, info]) => [id, info.enabled]),
+                modifyPixels: this.modifyPixels,
                 canvasWidth: ctx.canvas.width,
                 canvas: canvasImageData.buffer
             }
