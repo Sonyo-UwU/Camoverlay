@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.4.0
+// @version      1.4.1
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -495,6 +495,7 @@ var Template = class _Template {
   }
   static async fromFile(name, coords, file) {
     const bitmap = await createImageBitmap(file);
+    const template = new _Template(name, coords, bitmap.width, bitmap.height);
     const { promise, resolve, reject } = Promise.withResolvers();
     setTimeout(reject, 60 * 1e3);
     Manager.workerCreateTemplateResolve.set(name, resolve);
@@ -512,9 +513,7 @@ var Template = class _Template {
     if (result === null) {
       return null;
     }
-    const template = new _Template(name, coords, bitmap.width, bitmap.height);
     template.imageData = new Uint8ClampedArray(result.imageData);
-    template.base64Data = result.base64Data;
     template.tiles = /* @__PURE__ */ new Map();
     for (const [index, colors] of result.tiles) {
       const progress = /* @__PURE__ */ new Map();
@@ -714,29 +713,24 @@ function workerFunction() {
     }
     return otherColor2;
   }
+  const imagesData = /* @__PURE__ */ new Map();
   self.onmessage = (e) => {
     const m = e.data;
-    let result = null;
-    let transferable = [];
     switch (m.name) {
       case "Init":
         rgbColorMap2 = new Map(m.data.rgbColorMap);
         break;
       case "CreateTemplate":
-        [result, transferable] = templateFromBitmap(m.data);
+        templateFromBitmap(m.data);
+        break;
+      case "ComputeBase64Data":
+        computeBase64Data(m.data.name);
         break;
       default:
         const n = m;
         n;
         break;
     }
-    if (result === null)
-      return;
-    const response = {
-      name: "CreateTemplate",
-      data: result
-    };
-    self.postMessage(response, transferable);
   };
   function templateFromBitmap({ name, bitmap, coords }) {
     const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
@@ -765,18 +759,36 @@ function workerFunction() {
           imageData.data[pixelIndex + 2] = color.rgb[2];
         }
       }
+    imagesData.set(name, imageData.data);
+    setTimeout(() => computeBase64Data(name));
+    const buffer = imageData.data.buffer;
+    const response = {
+      name: "CreateTemplate",
+      data: {
+        name,
+        tiles: tiles.entries().toArray().map(([index, colors]) => [index, colors.entries().toArray()]),
+        imageData: buffer
+      }
+    };
+    self.postMessage(response);
+  }
+  function computeBase64Data(name) {
+    const imageData = imagesData.get(name);
+    if (imageData === void 0)
+      return;
     let binary = "";
-    for (let i = 0; i < imageData.data.length; i++) {
-      binary += String.fromCharCode(imageData.data[i]);
+    for (let i = 0; i < imageData.length; i++) {
+      binary += String.fromCharCode(imageData[i]);
     }
     const base64Data = LZString.compress(btoa(binary));
-    const buffer = imageData.data.buffer;
-    return [{
-      name,
-      tiles: tiles.entries().toArray().map(([index, colors]) => [index, colors.entries().toArray()]),
-      imageData: buffer,
-      base64Data
-    }, [buffer]];
+    const response = {
+      name: "ComputeBase64Data",
+      data: {
+        name,
+        base64Data
+      }
+    };
+    self.postMessage(response);
   }
 }
 
@@ -903,8 +915,15 @@ var ManagerClass = class _ManagerClass {
       case "CreateTemplate":
         Manager.workerCreateTemplateResolve.get(m.data.name)?.(m.data);
         break;
+      case "ComputeBase64Data":
+        const template = Manager.templates.find((t) => t.name === m.data.name);
+        if (template === void 0)
+          break;
+        template.base64Data = m.data.base64Data;
+        Manager.storeTemplates();
+        break;
       default:
-        const n = m.name;
+        const n = m;
         n;
         break;
     }
@@ -938,7 +957,6 @@ var ManagerClass = class _ManagerClass {
     }
     this.resetTiles(template.tiles.keys());
     this.templates.push(template);
-    this.storeTemplates();
     addTemplateRow(template);
     this.rebuildColorList();
     displayStatus("Created template at " + template.coords.toString() + ": " + template.totalProgress.total + " pixels");

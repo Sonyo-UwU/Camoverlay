@@ -1,6 +1,6 @@
 /* Only import types here ; this will run in a web worker */
 
-import type { MessageCreateTemplate, WorkerMessage, WorkerResponse } from './Messages';
+import type { MessageComputeBase64Data, MessageCreateTemplate, WorkerMessage } from './Messages';
 import type { TileIndex, WorkerWplaceColor, WplaceColorId } from './types';
 
 declare const self: Worker;
@@ -53,35 +53,28 @@ export function workerFunction() {
 
     //#endregion
 
+    const imagesData = new Map<string, Uint8ClampedArray>();
 
     self.onmessage = e => {
         const m = e.data as WorkerMessage;
-        let result: WorkerResponse['data'] | null = null;
-        let transferable: Transferable[] = [];
         switch (m.name) {
             case 'Init':
                 rgbColorMap = new Map<WplaceColorId, WorkerWplaceColor>(m.data.rgbColorMap);
                 break;
             case 'CreateTemplate':
-                [result, transferable] = templateFromBitmap(m.data);
+                templateFromBitmap(m.data);
+                break;
+            case 'ComputeBase64Data':
+                computeBase64Data(m.data.name);
                 break;
             default:
                 const n: never = m;
                 n;
                 break;
         }
-
-        if (result === null)
-            return;
-
-        const response: WorkerResponse = {
-            name: 'CreateTemplate',
-            data: result
-        };
-        self.postMessage(response, transferable);
     };
     
-    function templateFromBitmap({ name, bitmap, coords }: MessageCreateTemplate['message']['data']): [MessageCreateTemplate['response']['data'], Transferable[]] {
+    function templateFromBitmap({ name, bitmap, coords }: MessageCreateTemplate['message']['data']): void {
         const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
         const ctx = canvas.getContext('2d')!;
         ctx.imageSmoothingEnabled = false;
@@ -118,19 +111,42 @@ export function workerFunction() {
                 }
             }
 
-        // Compute base64 data
+
+        imagesData.set(name, imageData.data);
+        setTimeout(() => computeBase64Data(name));
+
+        // Send response
+        const buffer = imageData.data.buffer;
+        const response: MessageCreateTemplate['response'] = {
+            name: 'CreateTemplate',
+            data: {
+                name: name,
+                tiles: tiles.entries().toArray().map(([index, colors]) => [index, colors.entries().toArray()]),
+                imageData: buffer
+            }
+        };
+        self.postMessage(response); // buffer is not transfered until all computation is moved to worker, since we need it on both sides
+    }
+
+    function computeBase64Data(name: string): void {
+        const imageData = imagesData.get(name);
+        if (imageData === undefined)
+            return;
+
         let binary = '';
-        for (let i = 0; i < imageData.data.length; i++) {
-            binary += String.fromCharCode(imageData.data[i]!);
+        for (let i = 0; i < imageData.length; i++) {
+            binary += String.fromCharCode(imageData[i]!);
         }
         const base64Data = LZString.compress(btoa(binary)); // Binary to ASCII
 
-        const buffer = imageData.data.buffer;
-        return [{
-            name: name,
-            tiles: tiles.entries().toArray().map(([index, colors]) => [index, colors.entries().toArray()]),
-            imageData: buffer,
-            base64Data: base64Data
-        }, [buffer]];
+        // Send response
+        const response: MessageComputeBase64Data['response'] = {
+            name: 'ComputeBase64Data',
+            data: {
+                name: name,
+                base64Data: base64Data
+            }
+        };
+        self.postMessage(response);
     }
 }

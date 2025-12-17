@@ -1,15 +1,15 @@
 import type { PixelCoordsObject } from './Coords';
 import type { WplaceColorId, WorkerWplaceColor, TileIndex } from './types';
 
-type Message<N extends string, D1, D2 = never> = {
+type Message<N extends string, M, R = never> = {
     message: {
         name: N,
-        data: D1;
+        data: M;
     };
 } & {
-    response: [D2] extends [never] ? never : {
+    response: [R] extends [never] ? never : {
         name: N,
-        data: D2;
+        data: R;
     };
 };
 
@@ -30,10 +30,19 @@ export type MessageCreateTemplate = Message<
     {
         name: string,
         tiles: [TileIndex, [WplaceColorId, number][]][],
-        imageData: Extract<Transferable, ArrayBuffer>,
-        base64Data: string
+        imageData: Extract<Transferable, ArrayBuffer>;
     }>;
 
-type AllMessages = MessageInit | MessageCreateTemplate;
+export type MessageComputeBase64Data = Message<
+    'ComputeBase64Data',
+    {
+        name: string;
+    },
+    {
+        name: string,
+        base64Data: string;
+    }>;
+
+type AllMessages = MessageInit | MessageCreateTemplate | MessageComputeBase64Data;
 export type WorkerMessage = AllMessages['message'];
 export type WorkerResponse = AllMessages['response'];

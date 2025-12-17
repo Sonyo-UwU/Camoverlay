@@ -164,8 +164,16 @@ class ManagerClass {
             case 'CreateTemplate':
                 Manager.workerCreateTemplateResolve.get(m.data.name)?.(m.data);
                 break;
+            case 'ComputeBase64Data':
+                const template = Manager.templates.find(t => t.name === m.data.name);
+                if (template === undefined)
+                    break;
+
+                template.base64Data = m.data.base64Data;
+                Manager.storeTemplates();
+                break;
             default:
-                const n: never = m.name;
+                const n: never = m;
                 n;
                 break;
         }
@@ -208,7 +216,7 @@ class ManagerClass {
         this.resetTiles(template.tiles.keys());
 
         this.templates.push(template);
-        this.storeTemplates();
+        // Don't store now, wait for the base64 data
 
         addTemplateRow(template);
         this.rebuildColorList();

@@ -58,6 +58,7 @@ export default class Template {
 
     static async fromFile(name: string, coords: PixelCoords, file: File): Promise<Template | null> {
         const bitmap = await createImageBitmap(file);
+        const template = new Template(name, coords, bitmap.width, bitmap.height);
 
         const { promise, resolve, reject } = Promise.withResolvers<MessageCreateTemplate['response']['data']>();
         setTimeout(reject, 60 * 1000);
@@ -82,9 +83,7 @@ export default class Template {
             return null;
         }
 
-        const template = new Template(name, coords, bitmap.width, bitmap.height);
         template.imageData = new Uint8ClampedArray(result.imageData);
-        template.base64Data = result.base64Data;
 
         template.tiles = new Map();
         for (const [index, colors] of result.tiles) {
