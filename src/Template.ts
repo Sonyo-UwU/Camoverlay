@@ -1,30 +1,12 @@
 import { PixelCoords, TileCoords } from './Coords';
 import { updateTemplatePixelCount } from './display';
 import { Manager } from './Manager';
-import { MessageComputeBase64Data, MessageCreateTemplate, MessageTemplateFromStorage } from './Messages';
+import { MessageComputeBase64Data, MessageCreateTemplate, MessageDrawOnTile, MessageTemplateFromStorage } from './Messages';
 import { JsonifiedValue, PixelIndex, TileIndex, TileProgress, WplaceColorId } from './types';
-import { getClosestColor, getColor } from './utils';
 
 type StoredTemplate = JsonifiedValue<Omit<Template, 'toJSON' | 'imageData' | 'tiles' | 'totalProgress' | 'modifyPixels'> & {
     tiles: [TileIndex, [WplaceColorId, number][]][];
 }>;
-
-declare const LZString: {
-    compressToBase64(input: string): string;
-    decompressFromBase64(input: string): string;
-    
-    compressToUTF16(input: string): string;
-    decompressFromUTF16(compressed: string): string;
-    
-    compressToUint8Array(uncompressed: string): Uint8Array;
-    decompressFromUint8Array(compressed: Uint8Array): string;
-    
-    compressToEncodedURIComponent(input: string): string;
-    decompressFromEncodedURIComponent(compressed: string): string;
-    
-    compress(input: string): string;
-    decompress(compressed: string): string;
-};
 
 export default class Template {
     name: string;
@@ -75,7 +57,7 @@ export default class Template {
         };
         Manager.worker.postMessage(message, [bitmap]);
 
-        const result = await promise.catch(() => null); // Wait for the worker
+        const result = await promise.catch(() => null); // Wait for worker
 
         Manager.workerCreateTemplateResolve.delete(name);
         
@@ -139,6 +121,9 @@ export default class Template {
             name: 'TemplateFromStorage',
             data: {
                 name: template.name,
+                width: template.width,
+                height: template.height,
+                coords: { tx: template.coords.tx, ty: template.coords.ty, px: template.coords.px, py: template.coords.py },
                 base64Data: stored.base64Data
             }
         };
@@ -167,129 +152,71 @@ export default class Template {
         return ix >= 0 && ix < this.width && iy >= 0 && iy < this.height;
     }
 
-    drawOnTile(tile: TileCoords, ctx: OffscreenCanvasRenderingContext2D, trackProgress: boolean): void {
+    async drawOnTile(tile: TileCoords, ctx: OffscreenCanvasRenderingContext2D, trackProgress: boolean): Promise<void> {
         if (!this.enabled || this.imageData === null || !this.overlaps(tile.toIndex()))
             return;
-
-        let needToStoreTemplates = false;
 
         const imageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
         const canvasImageData = imageData.data;
 
-        const isFirstX = this.coords.tx === tile.x;
-        const isFirstY = this.coords.ty === tile.y;
-        const colors = new Map<WplaceColorId, TileProgress>();
+        const { promise, resolve, reject } = Promise.withResolvers<MessageDrawOnTile['response']['data']>();
+        setTimeout(reject, 10 * 1000);
 
-        for (let iy = isFirstY ? 0 : (tile.y - this.coords.ty) * 1000 - this.coords.py,
-                 cy = isFirstY ? this.coords.py : 0;
-                 iy < this.height && cy < 1000;
-                 iy++, cy++)
-            for (let ix = isFirstX ? 0 : (tile.x - this.coords.tx) * 1000 - this.coords.px,
-                     cx = isFirstX ? this.coords.px : 0;
-                     ix < this.width && cx < 1000;
-                     ix++, cx++) {
-                const imagePixelIndex = (iy * this.width + ix) * 4;
-                const canvasPixelIndex = ((cy * Manager.patternSize + 1) * ctx.canvas.width + cx * Manager.patternSize + 1) * 4;
+        const key = this.name + tile.toIndex().toString();
+        Manager.workerDrawOnTileResolve.set(key, resolve);
 
-                if (this.imageData[imagePixelIndex + 3]! === 0)
-                    continue;
-
-                let color = getColor(this.imageData[imagePixelIndex + 0]!, this.imageData[imagePixelIndex + 1]!, this.imageData[imagePixelIndex + 2]!);
-                const paintedColor = getClosestColor(canvasImageData[canvasPixelIndex + 0]!, canvasImageData[canvasPixelIndex + 1]!, canvasImageData[canvasPixelIndex + 2]!);
-
-
-                const pixelTileIndex = PixelCoords.toIndex(tile.x, tile.y, cx, cy);
-
-                const pixelModifyIndex = this.modifyPixels.findIndex(c => c.tx === tile.x && c.ty === tile.y && c.px === cx && c.py === cy);
-                if (pixelModifyIndex !== -1) {
-                    this.modifyPixels.splice(pixelModifyIndex, 1);
-
-                    if (color !== paintedColor) {
-                        needToStoreTemplates = true;
-
-                        Manager.colorsInfo.get(color.id)?.unpainted.delete(pixelTileIndex);
-                        Manager.colorsInfo.get(color.id)?.wrong.delete(pixelTileIndex);
-
-                        color = paintedColor;
-                        this.imageData[imagePixelIndex + 0] = canvasImageData[canvasPixelIndex + 0]!;
-                        this.imageData[imagePixelIndex + 1] = canvasImageData[canvasPixelIndex + 1]!;
-                        this.imageData[imagePixelIndex + 2] = canvasImageData[canvasPixelIndex + 2]!;
-                        this.imageData[imagePixelIndex + 3] = canvasImageData[canvasPixelIndex + 3]!;
-
-
-
-                        if (this.imageData[imagePixelIndex + 3]! === 0)
-                            continue;
-                    }
-                }
-
-
-                if (!Manager.colorsInfo.has(color.id)) {
-                    Manager.colorsInfo.set(color.id, { enabled: true, unpainted: new Set<PixelIndex>(), wrong: new Set<PixelIndex>() });
-                }
-
-                const colorInfo = Manager.colorsInfo.get(color.id)!;
-
-                if (trackProgress) {
-                    let progress = colors.get(color.id);
-                    if (progress === undefined) {
-                        progress = {
-                            total: 0,
-                            unpainted: 0,
-                            wrong: 0
-                        };
-                        colors.set(color.id, progress);
-                    }
-
-                    progress.total++;
-                    if (canvasImageData[canvasPixelIndex + 3] === 0) {
-                        // Unpainted
-                        progress.unpainted++;
-
-                        colorInfo.unpainted.add(pixelTileIndex);
-                    }
-                    else if (color !== paintedColor) {
-                        // Wrong
-                        progress.wrong++;
-
-                        colorInfo.wrong.add(pixelTileIndex);
-                    }
-                    else {
-                        // Correct
-                        colorInfo.unpainted.delete(pixelTileIndex);
-                        colorInfo.wrong.delete(pixelTileIndex);
-                    }
-                }
-
-                if (colorInfo.enabled) {
-                    if (Manager.settings.wrongHighlight && canvasImageData[canvasPixelIndex + 3] !== 0 && color !== paintedColor) {
-                        // Wrong pixel highlight
-                        for (const [dx, dy] of [[0, 1], [1, 0], [2, 1], [1, 2]]) {
-                            const idx = ((cy * Manager.patternSize + dy!) * ctx.canvas.width + cx * Manager.patternSize + dx!) * 4;
-                            canvasImageData[idx + 0] = 255;
-                            canvasImageData[idx + 1] = 0;
-                            canvasImageData[idx + 2] = 0;
-                            canvasImageData[idx + 3] = 255;
-                        }
-                    }
-
-                    canvasImageData[canvasPixelIndex + 0] = this.imageData[imagePixelIndex + 0]!;
-                    canvasImageData[canvasPixelIndex + 1] = this.imageData[imagePixelIndex + 1]!;
-                    canvasImageData[canvasPixelIndex + 2] = this.imageData[imagePixelIndex + 2]!;
-                    canvasImageData[canvasPixelIndex + 3] = this.imageData[imagePixelIndex + 3]!;
-                }
+        const message: MessageDrawOnTile['message'] = {
+            name: 'DrawOnTile',
+            data: {
+                name: this.name,
+                tile: { x: tile.x, y: tile.y },
+                patternSize: Manager.patternSize,
+                trackProgress: trackProgress,
+                wrongHighlight: Manager.settings.wrongHighlight,
+                enabled: Manager.colorsInfo.entries().toArray().map(([id, info]) => [id, info.enabled]),
+                canvasWidth: ctx.canvas.width,
+                canvas: canvasImageData.buffer
             }
+        };
+        Manager.worker.postMessage(message, [canvasImageData.buffer]);
+
+        const result = await promise.catch(() => null); // Wait for worker
+
+        Manager.workerDrawOnTileResolve.delete(key);
+
+        if (result === null)
+            return;
+
+        ctx.putImageData(new ImageData(new Uint8ClampedArray(result.canvas), ctx.canvas.width, ctx.canvas.height), 0, 0);
 
         if (trackProgress) {
-            this.tiles.set(tile.toIndex(), colors);
+            this.tiles.set(tile.toIndex(), new Map(result.colorsProgress));
             this.updateTotalProgress();
             updateTemplatePixelCount(this);
         }
 
-        if (needToStoreTemplates)
-            this.computeBase64Data();
+        for (const [id, info] of result.colorsInfo) {
+            let colorInfo = Manager.colorsInfo.get(id);
+            if (colorInfo === undefined) {
+                colorInfo = { enabled: true, unpainted: new Set<PixelIndex>(), wrong: new Set<PixelIndex>() };
+                Manager.colorsInfo.set(id, colorInfo);
+            }
 
-        ctx.putImageData(imageData, 0, 0);
+            for (const i of info.unpainted.delete)
+                colorInfo.unpainted.delete(i);
+            for (const i of info.wrong.delete)
+                colorInfo.wrong.delete(i);
+            for (const i of info.unpainted.add) {
+                if (colorInfo.unpainted.size >= 100)
+                    break;
+                colorInfo.unpainted.add(i);
+            }
+            for (const i of info.wrong.add) {
+                if (colorInfo.wrong.size >= 100)
+                    break;
+                colorInfo.wrong.add(i);
+            }
+        }
     }
 
     updateTotalProgress() {

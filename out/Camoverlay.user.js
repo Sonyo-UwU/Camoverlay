@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.4.3
+// @version      1.4.4
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -104,12 +104,6 @@ function functionBody(f) {
 function twoHexDigits(n) {
   return n < 16 ? "0" + n.toString(16) : n.toString(16);
 }
-function closeEnough(r1, g1, b1, r2, g2, b2) {
-  const dr = r1 - r2;
-  const dg = g1 - g2;
-  const db = b1 - b2;
-  return dr * dr + dg * dg + db * db <= 100;
-}
 function rgbToId(r, g, b) {
   return r * 1e3 * 1e3 + g * 1e3 + b;
 }
@@ -117,17 +111,6 @@ function rgbToCss(rgb) {
   return twoHexDigits(rgb[0]) + twoHexDigits(rgb[1]) + twoHexDigits(rgb[2]);
 }
 var otherColor = { internalId: -1, id: rgbToId(136, 136, 136), name: "Other", rgb: [136, 136, 136], wplaceOrder: 64 };
-function getClosestColor(r, g, b) {
-  const id = rgbToId(r, g, b);
-  const color = rgbColorMap.get(id);
-  if (color !== void 0)
-    return color;
-  for (const color2 of rgbColorMap.values()) {
-    if (closeEnough(r, g, b, ...color2.rgb))
-      return color2;
-  }
-  return otherColor;
-}
 function getColor(r, g, b) {
   const id = rgbToId(r, g, b);
   const color = rgbColorMap.get(id);
@@ -555,6 +538,9 @@ var Template = class _Template {
       name: "TemplateFromStorage",
       data: {
         name: template.name,
+        width: template.width,
+        height: template.height,
+        coords: { tx: template.coords.tx, ty: template.coords.ty, px: template.coords.px, py: template.coords.py },
         base64Data: stored.base64Data
       }
     };
@@ -578,90 +564,60 @@ var Template = class _Template {
     const iy = (pixel.ty - this.coords.ty) * 1e3 - this.coords.py + pixel.py;
     return ix >= 0 && ix < this.width && iy >= 0 && iy < this.height;
   }
-  drawOnTile(tile, ctx, trackProgress) {
+  async drawOnTile(tile, ctx, trackProgress) {
     if (!this.enabled || this.imageData === null || !this.overlaps(tile.toIndex()))
       return;
-    let needToStoreTemplates = false;
     const imageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
     const canvasImageData = imageData.data;
-    const isFirstX = this.coords.tx === tile.x;
-    const isFirstY = this.coords.ty === tile.y;
-    const colors = /* @__PURE__ */ new Map();
-    for (let iy = isFirstY ? 0 : (tile.y - this.coords.ty) * 1e3 - this.coords.py, cy = isFirstY ? this.coords.py : 0; iy < this.height && cy < 1e3; iy++, cy++)
-      for (let ix = isFirstX ? 0 : (tile.x - this.coords.tx) * 1e3 - this.coords.px, cx = isFirstX ? this.coords.px : 0; ix < this.width && cx < 1e3; ix++, cx++) {
-        const imagePixelIndex = (iy * this.width + ix) * 4;
-        const canvasPixelIndex = ((cy * Manager.patternSize + 1) * ctx.canvas.width + cx * Manager.patternSize + 1) * 4;
-        if (this.imageData[imagePixelIndex + 3] === 0)
-          continue;
-        let color = getColor(this.imageData[imagePixelIndex + 0], this.imageData[imagePixelIndex + 1], this.imageData[imagePixelIndex + 2]);
-        const paintedColor = getClosestColor(canvasImageData[canvasPixelIndex + 0], canvasImageData[canvasPixelIndex + 1], canvasImageData[canvasPixelIndex + 2]);
-        const pixelTileIndex = PixelCoords.toIndex(tile.x, tile.y, cx, cy);
-        const pixelModifyIndex = this.modifyPixels.findIndex((c) => c.tx === tile.x && c.ty === tile.y && c.px === cx && c.py === cy);
-        if (pixelModifyIndex !== -1) {
-          this.modifyPixels.splice(pixelModifyIndex, 1);
-          if (color !== paintedColor) {
-            needToStoreTemplates = true;
-            Manager.colorsInfo.get(color.id)?.unpainted.delete(pixelTileIndex);
-            Manager.colorsInfo.get(color.id)?.wrong.delete(pixelTileIndex);
-            color = paintedColor;
-            this.imageData[imagePixelIndex + 0] = canvasImageData[canvasPixelIndex + 0];
-            this.imageData[imagePixelIndex + 1] = canvasImageData[canvasPixelIndex + 1];
-            this.imageData[imagePixelIndex + 2] = canvasImageData[canvasPixelIndex + 2];
-            this.imageData[imagePixelIndex + 3] = canvasImageData[canvasPixelIndex + 3];
-            if (this.imageData[imagePixelIndex + 3] === 0)
-              continue;
-          }
-        }
-        if (!Manager.colorsInfo.has(color.id)) {
-          Manager.colorsInfo.set(color.id, { enabled: true, unpainted: /* @__PURE__ */ new Set(), wrong: /* @__PURE__ */ new Set() });
-        }
-        const colorInfo = Manager.colorsInfo.get(color.id);
-        if (trackProgress) {
-          let progress = colors.get(color.id);
-          if (progress === void 0) {
-            progress = {
-              total: 0,
-              unpainted: 0,
-              wrong: 0
-            };
-            colors.set(color.id, progress);
-          }
-          progress.total++;
-          if (canvasImageData[canvasPixelIndex + 3] === 0) {
-            progress.unpainted++;
-            colorInfo.unpainted.add(pixelTileIndex);
-          } else if (color !== paintedColor) {
-            progress.wrong++;
-            colorInfo.wrong.add(pixelTileIndex);
-          } else {
-            colorInfo.unpainted.delete(pixelTileIndex);
-            colorInfo.wrong.delete(pixelTileIndex);
-          }
-        }
-        if (colorInfo.enabled) {
-          if (Manager.settings.wrongHighlight && canvasImageData[canvasPixelIndex + 3] !== 0 && color !== paintedColor) {
-            for (const [dx, dy] of [[0, 1], [1, 0], [2, 1], [1, 2]]) {
-              const idx = ((cy * Manager.patternSize + dy) * ctx.canvas.width + cx * Manager.patternSize + dx) * 4;
-              canvasImageData[idx + 0] = 255;
-              canvasImageData[idx + 1] = 0;
-              canvasImageData[idx + 2] = 0;
-              canvasImageData[idx + 3] = 255;
-            }
-          }
-          canvasImageData[canvasPixelIndex + 0] = this.imageData[imagePixelIndex + 0];
-          canvasImageData[canvasPixelIndex + 1] = this.imageData[imagePixelIndex + 1];
-          canvasImageData[canvasPixelIndex + 2] = this.imageData[imagePixelIndex + 2];
-          canvasImageData[canvasPixelIndex + 3] = this.imageData[imagePixelIndex + 3];
-        }
+    const { promise, resolve, reject } = Promise.withResolvers();
+    setTimeout(reject, 10 * 1e3);
+    const key = this.name + tile.toIndex().toString();
+    Manager.workerDrawOnTileResolve.set(key, resolve);
+    const message = {
+      name: "DrawOnTile",
+      data: {
+        name: this.name,
+        tile: { x: tile.x, y: tile.y },
+        patternSize: Manager.patternSize,
+        trackProgress,
+        wrongHighlight: Manager.settings.wrongHighlight,
+        enabled: Manager.colorsInfo.entries().toArray().map(([id, info]) => [id, info.enabled]),
+        canvasWidth: ctx.canvas.width,
+        canvas: canvasImageData.buffer
       }
+    };
+    Manager.worker.postMessage(message, [canvasImageData.buffer]);
+    const result = await promise.catch(() => null);
+    Manager.workerDrawOnTileResolve.delete(key);
+    if (result === null)
+      return;
+    ctx.putImageData(new ImageData(new Uint8ClampedArray(result.canvas), ctx.canvas.width, ctx.canvas.height), 0, 0);
     if (trackProgress) {
-      this.tiles.set(tile.toIndex(), colors);
+      this.tiles.set(tile.toIndex(), new Map(result.colorsProgress));
       this.updateTotalProgress();
       updateTemplatePixelCount(this);
     }
-    if (needToStoreTemplates)
-      this.computeBase64Data();
-    ctx.putImageData(imageData, 0, 0);
+    for (const [id, info] of result.colorsInfo) {
+      let colorInfo = Manager.colorsInfo.get(id);
+      if (colorInfo === void 0) {
+        colorInfo = { enabled: true, unpainted: /* @__PURE__ */ new Set(), wrong: /* @__PURE__ */ new Set() };
+        Manager.colorsInfo.set(id, colorInfo);
+      }
+      for (const i of info.unpainted.delete)
+        colorInfo.unpainted.delete(i);
+      for (const i of info.wrong.delete)
+        colorInfo.wrong.delete(i);
+      for (const i of info.unpainted.add) {
+        if (colorInfo.unpainted.size >= 100)
+          break;
+        colorInfo.unpainted.add(i);
+      }
+      for (const i of info.wrong.add) {
+        if (colorInfo.wrong.size >= 100)
+          break;
+        colorInfo.wrong.add(i);
+      }
+    }
   }
   updateTotalProgress() {
     this.totalProgress.total = 0;
@@ -694,24 +650,31 @@ function workerFunction() {
   function rgbToId2(r, g, b) {
     return r * 1e3 * 1e3 + g * 1e3 + b;
   }
-  function closeEnough2(r1, g1, b1, r2, g2, b2) {
+  function closeEnough(r1, g1, b1, r2, g2, b2) {
     const dr = r1 - r2;
     const dg = g1 - g2;
     const db = b1 - b2;
     return dr * dr + dg * dg + db * db <= 100;
   }
-  function getClosestColor2(r, g, b) {
+  function getColor2(r, g, b) {
+    const id = rgbToId2(r, g, b);
+    const color = rgbColorMap2.get(id);
+    if (color !== void 0)
+      return color;
+    return otherColor2;
+  }
+  function getClosestColor(r, g, b) {
     const id = rgbToId2(r, g, b);
     const color = rgbColorMap2.get(id);
     if (color !== void 0)
       return color;
     for (const color2 of rgbColorMap2.values()) {
-      if (closeEnough2(r, g, b, ...color2.rgb))
+      if (closeEnough(r, g, b, ...color2.rgb))
         return color2;
     }
     return otherColor2;
   }
-  const imagesData = /* @__PURE__ */ new Map();
+  const templates = /* @__PURE__ */ new Map();
   self.onmessage = (e) => {
     const m = e.data;
     switch (m.name) {
@@ -722,10 +685,13 @@ function workerFunction() {
         templateFromBitmap(m.data);
         break;
       case "TemplateFromStorage":
-        templateFromBase64Data(m.data.name, m.data.base64Data);
+        templateFromBase64Data(m.data);
         break;
       case "ComputeBase64Data":
         computeBase64Data(m.data.name);
+        break;
+      case "DrawOnTile":
+        drawOnTile(m.data);
         break;
       default:
         const n = m;
@@ -752,7 +718,7 @@ function workerFunction() {
           tile = /* @__PURE__ */ new Map();
           tiles.set(tileIndex, tile);
         }
-        const color = getClosestColor2(imageData.data[pixelIndex + 0], imageData.data[pixelIndex + 1], imageData.data[pixelIndex + 2]);
+        const color = getClosestColor(imageData.data[pixelIndex + 0], imageData.data[pixelIndex + 1], imageData.data[pixelIndex + 2]);
         tile.set(color.id, tile.get(color.id) ?? 0 + 1);
         if (color !== otherColor2) {
           imageData.data[pixelIndex + 0] = color.rgb[0];
@@ -760,7 +726,7 @@ function workerFunction() {
           imageData.data[pixelIndex + 2] = color.rgb[2];
         }
       }
-    imagesData.set(name, imageData.data);
+    templates.set(name, { imageData: imageData.data, width: canvas.width, height: canvas.height, coords });
     setTimeout(() => computeBase64Data(name));
     const buffer = imageData.data.buffer;
     const response = {
@@ -773,7 +739,7 @@ function workerFunction() {
     };
     self.postMessage(response);
   }
-  function templateFromBase64Data(name, base64Data) {
+  function templateFromBase64Data({ name, width, height, coords, base64Data }) {
     let result;
     try {
       const binary = atob(LZString.decompress(base64Data));
@@ -781,7 +747,7 @@ function workerFunction() {
       for (let i = 0; i < binary.length; i++) {
         array[i] = binary.charCodeAt(i);
       }
-      imagesData.set(name, array);
+      templates.set(name, { imageData: array, width, height, coords });
       result = array;
     } catch {
       result = new Uint8ClampedArray();
@@ -796,7 +762,7 @@ function workerFunction() {
     self.postMessage(message);
   }
   function computeBase64Data(name) {
-    const imageData = imagesData.get(name);
+    const imageData = templates.get(name)?.imageData;
     if (imageData === void 0)
       return;
     let binary = "";
@@ -813,6 +779,85 @@ function workerFunction() {
     };
     self.postMessage(response);
   }
+  function drawOnTile({ name, tile, patternSize, trackProgress, wrongHighlight, enabled, canvasWidth, canvas }) {
+    const template = templates.get(name);
+    if (template === void 0)
+      return;
+    const enabledMap = new Map(enabled);
+    let needToStoreTemplates = false;
+    const canvasImageData = new Uint8ClampedArray(canvas);
+    const isFirstX = template.coords.tx === tile.x;
+    const isFirstY = template.coords.ty === tile.y;
+    const colorsProgress = /* @__PURE__ */ new Map();
+    const colorsInfo = /* @__PURE__ */ new Map();
+    for (let iy = isFirstY ? 0 : (tile.y - template.coords.ty) * 1e3 - template.coords.py, cy = isFirstY ? template.coords.py : 0; iy < template.height && cy < 1e3; iy++, cy++)
+      for (let ix = isFirstX ? 0 : (tile.x - template.coords.tx) * 1e3 - template.coords.px, cx = isFirstX ? template.coords.px : 0; ix < template.width && cx < 1e3; ix++, cx++) {
+        const imagePixelIndex = (iy * template.width + ix) * 4;
+        const canvasPixelIndex = ((cy * patternSize + 1) * canvasWidth + cx * patternSize + 1) * 4;
+        if (template.imageData[imagePixelIndex + 3] === 0)
+          continue;
+        let color = getColor2(template.imageData[imagePixelIndex + 0], template.imageData[imagePixelIndex + 1], template.imageData[imagePixelIndex + 2]);
+        const paintedColor = getClosestColor(canvasImageData[canvasPixelIndex + 0], canvasImageData[canvasPixelIndex + 1], canvasImageData[canvasPixelIndex + 2]);
+        const pixelTileIndex = (tile.x * 1e4 + tile.y) * 1e6 + (cx * 1e3 + cy);
+        let colorInfo = colorsInfo.get(color.id);
+        if (colorInfo === void 0) {
+          colorInfo = { unpainted: { add: [], delete: [] }, wrong: { add: [], delete: [] } };
+          colorsInfo.set(color.id, colorInfo);
+        }
+        if (trackProgress) {
+          let progress = colorsProgress.get(color.id);
+          if (progress === void 0) {
+            progress = {
+              total: 0,
+              unpainted: 0,
+              wrong: 0
+            };
+            colorsProgress.set(color.id, progress);
+          }
+          progress.total++;
+          if (canvasImageData[canvasPixelIndex + 3] === 0) {
+            progress.unpainted++;
+            if (colorInfo.unpainted.add.length < 100)
+              colorInfo.unpainted.add.push(pixelTileIndex);
+          } else if (color !== paintedColor) {
+            progress.wrong++;
+            if (colorInfo.wrong.add.length < 100)
+              colorInfo.wrong.add.push(pixelTileIndex);
+          } else {
+            colorInfo.unpainted.delete.push(pixelTileIndex);
+            colorInfo.wrong.delete.push(pixelTileIndex);
+          }
+        }
+        if (enabledMap.get(color.id)) {
+          if (wrongHighlight && canvasImageData[canvasPixelIndex + 3] !== 0 && color !== paintedColor) {
+            for (const [dx, dy] of [[0, 1], [1, 0], [2, 1], [1, 2]]) {
+              const idx = ((cy * patternSize + dy) * canvasWidth + cx * patternSize + dx) * 4;
+              canvasImageData[idx + 0] = 255;
+              canvasImageData[idx + 1] = 0;
+              canvasImageData[idx + 2] = 0;
+              canvasImageData[idx + 3] = 255;
+            }
+          }
+          canvasImageData[canvasPixelIndex + 0] = template.imageData[imagePixelIndex + 0];
+          canvasImageData[canvasPixelIndex + 1] = template.imageData[imagePixelIndex + 1];
+          canvasImageData[canvasPixelIndex + 2] = template.imageData[imagePixelIndex + 2];
+          canvasImageData[canvasPixelIndex + 3] = template.imageData[imagePixelIndex + 3];
+        }
+      }
+    if (needToStoreTemplates)
+      setTimeout(() => computeBase64Data(name));
+    const message = {
+      name: "DrawOnTile",
+      data: {
+        name,
+        tile,
+        colorsProgress: colorsProgress.entries().toArray(),
+        colorsInfo: colorsInfo.entries().toArray(),
+        canvas: canvasImageData.buffer
+      }
+    };
+    self.postMessage(message, [canvasImageData.buffer]);
+  }
 }
 
 // dist/Manager.js
@@ -827,6 +872,7 @@ var ManagerClass = class _ManagerClass {
   wplaceMap;
   worker;
   workerCreateTemplateResolve;
+  workerDrawOnTileResolve;
   setInputCoords(value, store = true) {
     document.getElementById("ca-input-tx").value = value?.tx.toString() ?? "";
     document.getElementById("ca-input-ty").value = value?.ty.toString() ?? "";
@@ -859,6 +905,7 @@ var ManagerClass = class _ManagerClass {
     };
     this.wplaceMap = null;
     this.workerCreateTemplateResolve = /* @__PURE__ */ new Map();
+    this.workerDrawOnTileResolve = /* @__PURE__ */ new Map();
   }
   static #loadValue(key) {
     return JSON.parse(GM_getValue(key, null));
@@ -951,6 +998,9 @@ var ManagerClass = class _ManagerClass {
         template2.base64Data = m.data.base64Data;
         Manager.storeTemplates();
         break;
+      case "DrawOnTile":
+        Manager.workerDrawOnTileResolve.get(m.data.name + TileCoords.toIndex(m.data.tile.x, m.data.tile.y).toString())?.(m.data);
+        break;
       default:
         const n = m;
         n;
@@ -1005,10 +1055,13 @@ var ManagerClass = class _ManagerClass {
     while (list.firstChild)
       list.firstChild.remove();
     const colorProgress = /* @__PURE__ */ new Map();
+    let anyWrong = false;
     for (const template of this.templates) {
       if (template.enabled)
         for (const [_, colors] of template.tiles)
           for (const [id, progress] of colors) {
+            if (progress.total === 0)
+              continue;
             let totalProgress = colorProgress.get(id);
             if (totalProgress === void 0) {
               totalProgress = { total: 0, unpainted: 0, wrong: 0 };
@@ -1017,6 +1070,8 @@ var ManagerClass = class _ManagerClass {
             totalProgress.total += progress.total;
             totalProgress.unpainted += progress.unpainted;
             totalProgress.wrong += progress.wrong;
+            if (totalProgress.wrong > 0)
+              anyWrong = true;
           }
     }
     for (const id of this.colorsInfo.keys()) {
@@ -1052,7 +1107,7 @@ var ManagerClass = class _ManagerClass {
     for (const [id, progress] of colorsArray) {
       if (!this.colorsInfo.has(id))
         this.colorsInfo.set(id, { enabled: true, wrong: /* @__PURE__ */ new Set(), unpainted: /* @__PURE__ */ new Set() });
-      if (!this.settings.hideCompleted || (this.settings.colorSorting === "Wrong" ? 0 : progress.unpainted) + progress.wrong > 0)
+      if (!this.settings.hideCompleted || (this.settings.colorSorting === "Wrong" && anyWrong ? 0 : progress.unpainted) + progress.wrong > 0)
         addColorRow(id, progress);
     }
   }
@@ -1103,14 +1158,13 @@ var ManagerClass = class _ManagerClass {
     }
     if (allDisabled)
       return blob;
-    const canvas = new OffscreenCanvas(this.patternSize * 1e3, this.patternSize * 1e3);
+    let canvas = new OffscreenCanvas(this.patternSize * 1e3, this.patternSize * 1e3);
     const ctx = canvas.getContext("2d");
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(await createImageBitmap(blob), 0, 0, canvas.width, canvas.height);
-    for (const template of this.templates) {
+    for (const template of this.templates)
       if (template.enabled)
-        template.drawOnTile(tile, ctx, trackProgress);
-    }
+        await template.drawOnTile(tile, ctx, trackProgress);
     return await canvas.convertToBlob();
   }
   /* Snipet inspired from https://github.com/t-wy/Wplace-BlueMarble-Userscripts/tree/custom-improve */

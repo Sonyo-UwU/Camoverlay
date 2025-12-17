@@ -1,7 +1,7 @@
 import { PixelCoords, TileCoords } from './Coords';
 import { addColorRow, addTemplateRow, displayStatus, removeTemplateRow } from './display';
 import { addCanvasListeners } from './eventListeners';
-import { MessageCreateTemplate, MessageInit, WorkerResponse } from './Messages';
+import { MessageCreateTemplate, MessageDrawOnTile, MessageInit, WorkerResponse } from './Messages';
 import Template from './Template';
 import { ColorInfo, JsonifiedValue, PixelIndex, PromiseResolve, TileIndex, TileInfo, TileProgress, UserSettings, WplaceColorId, WplaceMap } from './types';
 import { ColorSortingOptions, computeHue, computeLuminance, functionBody, rgbColorMap } from './utils';
@@ -27,6 +27,7 @@ class ManagerClass {
     wplaceMap: WplaceMap | null;
     worker!: Worker;
     workerCreateTemplateResolve: Map<string, PromiseResolve<MessageCreateTemplate['response']['data']>>;
+    workerDrawOnTileResolve: Map<string, PromiseResolve<MessageDrawOnTile['response']['data']>>;
 
     setInputCoords(value: PixelCoords | null, store: boolean = true) {
         (document.getElementById('ca-input-tx') as HTMLInputElement).value = value?.tx.toString() ?? '';
@@ -64,6 +65,7 @@ class ManagerClass {
         };
         this.wplaceMap = null;
         this.workerCreateTemplateResolve = new Map();
+        this.workerDrawOnTileResolve = new Map();
     }
 
     static #loadValue<K extends keyof StorageValues>(key: K): JsonifiedValue<StorageValues[K]> | null {
@@ -179,6 +181,9 @@ class ManagerClass {
                 template2.base64Data = m.data.base64Data;
                 Manager.storeTemplates();
                 break;
+            case 'DrawOnTile':
+                Manager.workerDrawOnTileResolve.get(m.data.name + TileCoords.toIndex(m.data.tile.x, m.data.tile.y).toString())?.(m.data);
+                break;
             default:
                 const n: never = m;
                 n;
@@ -250,10 +255,15 @@ class ManagerClass {
 
         const colorProgress = new Map<WplaceColorId, TileProgress>();
 
+        let anyWrong: boolean = false;
+
         for (const template of this.templates) {
             if (template.enabled)
                 for (const [_, colors] of template.tiles)
                     for (const [id, progress] of colors) {
+                        if (progress.total === 0)
+                            continue;
+
                         let totalProgress = colorProgress.get(id);
                         if (totalProgress === undefined) {
                             totalProgress = { total: 0, unpainted: 0, wrong: 0 };
@@ -262,6 +272,9 @@ class ManagerClass {
                         totalProgress.total += progress.total;
                         totalProgress.unpainted += progress.unpainted;
                         totalProgress.wrong += progress.wrong;
+
+                        if (totalProgress.wrong > 0)
+                            anyWrong = true;
                     }
         }
 
@@ -302,7 +315,7 @@ class ManagerClass {
         for (const [id, progress] of colorsArray) {
             if (!this.colorsInfo.has(id))
                 this.colorsInfo.set(id, { enabled: true, wrong: new Set<PixelIndex>(), unpainted: new Set<PixelIndex>() });
-            if (!this.settings.hideCompleted || (this.settings.colorSorting === ColorSortingOptions.Wrong ? 0 : progress.unpainted) + progress.wrong > 0)
+            if (!this.settings.hideCompleted || ((this.settings.colorSorting === ColorSortingOptions.Wrong && anyWrong) ? 0 : progress.unpainted) + progress.wrong > 0)
                 addColorRow(id, progress);
         }
     }
@@ -371,17 +384,16 @@ class ManagerClass {
         if (allDisabled)
             return blob;
 
-        const canvas = new OffscreenCanvas(this.patternSize * 1000, this.patternSize * 1000);
+        let canvas = new OffscreenCanvas(this.patternSize * 1000, this.patternSize * 1000);
         const ctx = canvas.getContext('2d')!;
         ctx.imageSmoothingEnabled = false;
 
         ctx.drawImage(await createImageBitmap(blob), 0, 0, canvas.width, canvas.height);
 
 
-        for (const template of this.templates) {
+        for (const template of this.templates)
             if (template.enabled)
-                template.drawOnTile(tile, ctx, trackProgress);
-        }
+                await template.drawOnTile(tile, ctx, trackProgress);
 
         return await canvas.convertToBlob();
     }

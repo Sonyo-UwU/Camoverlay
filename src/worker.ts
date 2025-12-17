@@ -1,7 +1,15 @@
 /* Only import types here ; this will run in a web worker */
 
-import type { MessageComputeBase64Data, MessageCreateTemplate, MessageTemplateFromStorage, WorkerMessage } from './Messages';
-import type { TileIndex, WorkerWplaceColor, WplaceColorId } from './types';
+import type { PixelCoordsObject } from './Coords';
+import type { MessageComputeBase64Data, MessageCreateTemplate, MessageDrawOnTile, MessageTemplateFromStorage, WorkerMessage } from './Messages';
+import type { PixelIndex, TileIndex, TileProgress, WorkerWplaceColor, WplaceColorId } from './types';
+
+type WorkerTemplate = {
+    imageData: Uint8ClampedArray,
+    width: number,
+    height: number,
+    coords: PixelCoordsObject;
+};
 
 declare const self: Worker;
 declare const LZString: {
@@ -36,6 +44,13 @@ export function workerFunction() {
         const dg = g1 - g2;
         const db = b1 - b2;
         return dr * dr + dg * dg + db * db <= 100;
+    } function getColor(r: number, g: number, b: number): WorkerWplaceColor {
+        const id = rgbToId(r, g, b);
+        const color = rgbColorMap.get(id);
+        if (color !== undefined)
+            return color;
+
+        return otherColor;
     }
 
     function getClosestColor(r: number, g: number, b: number): WorkerWplaceColor {
@@ -53,7 +68,7 @@ export function workerFunction() {
 
     //#endregion
 
-    const imagesData = new Map<string, Uint8ClampedArray>();
+    const templates = new Map<string, WorkerTemplate>();
 
     self.onmessage = e => {
         const m = e.data as WorkerMessage;
@@ -65,10 +80,13 @@ export function workerFunction() {
                 templateFromBitmap(m.data);
                 break;
             case 'TemplateFromStorage':
-                templateFromBase64Data(m.data.name, m.data.base64Data);
+                templateFromBase64Data(m.data);
                 break;
             case 'ComputeBase64Data':
                 computeBase64Data(m.data.name);
+                break;
+            case 'DrawOnTile':
+                drawOnTile(m.data);
                 break;
             default:
                 const n: never = m;
@@ -115,7 +133,7 @@ export function workerFunction() {
             }
 
 
-        imagesData.set(name, imageData.data);
+        templates.set(name, { imageData: imageData.data, width: canvas.width, height: canvas.height, coords: coords });
         setTimeout(() => computeBase64Data(name));
 
         // Send response
@@ -131,7 +149,7 @@ export function workerFunction() {
         self.postMessage(response); // buffer is not transfered until all computation is moved to worker, since we need it on both sides
     }
 
-    function templateFromBase64Data(name: string, base64Data: string): void {
+    function templateFromBase64Data({ name, width, height, coords, base64Data }: MessageTemplateFromStorage['message']['data']): void {
         let result: Uint8ClampedArray<ArrayBuffer>;
 
         try {
@@ -140,7 +158,7 @@ export function workerFunction() {
             for (let i = 0; i < binary.length; i++) {
                 array[i] = binary.charCodeAt(i);
             }
-            imagesData.set(name, array);
+            templates.set(name, { imageData: array, width: width, height: height, coords: coords });
             result = array;
         }
         catch {
@@ -158,7 +176,7 @@ export function workerFunction() {
     }
 
     function computeBase64Data(name: string): void {
-        const imageData = imagesData.get(name);
+        const imageData = templates.get(name)?.imageData;
         if (imageData === undefined)
             return;
 
@@ -177,5 +195,141 @@ export function workerFunction() {
             }
         };
         self.postMessage(response);
+    }
+
+    function drawOnTile({ name, tile, patternSize, trackProgress, wrongHighlight, enabled, canvasWidth, canvas }: MessageDrawOnTile['message']['data']): void {
+        const template = templates.get(name);
+        if (template === undefined)
+            return;
+
+        const enabledMap = new Map(enabled);
+
+        let needToStoreTemplates = false;
+
+        //const ctx = canvas.getContext('2d')!;
+        //const imageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
+        const canvasImageData = new Uint8ClampedArray(canvas);
+
+        const isFirstX = template.coords.tx === tile.x;
+        const isFirstY = template.coords.ty === tile.y;
+        const colorsProgress = new Map<WplaceColorId, TileProgress>();
+        const colorsInfo = new Map<WplaceColorId, { unpainted: { add: PixelIndex[], delete: PixelIndex[]; }, wrong: { add: PixelIndex[], delete: PixelIndex[]; }; }>();
+
+        for (let iy = isFirstY ? 0 : (tile.y - template.coords.ty) * 1000 - template.coords.py,
+            cy = isFirstY ? template.coords.py : 0;
+            iy < template.height && cy < 1000;
+            iy++, cy++)
+            for (let ix = isFirstX ? 0 : (tile.x - template.coords.tx) * 1000 - template.coords.px,
+                cx = isFirstX ? template.coords.px : 0;
+                ix < template.width && cx < 1000;
+                ix++, cx++) {
+                const imagePixelIndex = (iy * template.width + ix) * 4;
+                const canvasPixelIndex = ((cy * patternSize + 1) * canvasWidth + cx * patternSize + 1) * 4;
+
+                if (template.imageData[imagePixelIndex + 3]! === 0)
+                    continue;
+
+                let color = getColor(template.imageData[imagePixelIndex + 0]!, template.imageData[imagePixelIndex + 1]!, template.imageData[imagePixelIndex + 2]!);
+                const paintedColor = getClosestColor(canvasImageData[canvasPixelIndex + 0]!, canvasImageData[canvasPixelIndex + 1]!, canvasImageData[canvasPixelIndex + 2]!);
+
+
+                const pixelTileIndex = (tile.x * 10000 + tile.y) * 1000000 + (cx * 1000 + cy) as PixelIndex;
+
+                /*const pixelModifyIndex = this.modifyPixels.findIndex(c => c.tx === tile.x && c.ty === tile.y && c.px === cx && c.py === cy);
+                if (pixelModifyIndex !== -1) {
+                    this.modifyPixels.splice(pixelModifyIndex, 1);
+
+                    if (color !== paintedColor) {
+                        needToStoreTemplates = true;
+
+                        Manager.colorsInfo.get(color.id)?.unpainted.delete(pixelTileIndex);
+                        Manager.colorsInfo.get(color.id)?.wrong.delete(pixelTileIndex);
+
+                        color = paintedColor;
+                        template.imageData[imagePixelIndex + 0] = canvasImageData[canvasPixelIndex + 0]!;
+                        template.imageData[imagePixelIndex + 1] = canvasImageData[canvasPixelIndex + 1]!;
+                        template.imageData[imagePixelIndex + 2] = canvasImageData[canvasPixelIndex + 2]!;
+                        template.imageData[imagePixelIndex + 3] = canvasImageData[canvasPixelIndex + 3]!;
+
+
+
+                        if (template.imageData[imagePixelIndex + 3]! === 0)
+                            continue;
+                    }
+                }*/
+
+
+                let colorInfo = colorsInfo.get(color.id);
+                if (colorInfo === undefined) {
+                    colorInfo = { unpainted: { add: [], delete: [] }, wrong: { add: [], delete: [] } };
+                    colorsInfo.set(color.id, colorInfo);
+                }
+
+                if (trackProgress) {
+                    let progress = colorsProgress.get(color.id);
+                    if (progress === undefined) {
+                        progress = {
+                            total: 0,
+                            unpainted: 0,
+                            wrong: 0
+                        };
+                        colorsProgress.set(color.id, progress);
+                    }
+
+                    progress.total++;
+                    if (canvasImageData[canvasPixelIndex + 3] === 0) {
+                        // Unpainted
+                        progress.unpainted++;
+
+                        if (colorInfo.unpainted.add.length < 100)
+                            colorInfo.unpainted.add.push(pixelTileIndex);
+                    }
+                    else if (color !== paintedColor) {
+                        // Wrong
+                        progress.wrong++;
+
+                        if (colorInfo.wrong.add.length < 100)
+                            colorInfo.wrong.add.push(pixelTileIndex);
+                    }
+                    else {
+                        // Correct
+                        colorInfo.unpainted.delete.push(pixelTileIndex);
+                        colorInfo.wrong.delete.push(pixelTileIndex);
+                    }
+                }
+
+                if (enabledMap.get(color.id)) {
+                    if (wrongHighlight && canvasImageData[canvasPixelIndex + 3] !== 0 && color !== paintedColor) {
+                        // Wrong pixel highlight
+                        for (const [dx, dy] of [[0, 1], [1, 0], [2, 1], [1, 2]]) {
+                            const idx = ((cy * patternSize + dy!) * canvasWidth + cx * patternSize + dx!) * 4;
+                            canvasImageData[idx + 0] = 255;
+                            canvasImageData[idx + 1] = 0;
+                            canvasImageData[idx + 2] = 0;
+                            canvasImageData[idx + 3] = 255;
+                        }
+                    }
+
+                    canvasImageData[canvasPixelIndex + 0] = template.imageData[imagePixelIndex + 0]!;
+                    canvasImageData[canvasPixelIndex + 1] = template.imageData[imagePixelIndex + 1]!;
+                    canvasImageData[canvasPixelIndex + 2] = template.imageData[imagePixelIndex + 2]!;
+                    canvasImageData[canvasPixelIndex + 3] = template.imageData[imagePixelIndex + 3]!;
+                }
+            }
+
+        if (needToStoreTemplates)
+            setTimeout(() => computeBase64Data(name));
+
+        const message: MessageDrawOnTile['response'] = {
+            name: 'DrawOnTile',
+            data: {
+                name: name,
+                tile: tile,
+                colorsProgress: colorsProgress.entries().toArray(),
+                colorsInfo: colorsInfo.entries().toArray(),
+                canvas: canvasImageData.buffer
+            }
+        };
+        self.postMessage(message, [canvasImageData.buffer]);
     }
 }
