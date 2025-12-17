@@ -133,7 +133,7 @@ class ManagerClass {
         ManagerClass.#storeValue('templates', this.templates);
     }
 
-    resetTiles(indices: Iterable<number>): void {
+    resetTiles(indices: Iterable<TileIndex>): void {
         for (const index of indices)
             this.tilesInfo.delete(index);
     }

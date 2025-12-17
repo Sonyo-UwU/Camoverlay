@@ -1,9 +1,7 @@
 import { ColorSortingOptions } from './utils';
 
-declare const __brand: unique symbol;
-
-export type TileIndex = number;
-export type PixelIndex = number;
+export type TileIndex = number & { readonly b: unique symbol; };
+export type PixelIndex = number & { readonly b: unique symbol; };
 
 export type TileInfo = {
     lastModified: EpochTimeStamp,
@@ -29,7 +27,7 @@ export type UserSettings = {
     hideCompleted: boolean;
 };
 
-export type WplaceColorId = number & { [__brand]: 0; };
+export type WplaceColorId = number & { readonly b: unique symbol; };
 export type WplaceColor = {
     internalId: number,
     id: WplaceColorId,

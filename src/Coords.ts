@@ -10,7 +10,7 @@ export class TileCoords {
     }
 
     static toIndex(x: number, y: number): TileIndex {
-        return x * 10000 + y;
+        return x * 10000 + y as TileIndex;
     }
 
     toIndex(): TileIndex {
@@ -51,7 +51,7 @@ export class PixelCoords {
     }
 
     static toIndex(tx: number, ty: number, px: number, py: number): PixelIndex {
-        return (tx * 10000 + ty) * 1000000 + (px * 1000 + py);
+        return (tx * 10000 + ty) * 1000000 + (px * 1000 + py) as PixelIndex;
     }
 
     static fromIndex(i: PixelIndex): PixelCoords {
