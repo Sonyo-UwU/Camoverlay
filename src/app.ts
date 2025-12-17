@@ -7,6 +7,7 @@ import { parsePixelCoordsFromURL, parseTileCoordsFromURL } from './utils';
 declare const GM_info: ScriptGetInfo;
 declare const unsafeWindow: typeof window;
 
+await Manager.createWorker();
 
 Manager.getMapObject();
 

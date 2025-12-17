@@ -64,7 +64,6 @@ class ManagerClass {
         };
         this.wplaceMap = null;
         this.workerCreateTemplateResolve = new Map();
-        this.createWorker();
     }
 
     static #loadValue<K extends keyof StorageValues>(key: K): JsonifiedValue<StorageValues[K]> | null {
@@ -164,12 +163,20 @@ class ManagerClass {
             case 'CreateTemplate':
                 Manager.workerCreateTemplateResolve.get(m.data.name)?.(m.data);
                 break;
-            case 'ComputeBase64Data':
-                const template = Manager.templates.find(t => t.name === m.data.name);
-                if (template === undefined)
+            case 'TemplateFromStorage':
+                const template1 = Manager.templates.find(t => t.name === m.data.name);
+                if (template1 === undefined)
                     break;
 
-                template.base64Data = m.data.base64Data;
+                template1.imageData = new Uint8ClampedArray(m.data.imageData);
+                Manager.storeTemplates();
+                break;
+            case 'ComputeBase64Data':
+                const template2 = Manager.templates.find(t => t.name === m.data.name);
+                if (template2 === undefined)
+                    break;
+
+                template2.base64Data = m.data.base64Data;
                 Manager.storeTemplates();
                 break;
             default:

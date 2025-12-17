@@ -33,6 +33,17 @@ export type MessageCreateTemplate = Message<
         imageData: Extract<Transferable, ArrayBuffer>;
     }>;
 
+export type MessageTemplateFromStorage = Message<
+    'TemplateFromStorage',
+    {
+        name: string,
+        base64Data: string;
+    },
+    {
+        name: string,
+        imageData: Extract<Transferable, ArrayBuffer>;
+    }>;
+
 export type MessageComputeBase64Data = Message<
     'ComputeBase64Data',
     {
@@ -43,6 +54,6 @@ export type MessageComputeBase64Data = Message<
         base64Data: string;
     }>;
 
-type AllMessages = MessageInit | MessageCreateTemplate | MessageComputeBase64Data;
+type AllMessages = MessageInit | MessageCreateTemplate | MessageComputeBase64Data | MessageTemplateFromStorage;
 export type WorkerMessage = AllMessages['message'];
 export type WorkerResponse = AllMessages['response'];

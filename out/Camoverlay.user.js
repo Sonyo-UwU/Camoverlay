@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.4.2
+// @version      1.4.3
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -536,16 +536,6 @@ var Template = class _Template {
     const template = new _Template(stored.name, PixelCoords.copy(stored.coords), stored.width, stored.height);
     if (stored.enabled !== void 0)
       template.enabled = stored.enabled;
-    try {
-      const binary = atob(LZString.decompress(stored.base64Data));
-      const array = new Uint8ClampedArray(binary.length);
-      for (let i = 0; i < binary.length; i++) {
-        array[i] = binary.charCodeAt(i);
-      }
-      template.imageData = array;
-    } catch {
-      return null;
-    }
     template.base64Data = stored.base64Data;
     template.tiles = /* @__PURE__ */ new Map();
     for (const [index, colors] of stored.tiles) {
@@ -561,6 +551,14 @@ var Template = class _Template {
       }
       template.tiles.set(index, progress);
     }
+    const message = {
+      name: "TemplateFromStorage",
+      data: {
+        name: template.name,
+        base64Data: stored.base64Data
+      }
+    };
+    Manager.worker.postMessage(message);
     return template;
   }
   computeBase64Data() {
@@ -723,6 +721,9 @@ function workerFunction() {
       case "CreateTemplate":
         templateFromBitmap(m.data);
         break;
+      case "TemplateFromStorage":
+        templateFromBase64Data(m.data.name, m.data.base64Data);
+        break;
       case "ComputeBase64Data":
         computeBase64Data(m.data.name);
         break;
@@ -771,6 +772,28 @@ function workerFunction() {
       }
     };
     self.postMessage(response);
+  }
+  function templateFromBase64Data(name, base64Data) {
+    let result;
+    try {
+      const binary = atob(LZString.decompress(base64Data));
+      const array = new Uint8ClampedArray(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        array[i] = binary.charCodeAt(i);
+      }
+      imagesData.set(name, array);
+      result = array;
+    } catch {
+      result = new Uint8ClampedArray();
+    }
+    const message = {
+      name: "TemplateFromStorage",
+      data: {
+        name,
+        imageData: result.buffer
+      }
+    };
+    self.postMessage(message);
   }
   function computeBase64Data(name) {
     const imageData = imagesData.get(name);
@@ -836,7 +859,6 @@ var ManagerClass = class _ManagerClass {
     };
     this.wplaceMap = null;
     this.workerCreateTemplateResolve = /* @__PURE__ */ new Map();
-    this.createWorker();
   }
   static #loadValue(key) {
     return JSON.parse(GM_getValue(key, null));
@@ -915,11 +937,18 @@ var ManagerClass = class _ManagerClass {
       case "CreateTemplate":
         Manager.workerCreateTemplateResolve.get(m.data.name)?.(m.data);
         break;
-      case "ComputeBase64Data":
-        const template = Manager.templates.find((t) => t.name === m.data.name);
-        if (template === void 0)
+      case "TemplateFromStorage":
+        const template1 = Manager.templates.find((t) => t.name === m.data.name);
+        if (template1 === void 0)
           break;
-        template.base64Data = m.data.base64Data;
+        template1.imageData = new Uint8ClampedArray(m.data.imageData);
+        Manager.storeTemplates();
+        break;
+      case "ComputeBase64Data":
+        const template2 = Manager.templates.find((t) => t.name === m.data.name);
+        if (template2 === void 0)
+          break;
+        template2.base64Data = m.data.base64Data;
         Manager.storeTemplates();
         break;
       default:
@@ -1845,6 +1874,7 @@ function displayTileCoords(coords) {
 }
 
 // dist/app.js
+await Manager.createWorker();
 Manager.getMapObject();
 importFont();
 injectOverlay();

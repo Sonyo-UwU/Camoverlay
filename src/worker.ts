@@ -1,6 +1,6 @@
 /* Only import types here ; this will run in a web worker */
 
-import type { MessageComputeBase64Data, MessageCreateTemplate, WorkerMessage } from './Messages';
+import type { MessageComputeBase64Data, MessageCreateTemplate, MessageTemplateFromStorage, WorkerMessage } from './Messages';
 import type { TileIndex, WorkerWplaceColor, WplaceColorId } from './types';
 
 declare const self: Worker;
@@ -64,6 +64,9 @@ export function workerFunction() {
             case 'CreateTemplate':
                 templateFromBitmap(m.data);
                 break;
+            case 'TemplateFromStorage':
+                templateFromBase64Data(m.data.name, m.data.base64Data);
+                break;
             case 'ComputeBase64Data':
                 computeBase64Data(m.data.name);
                 break;
@@ -126,6 +129,32 @@ export function workerFunction() {
             }
         };
         self.postMessage(response); // buffer is not transfered until all computation is moved to worker, since we need it on both sides
+    }
+
+    function templateFromBase64Data(name: string, base64Data: string): void {
+        let result: Uint8ClampedArray<ArrayBuffer>;
+
+        try {
+            const binary = atob(LZString.decompress(base64Data)); // ASCII to Binary
+            const array = new Uint8ClampedArray(binary.length);
+            for (let i = 0; i < binary.length; i++) {
+                array[i] = binary.charCodeAt(i);
+            }
+            imagesData.set(name, array);
+            result = array;
+        }
+        catch {
+            result = new Uint8ClampedArray();
+        }
+
+        const message: MessageTemplateFromStorage['response'] = {
+            name: 'TemplateFromStorage',
+            data: {
+                name: name,
+                imageData: result.buffer
+            }
+        };
+        self.postMessage(message);
     }
 
     function computeBase64Data(name: string): void {

@@ -1,7 +1,7 @@
 import { PixelCoords, TileCoords } from './Coords';
 import { updateTemplatePixelCount } from './display';
 import { Manager } from './Manager';
-import { MessageComputeBase64Data, MessageCreateTemplate } from './Messages';
+import { MessageComputeBase64Data, MessageCreateTemplate, MessageTemplateFromStorage } from './Messages';
 import { JsonifiedValue, PixelIndex, TileIndex, TileProgress, WplaceColorId } from './types';
 import { getClosestColor, getColor } from './utils';
 
@@ -117,17 +117,6 @@ export default class Template {
         if (stored.enabled !== undefined)
             template.enabled = stored.enabled;
 
-        try {
-            const binary = atob(LZString.decompress(stored.base64Data)); // ASCII to Binary
-            const array = new Uint8ClampedArray(binary.length);
-            for (let i = 0; i < binary.length; i++) {
-                array[i] = binary.charCodeAt(i);
-            }
-            template.imageData = array;
-        }
-        catch {
-            return null;
-        }
         template.base64Data = stored.base64Data;
 
         template.tiles = new Map();
@@ -145,6 +134,15 @@ export default class Template {
             }
             template.tiles.set(index, progress);
         }
+
+        const message: MessageTemplateFromStorage['message'] = {
+            name: 'TemplateFromStorage',
+            data: {
+                name: template.name,
+                base64Data: stored.base64Data
+            }
+        };
+        Manager.worker.postMessage(message);
 
         return template;
     }
