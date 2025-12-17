@@ -1,7 +1,7 @@
 import { PixelCoords, TileCoords } from './Coords';
 import { updateTemplatePixelCount } from './display';
 import { Manager } from './Manager';
-import { MessageCreateTemplate } from './Messages';
+import { MessageComputeBase64Data, MessageCreateTemplate } from './Messages';
 import { JsonifiedValue, PixelIndex, TileIndex, TileProgress, WplaceColorId } from './types';
 import { getClosestColor, getColor } from './utils';
 
@@ -150,11 +150,13 @@ export default class Template {
     }
 
     computeBase64Data() {
-        let binary = '';
-        for (let i = 0; i < this.imageData!.length; i++) {
-            binary += String.fromCharCode(this.imageData![i]!);
-        }
-        this.base64Data = LZString.compress(btoa(binary)); // Binary to ASCII
+        const message: MessageComputeBase64Data['message'] = {
+            name: 'ComputeBase64Data',
+            data: {
+                name: this.name
+            }
+        };
+        Manager.worker.postMessage(message);
     }
 
     overlaps(tile: TileIndex): boolean {
@@ -286,10 +288,8 @@ export default class Template {
             updateTemplatePixelCount(this);
         }
 
-        if (needToStoreTemplates) {
+        if (needToStoreTemplates)
             this.computeBase64Data();
-            Manager.storeTemplates();
-        }
 
         ctx.putImageData(imageData, 0, 0);
     }

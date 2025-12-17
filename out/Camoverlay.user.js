@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.4.1
+// @version      1.4.2
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -564,11 +564,13 @@ var Template = class _Template {
     return template;
   }
   computeBase64Data() {
-    let binary = "";
-    for (let i = 0; i < this.imageData.length; i++) {
-      binary += String.fromCharCode(this.imageData[i]);
-    }
-    this.base64Data = LZString.compress(btoa(binary));
+    const message = {
+      name: "ComputeBase64Data",
+      data: {
+        name: this.name
+      }
+    };
+    Manager.worker.postMessage(message);
   }
   overlaps(tile) {
     return this.tiles.has(tile);
@@ -659,10 +661,8 @@ var Template = class _Template {
       this.updateTotalProgress();
       updateTemplatePixelCount(this);
     }
-    if (needToStoreTemplates) {
+    if (needToStoreTemplates)
       this.computeBase64Data();
-      Manager.storeTemplates();
-    }
     ctx.putImageData(imageData, 0, 0);
   }
   updateTotalProgress() {
