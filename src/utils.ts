@@ -50,6 +50,14 @@ export const enum ColorSortingOptions {
     Hue = 'Hue'
 };
 
+export function functionParameters(f: string): string[] {
+    return f.substring(f.indexOf('(') + 1, f.indexOf(')')).split(',').map(p => p.trim());
+}
+
+export function functionBody(f: string): string {
+    return f.substring(f.indexOf('{') + 1, f.lastIndexOf('}'));
+}
+
 
 function twoHexDigits(n: number): string {
     return n < 16 ? '0' + n.toString(16) : n.toString(16);
@@ -64,7 +72,7 @@ function closeEnough(r1: number, g1: number, b1: number, r2: number, g2: number,
 }
 
 function rgbToId(r: number, g: number, b: number): WplaceColorId {
-    return (r * 1000 * 1000 + g * 1000 + b) as WplaceColorId;
+    return r * 1000 * 1000 + g * 1000 + b as WplaceColorId;
 }
 
 export function rgbToCss(rgb: [number, number, number]): string {

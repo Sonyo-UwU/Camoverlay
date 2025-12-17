@@ -1,8 +1,9 @@
 import { PixelCoords, TileCoords } from './Coords';
 import { updateTemplatePixelCount } from './display';
 import { Manager } from './Manager';
+import { MessageCreateTemplate } from './Messages';
 import { JsonifiedValue, PixelIndex, TileIndex, TileProgress, WplaceColorId } from './types';
-import { getClosestColor, getColor, otherColor } from './utils';
+import { getClosestColor, getColor } from './utils';
 
 type StoredTemplate = JsonifiedValue<Omit<Template, 'toJSON' | 'imageData' | 'tiles' | 'totalProgress' | 'modifyPixels'> & {
     tiles: [TileIndex, [WplaceColorId, number][]][];
@@ -55,63 +56,51 @@ export default class Template {
         this.modifyPixels = [];
     }
 
-    static async fromFile(name: string, coords: PixelCoords, file: File): Promise<Template> {
+    static async fromFile(name: string, coords: PixelCoords, file: File): Promise<Template | null> {
         const bitmap = await createImageBitmap(file);
 
-        const template = new Template(name, coords, bitmap.width, bitmap.height);
+        const { promise, resolve, reject } = Promise.withResolvers<MessageCreateTemplate['response']['data']>();
+        setTimeout(reject, 60 * 1000);
 
-        // Compute bitmap
-        const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
-        const ctx = canvas.getContext('2d')!;
-        ctx.imageSmoothingEnabled = false;
-        ctx.drawImage(bitmap, 0, 0);
-        bitmap.close();
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        Manager.workerCreateTemplateResolve.set(name, resolve);
 
-        // Create pattern and count pixels
-        for (let y = 0; y < imageData.height; y++)
-            for (let x = 0; x < imageData.width; x++) {
-                const pixelIndex = (y * imageData.width + x) * 4;
-
-                // Ignore transparent pixels
-                if (imageData.data[pixelIndex + 3]! < 128)
-                    continue;
-
-                const tileIndex = new PixelCoords(coords.tx, coords.ty, coords.px + x, coords.py + y).toTileIndex();
-                let tile = template.tiles.get(tileIndex);
-                if (tile === undefined) {
-                    tile = new Map();
-                    template.tiles.set(tileIndex, tile);
-                }
-
-                const color = getClosestColor(imageData.data[pixelIndex + 0]!, imageData.data[pixelIndex + 1]!, imageData.data[pixelIndex + 2]!);
-
-                let progress = tile.get(color.id);
-                if (progress === undefined) {
-                    progress = {
-                        total: 0,
-                        unpainted: 0,
-                        wrong: 0
-                    };
-                    tile.set(color.id, progress);
-                }
-
-                progress.total++;
-                progress.unpainted++;
-                template.totalProgress.total++;
-                template.totalProgress.unpainted++;
-
-                if (color !== otherColor) {
-                    imageData.data[pixelIndex + 0] = color.rgb[0];
-                    imageData.data[pixelIndex + 1] = color.rgb[1];
-                    imageData.data[pixelIndex + 2] = color.rgb[2];
-                }
+        const message: MessageCreateTemplate['message'] = {
+            name: 'CreateTemplate',
+            data: {
+                name: name,
+                bitmap: bitmap,
+                coords: { tx: coords.tx, ty: coords.ty, px: coords.px, py: coords.py }
             }
-        
-        template.imageData = imageData.data;
+        };
+        Manager.worker.postMessage(message, [bitmap]);
 
-        // Compute base64 data
-        template.computeBase64Data();
+        const result = await promise.catch(() => null); // Wait for the worker
+
+        Manager.workerCreateTemplateResolve.delete(name);
+        
+        if (result === null) {
+            return null;
+        }
+
+        const template = new Template(name, coords, bitmap.width, bitmap.height);
+        template.imageData = new Uint8ClampedArray(result.imageData);
+        template.base64Data = result.base64Data;
+
+        template.tiles = new Map();
+        for (const [index, colors] of result.tiles) {
+            const progress = new Map<WplaceColorId, TileProgress>();
+            for (const [id, total] of colors) {
+                progress.set(id, {
+                    total: total,
+                    unpainted: total,
+                    wrong: 0
+                });
+
+                template.totalProgress.total += total;
+                template.totalProgress.unpainted += total;
+            }
+            template.tiles.set(index, progress);
+        }
 
         return template;
     }

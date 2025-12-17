@@ -35,6 +35,7 @@ export type WplaceColor = {
     wplaceOrder: number,
     rgb: [number, number, number];
 };
+export type WorkerWplaceColor = Pick<WplaceColor, 'id' | 'rgb'>;
 
 type JsonifiedObject<T> = {
     [Key in keyof T as[JsonifiedValue<T[Key]>] extends [never] ? never : Key]?: JsonifiedValue<T[Key]>
@@ -48,6 +49,8 @@ export type JsonifiedValue<T> = T extends string | number | null | boolean
     : T extends Array<infer A> ? JsonifiedValue<A>[]
     : T extends object ? JsonifiedObject<T>
     : never;
+
+export type PromiseResolve<T> = (value: T | PromiseLike<T>) => void;
 
 export type UserData = {
     allianceId: number,

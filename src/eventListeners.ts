@@ -228,7 +228,7 @@ export function addListeners() {
             document.getElementById('ca-select-button')!.innerText = (e.target as HTMLInputElement).files![0]!.name;
     });
 
-    document.getElementById('ca-create-button')!.addEventListener('click', e => {
+    document.getElementById('ca-create-button')!.addEventListener('click', async e => {
         const fileInput = document.getElementById('ca-file-input') as HTMLInputElement;
         if (fileInput.files!.length < 1) {
             displayStatus('Select a file to upload');
@@ -242,7 +242,7 @@ export function addListeners() {
         }
 
         (e.target as HTMLInputElement).disabled = true;
-        Manager.createTemplate(coords, fileInput.files![0]!);
+        await Manager.createTemplate(coords, fileInput.files![0]!);
         (e.target as HTMLInputElement).disabled = false;
     });
 

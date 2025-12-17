@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.3.5
+// @version      1.4.0
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -97,6 +97,9 @@ function pickRandomSet(s) {
     if (cntr++ === index)
       return key;
   return null;
+}
+function functionBody(f) {
+  return f.substring(f.indexOf("{") + 1, f.lastIndexOf("}"));
 }
 function twoHexDigits(n) {
   return n < 16 ? "0" + n.toString(16) : n.toString(16);
@@ -416,7 +419,7 @@ function addListeners() {
     if (e.target.files.length > 0)
       document.getElementById("ca-select-button").innerText = e.target.files[0].name;
   });
-  document.getElementById("ca-create-button").addEventListener("click", (e) => {
+  document.getElementById("ca-create-button").addEventListener("click", async (e) => {
     const fileInput = document.getElementById("ca-file-input");
     if (fileInput.files.length < 1) {
       displayStatus("Select a file to upload");
@@ -428,7 +431,7 @@ function addListeners() {
       return;
     }
     e.target.disabled = true;
-    Manager.createTemplate(coords, fileInput.files[0]);
+    await Manager.createTemplate(coords, fileInput.files[0]);
     e.target.disabled = false;
   });
   document.getElementById("ca-converter-button").addEventListener("click", () => {
@@ -492,46 +495,40 @@ var Template = class _Template {
   }
   static async fromFile(name, coords, file) {
     const bitmap = await createImageBitmap(file);
-    const template = new _Template(name, coords, bitmap.width, bitmap.height);
-    const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
-    const ctx = canvas.getContext("2d");
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(bitmap, 0, 0);
-    bitmap.close();
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    for (let y = 0; y < imageData.height; y++)
-      for (let x = 0; x < imageData.width; x++) {
-        const pixelIndex = (y * imageData.width + x) * 4;
-        if (imageData.data[pixelIndex + 3] < 128)
-          continue;
-        const tileIndex = new PixelCoords(coords.tx, coords.ty, coords.px + x, coords.py + y).toTileIndex();
-        let tile = template.tiles.get(tileIndex);
-        if (tile === void 0) {
-          tile = /* @__PURE__ */ new Map();
-          template.tiles.set(tileIndex, tile);
-        }
-        const color = getClosestColor(imageData.data[pixelIndex + 0], imageData.data[pixelIndex + 1], imageData.data[pixelIndex + 2]);
-        let progress = tile.get(color.id);
-        if (progress === void 0) {
-          progress = {
-            total: 0,
-            unpainted: 0,
-            wrong: 0
-          };
-          tile.set(color.id, progress);
-        }
-        progress.total++;
-        progress.unpainted++;
-        template.totalProgress.total++;
-        template.totalProgress.unpainted++;
-        if (color !== otherColor) {
-          imageData.data[pixelIndex + 0] = color.rgb[0];
-          imageData.data[pixelIndex + 1] = color.rgb[1];
-          imageData.data[pixelIndex + 2] = color.rgb[2];
-        }
+    const { promise, resolve, reject } = Promise.withResolvers();
+    setTimeout(reject, 60 * 1e3);
+    Manager.workerCreateTemplateResolve.set(name, resolve);
+    const message = {
+      name: "CreateTemplate",
+      data: {
+        name,
+        bitmap,
+        coords: { tx: coords.tx, ty: coords.ty, px: coords.px, py: coords.py }
       }
-    template.imageData = imageData.data;
-    template.computeBase64Data();
+    };
+    Manager.worker.postMessage(message, [bitmap]);
+    const result = await promise.catch(() => null);
+    Manager.workerCreateTemplateResolve.delete(name);
+    if (result === null) {
+      return null;
+    }
+    const template = new _Template(name, coords, bitmap.width, bitmap.height);
+    template.imageData = new Uint8ClampedArray(result.imageData);
+    template.base64Data = result.base64Data;
+    template.tiles = /* @__PURE__ */ new Map();
+    for (const [index, colors] of result.tiles) {
+      const progress = /* @__PURE__ */ new Map();
+      for (const [id, total] of colors) {
+        progress.set(id, {
+          total,
+          unpainted: total,
+          wrong: 0
+        });
+        template.totalProgress.total += total;
+        template.totalProgress.unpainted += total;
+      }
+      template.tiles.set(index, progress);
+    }
     return template;
   }
   static async fromStorage(stored) {
@@ -693,6 +690,96 @@ var Template = class _Template {
   }
 };
 
+// dist/worker.js
+function workerFunction() {
+  let rgbColorMap2;
+  const otherColor2 = { id: rgbToId2(136, 136, 136), rgb: [136, 136, 136] };
+  function rgbToId2(r, g, b) {
+    return r * 1e3 * 1e3 + g * 1e3 + b;
+  }
+  function closeEnough2(r1, g1, b1, r2, g2, b2) {
+    const dr = r1 - r2;
+    const dg = g1 - g2;
+    const db = b1 - b2;
+    return dr * dr + dg * dg + db * db <= 100;
+  }
+  function getClosestColor2(r, g, b) {
+    const id = rgbToId2(r, g, b);
+    const color = rgbColorMap2.get(id);
+    if (color !== void 0)
+      return color;
+    for (const color2 of rgbColorMap2.values()) {
+      if (closeEnough2(r, g, b, ...color2.rgb))
+        return color2;
+    }
+    return otherColor2;
+  }
+  self.onmessage = (e) => {
+    const m = e.data;
+    let result = null;
+    let transferable = [];
+    switch (m.name) {
+      case "Init":
+        rgbColorMap2 = new Map(m.data.rgbColorMap);
+        break;
+      case "CreateTemplate":
+        [result, transferable] = templateFromBitmap(m.data);
+        break;
+      default:
+        const n = m;
+        n;
+        break;
+    }
+    if (result === null)
+      return;
+    const response = {
+      name: "CreateTemplate",
+      data: result
+    };
+    self.postMessage(response, transferable);
+  };
+  function templateFromBitmap({ name, bitmap, coords }) {
+    const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+    const ctx = canvas.getContext("2d");
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(bitmap, 0, 0);
+    bitmap.close();
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const tiles = /* @__PURE__ */ new Map();
+    for (let y = 0; y < imageData.height; y++)
+      for (let x = 0; x < imageData.width; x++) {
+        const pixelIndex = (y * imageData.width + x) * 4;
+        if (imageData.data[pixelIndex + 3] < 128)
+          continue;
+        const tileIndex = (coords.tx + Math.floor(coords.px / 1e3)) % 2048 * 1e4 + (coords.ty + Math.floor(coords.py / 1e3)) % 2048;
+        let tile = tiles.get(tileIndex);
+        if (tile === void 0) {
+          tile = /* @__PURE__ */ new Map();
+          tiles.set(tileIndex, tile);
+        }
+        const color = getClosestColor2(imageData.data[pixelIndex + 0], imageData.data[pixelIndex + 1], imageData.data[pixelIndex + 2]);
+        tile.set(color.id, tile.get(color.id) ?? 0 + 1);
+        if (color !== otherColor2) {
+          imageData.data[pixelIndex + 0] = color.rgb[0];
+          imageData.data[pixelIndex + 1] = color.rgb[1];
+          imageData.data[pixelIndex + 2] = color.rgb[2];
+        }
+      }
+    let binary = "";
+    for (let i = 0; i < imageData.data.length; i++) {
+      binary += String.fromCharCode(imageData.data[i]);
+    }
+    const base64Data = LZString.compress(btoa(binary));
+    const buffer = imageData.data.buffer;
+    return [{
+      name,
+      tiles: tiles.entries().toArray().map(([index, colors]) => [index, colors.entries().toArray()]),
+      imageData: buffer,
+      base64Data
+    }, [buffer]];
+  }
+}
+
 // dist/Manager.js
 var ManagerClass = class _ManagerClass {
   patternSize = 3;
@@ -703,6 +790,8 @@ var ManagerClass = class _ManagerClass {
   loggedIn;
   settings;
   wplaceMap;
+  worker;
+  workerCreateTemplateResolve;
   setInputCoords(value, store = true) {
     document.getElementById("ca-input-tx").value = value?.tx.toString() ?? "";
     document.getElementById("ca-input-ty").value = value?.ty.toString() ?? "";
@@ -734,6 +823,8 @@ var ManagerClass = class _ManagerClass {
       hideCompleted: false
     };
     this.wplaceMap = null;
+    this.workerCreateTemplateResolve = /* @__PURE__ */ new Map();
+    this.createWorker();
   }
   static #loadValue(key) {
     return JSON.parse(GM_getValue(key, null));
@@ -796,6 +887,37 @@ var ManagerClass = class _ManagerClass {
     for (const index of indices)
       this.tilesInfo.delete(index);
   }
+  async createWorker() {
+    const lzstring = await fetch("https://cdn.jsdelivr.net/gh/pieroxy/lz-string/libs/lz-string.min.js").then((r) => r.text());
+    const script = lzstring + functionBody(workerFunction.toString());
+    const blob = new Blob([script], { type: "text/javascript" });
+    const blobURL = URL.createObjectURL(blob);
+    this.worker = new unsafeWindow.Worker(blobURL);
+    URL.revokeObjectURL(blobURL);
+    this.worker.onmessage = _ManagerClass.workerMessage;
+    this.workerInit();
+  }
+  static workerMessage(e) {
+    const m = e.data;
+    switch (m.name) {
+      case "CreateTemplate":
+        Manager.workerCreateTemplateResolve.get(m.data.name)?.(m.data);
+        break;
+      default:
+        const n = m.name;
+        n;
+        break;
+    }
+  }
+  workerInit() {
+    const initMessage = {
+      name: "Init",
+      data: {
+        rgbColorMap: rgbColorMap.entries().toArray().map(([id, c]) => [id, { id: c.id, rgb: c.rgb }])
+      }
+    };
+    this.worker.postMessage(initMessage);
+  }
   async createTemplate(coords, file) {
     let name = file.name.slice(0, file.name.lastIndexOf("."));
     if (name.startsWith("converted_"))
@@ -805,17 +927,21 @@ var ManagerClass = class _ManagerClass {
         this.deleteTemplate(i);
         i--;
       }
+    displayStatus("Creating template...");
     const start = performance.now();
     const template = await Template.fromFile(name, coords, file);
     const time = performance.now() - start;
     console.log("Created template in " + time + "ms");
+    if (template === null) {
+      displayStatus("Failed creating template");
+      return;
+    }
     this.resetTiles(template.tiles.keys());
     this.templates.push(template);
     this.storeTemplates();
     addTemplateRow(template);
     this.rebuildColorList();
     displayStatus("Created template at " + template.coords.toString() + ": " + template.totalProgress.total + " pixels");
-    return template;
   }
   deleteTemplate(index) {
     const template = this.templates[index];

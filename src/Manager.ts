@@ -1,9 +1,11 @@
 import { PixelCoords, TileCoords } from './Coords';
 import { addColorRow, addTemplateRow, displayStatus, removeTemplateRow } from './display';
 import { addCanvasListeners } from './eventListeners';
+import { MessageCreateTemplate, MessageInit, WorkerResponse } from './Messages';
 import Template from './Template';
-import { ColorInfo, JsonifiedValue, PixelIndex, TileIndex, TileInfo, TileProgress, UserSettings, WplaceColorId, WplaceMap } from './types';
-import { ColorSortingOptions, computeHue, computeLuminance, rgbColorMap } from './utils';
+import { ColorInfo, JsonifiedValue, PixelIndex, PromiseResolve, TileIndex, TileInfo, TileProgress, UserSettings, WplaceColorId, WplaceMap } from './types';
+import { ColorSortingOptions, computeHue, computeLuminance, functionBody, rgbColorMap } from './utils';
+import { workerFunction } from './worker';
 
 declare type StorageValues = {
     'global': { inputCoords: PixelCoords | null, settings: UserSettings, enabledColors: [WplaceColorId, boolean][] },
@@ -12,6 +14,7 @@ declare type StorageValues = {
 
 declare function GM_getValue(key: keyof StorageValues, defaultValue?: null): string | null;
 declare function GM_setValue(key: keyof StorageValues, value: string): void;
+declare const unsafeWindow: typeof window;
 
 class ManagerClass {
     readonly patternSize: number = 3;
@@ -22,6 +25,8 @@ class ManagerClass {
     loggedIn: boolean;
     settings: UserSettings;
     wplaceMap: WplaceMap | null;
+    worker!: Worker;
+    workerCreateTemplateResolve: Map<string, PromiseResolve<MessageCreateTemplate['response']['data']>>;
 
     setInputCoords(value: PixelCoords | null, store: boolean = true) {
         (document.getElementById('ca-input-tx') as HTMLInputElement).value = value?.tx.toString() ?? '';
@@ -58,6 +63,8 @@ class ManagerClass {
             hideCompleted: false
         };
         this.wplaceMap = null;
+        this.workerCreateTemplateResolve = new Map();
+        this.createWorker();
     }
 
     static #loadValue<K extends keyof StorageValues>(key: K): JsonifiedValue<StorageValues[K]> | null {
@@ -138,7 +145,44 @@ class ManagerClass {
             this.tilesInfo.delete(index);
     }
 
-    async createTemplate(coords: PixelCoords, file: File): Promise<Template> {
+    async createWorker(): Promise<void> {
+        const lzstring = await fetch('https://cdn.jsdelivr.net/gh/pieroxy/lz-string/libs/lz-string.min.js').then(r => r.text());
+        const script = lzstring + functionBody(workerFunction.toString());
+        const blob = new Blob([script], { type: 'text/javascript' });
+        const blobURL = URL.createObjectURL(blob);
+        this.worker = new unsafeWindow.Worker(blobURL);
+        URL.revokeObjectURL(blobURL);
+
+        this.worker.onmessage = ManagerClass.workerMessage;
+        this.workerInit();
+    }
+
+    static workerMessage(e: MessageEvent) {
+        // Can't use `this` here, the context is the Worker
+        const m = e.data as WorkerResponse;
+        switch (m.name) {
+            case 'CreateTemplate':
+                Manager.workerCreateTemplateResolve.get(m.data.name)?.(m.data);
+                break;
+            default:
+                const n: never = m.name;
+                n;
+                break;
+        }
+    }
+
+    workerInit() {
+        const initMessage: MessageInit['message'] = {
+            name: 'Init',
+            data: {
+                rgbColorMap: rgbColorMap.entries().toArray().map(([id, c]) => [id, { id: c.id, rgb: c.rgb }])
+            }
+        };
+
+        this.worker.postMessage(initMessage);
+    }
+
+    async createTemplate(coords: PixelCoords, file: File): Promise<void> {
         let name = file.name.slice(0, file.name.lastIndexOf('.'));
         if (name.startsWith('converted_'))
             name = name.substring(10);
@@ -149,10 +193,17 @@ class ManagerClass {
                 i--;
             }
 
+        displayStatus('Creating template...');
+
         const start = performance.now();
         const template = await Template.fromFile(name, coords, file);
         const time = performance.now() - start;
         console.log('Created template in ' + time + 'ms');
+
+        if (template === null) {
+            displayStatus('Failed creating template');
+            return;
+        }
 
         this.resetTiles(template.tiles.keys());
 
@@ -162,7 +213,6 @@ class ManagerClass {
         addTemplateRow(template);
         this.rebuildColorList();
         displayStatus('Created template at ' + template.coords.toString() + ': ' + template.totalProgress.total + ' pixels');
-        return template;
     }
 
     deleteTemplate(index: number): void {

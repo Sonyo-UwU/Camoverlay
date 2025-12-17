@@ -1,5 +1,8 @@
 import { PixelIndex, TileIndex } from './types';
 
+export type TileCoordsObject = { readonly x: number, readonly y: number; };
+export type PixelCoordsObject = { readonly tx: number, readonly ty: number, readonly px: number, readonly py: number; };
+
 export class TileCoords {
     readonly x: number;
     readonly y: number;
@@ -36,7 +39,7 @@ export class PixelCoords {
         this.py = py % 1000;
     }
 
-    static copy(o: { tx: number, ty: number, px: number, py: number }): PixelCoords {
+    static copy(o: PixelCoordsObject): PixelCoords {
         return new PixelCoords(o.tx, o.ty, o.px, o.py);
     }
 
