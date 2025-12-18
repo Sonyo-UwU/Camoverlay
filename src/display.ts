@@ -120,19 +120,22 @@ export function addColorRow(colorId: WplaceColorId, progress: TileProgress): voi
         Manager.flyTo(coords, 17.5);
     });
 
-    let countToShow: number;
+    let countToShow: string;
     switch (Manager.settings.colorSorting) {
         case ColorSortingOptions.Total:
-            countToShow = progress.total;
+            countToShow = numberOrHehe(progress.total);
             break;
         case ColorSortingOptions.Remaining:
         case ColorSortingOptions.Original:
         case ColorSortingOptions.Luminance:
         case ColorSortingOptions.Hue:
-            countToShow = progress.unpainted + progress.wrong;
+            countToShow = numberOrHehe(progress.unpainted + progress.wrong);
             break;
         case ColorSortingOptions.Wrong:
-            countToShow = progress.wrong;
+            countToShow = numberOrHehe(progress.wrong);
+            break;
+        case ColorSortingOptions.Progress:
+            countToShow = numberOrHehe(Math.round((progress.total - progress.unpainted - progress.wrong) / progress.total * 100)) + '%';
             break;
 
         default:
@@ -141,7 +144,7 @@ export function addColorRow(colorId: WplaceColorId, progress: TileProgress): voi
             return;
     }
 
-    row.querySelector('.ca-color-count')!.innerHTML = numberOrHehe(countToShow);
+    row.querySelector('.ca-color-count')!.innerHTML = countToShow;
     row.querySelector('.ca-color-name')!.textContent = c.name;
 
     document.getElementById('ca-color-list')!.appendChild(row);

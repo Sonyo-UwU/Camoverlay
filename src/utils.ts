@@ -45,6 +45,7 @@ export const enum ColorSortingOptions {
     Total = 'Total',
     Remaining = 'Remaining',
     Wrong = 'Wrong',
+    Progress = 'Progress',
     Original = 'Original',
     Luminance = 'Luminance',
     Hue = 'Hue'

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.4.7
+// @version      1.4.8
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -1068,6 +1068,9 @@ var ManagerClass = class _ManagerClass {
       case "Wrong":
         colorsArray.sort((a, b) => b[1].wrong - a[1].wrong);
         break;
+      case "Progress":
+        colorsArray.sort((a, b) => (b[1].total - b[1].unpainted - b[1].wrong) / b[1].total - (a[1].total - a[1].unpainted - a[1].wrong) / a[1].total);
+        break;
       case "Original":
         colorsArray.sort((a, b) => rgbColorMap.get(a[0]).wplaceOrder - rgbColorMap.get(b[0]).wplaceOrder);
         break;
@@ -1292,6 +1295,7 @@ function injectOverlay() {
                 <option value="Total">Total pixels</option>
                 <option value="Remaining">Remaining pixels</option>
                 <option value="Wrong">Wrong pixels</option>
+                <option value="Progress">Progress %</option>
                 <option value="Original">Original</option>
                 <option value="Luminance">Luminance</option>
                 <option value="Hue">Hue</option>
@@ -1786,23 +1790,26 @@ function addColorRow(colorId, progress) {
   let countToShow;
   switch (Manager.settings.colorSorting) {
     case "Total":
-      countToShow = progress.total;
+      countToShow = numberOrHehe(progress.total);
       break;
     case "Remaining":
     case "Original":
     case "Luminance":
     case "Hue":
-      countToShow = progress.unpainted + progress.wrong;
+      countToShow = numberOrHehe(progress.unpainted + progress.wrong);
       break;
     case "Wrong":
-      countToShow = progress.wrong;
+      countToShow = numberOrHehe(progress.wrong);
+      break;
+    case "Progress":
+      countToShow = numberOrHehe(Math.round((progress.total - progress.unpainted - progress.wrong) / progress.total * 100)) + "%";
       break;
     default:
       const n = Manager.settings.colorSorting;
       n;
       return;
   }
-  row.querySelector(".ca-color-count").innerHTML = numberOrHehe(countToShow);
+  row.querySelector(".ca-color-count").innerHTML = countToShow;
   row.querySelector(".ca-color-name").textContent = c.name;
   document.getElementById("ca-color-list").appendChild(row);
 }

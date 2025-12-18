@@ -294,6 +294,9 @@ class ManagerClass {
             case ColorSortingOptions.Wrong:
                 colorsArray.sort((a, b) => b[1].wrong - a[1].wrong);
                 break;
+            case ColorSortingOptions.Progress:
+                colorsArray.sort((a, b) => ((b[1].total - b[1].unpainted - b[1].wrong) / b[1].total) - ((a[1].total - a[1].unpainted - a[1].wrong) / a[1].total));
+                break;
             case ColorSortingOptions.Original:
                 colorsArray.sort((a, b) => rgbColorMap.get(a[0])!.wplaceOrder - rgbColorMap.get(b[0])!.wplaceOrder);
                 break;
