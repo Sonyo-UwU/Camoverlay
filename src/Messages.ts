@@ -71,9 +71,9 @@ export type MessageDrawOnTile = Message<
         canvas: Extract<Transferable, ArrayBuffer>;
     },
     {
-        key: string
+        key: string,
         colorsProgress: [WplaceColorId, TileProgress][],
-        colorsInfo: [WplaceColorId, { unpainted: { add: PixelIndex[], delete: PixelIndex[]; }, wrong: { add: PixelIndex[], delete: PixelIndex[]; }; }][],
+        teleportPixels: [WplaceColorId, { unpainted: PixelIndex[], wrong: PixelIndex[]; }][],
         canvas: Extract<Transferable, ArrayBuffer>;
     }>;
 

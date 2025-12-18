@@ -146,8 +146,8 @@ export function addListeners() {
     });
 
     document.getElementById('ca-enable-all')!.addEventListener('click', () => {
-        Manager.colorsInfo.forEach((colorInfo, id) => {
-            colorInfo.enabled = true;
+        Manager.enabledColors.keys().forEach(id => {
+            Manager.enabledColors.set(id, true);
             const checkbox = document.getElementById('ca-color-id-' + id)?.firstElementChild as HTMLInputElement | undefined;
             if (checkbox !== undefined)
                 checkbox.checked = true;
@@ -157,8 +157,8 @@ export function addListeners() {
         Manager.storeGlobal();
     });
     document.getElementById('ca-disable-all')!.addEventListener('click', () => {
-        Manager.colorsInfo.forEach((colorInfo, id) => {
-            colorInfo.enabled = false;
+        Manager.enabledColors.keys().forEach(id => {
+            Manager.enabledColors.set(id, false);
             const checkbox = document.getElementById('ca-color-id-' + id)?.firstElementChild as HTMLInputElement | undefined;
             if (checkbox !== undefined)
                 checkbox.checked = false;
@@ -186,12 +186,12 @@ export function addListeners() {
         let inPalette = false;
 
         // Update palette
-        Manager.colorsInfo.forEach((colorInfo, id) => {
+        Manager.enabledColors.keys().forEach(id => {
             const checkbox = document.getElementById('ca-color-id-' + id)?.firstElementChild as HTMLInputElement | undefined;
 
             if (id === color.id) {
                 inPalette = true;
-                colorInfo.enabled = true;
+                Manager.enabledColors.set(id, true);
                 if (checkbox !== undefined) {
                     checkbox.checked = true;
                     checkbox.scrollIntoView({ 'behavior': 'smooth', 'block': 'center' });
@@ -201,7 +201,7 @@ export function addListeners() {
                 }
             }
             else {
-                colorInfo.enabled = false;
+                Manager.enabledColors.set(id, false);
                 if (checkbox !== undefined)
                     checkbox.checked = false;
             }

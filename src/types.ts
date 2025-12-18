@@ -8,8 +8,7 @@ export type TileInfo = {
     blob: Blob | null;
 };
 
-export type ColorInfo = {
-    enabled: boolean,
+export type TeleportPixels = {
     wrong: Set<PixelIndex>,
     unpainted: Set<PixelIndex>
 };

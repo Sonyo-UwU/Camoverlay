@@ -338,8 +338,8 @@ function addListeners() {
     Manager.rebuildColorList();
   });
   document.getElementById("ca-enable-all").addEventListener("click", () => {
-    Manager.colorsInfo.forEach((colorInfo, id) => {
-      colorInfo.enabled = true;
+    Manager.enabledColors.keys().forEach((id) => {
+      Manager.enabledColors.set(id, true);
       const checkbox = document.getElementById("ca-color-id-" + id)?.firstElementChild;
       if (checkbox !== void 0)
         checkbox.checked = true;
@@ -348,8 +348,8 @@ function addListeners() {
     Manager.storeGlobal();
   });
   document.getElementById("ca-disable-all").addEventListener("click", () => {
-    Manager.colorsInfo.forEach((colorInfo, id) => {
-      colorInfo.enabled = false;
+    Manager.enabledColors.keys().forEach((id) => {
+      Manager.enabledColors.set(id, false);
       const checkbox = document.getElementById("ca-color-id-" + id)?.firstElementChild;
       if (checkbox !== void 0)
         checkbox.checked = false;
@@ -368,11 +368,11 @@ function addListeners() {
       rgb = [222, 250, 206];
     const color = getColor(rgb[0], rgb[1], rgb[2]);
     let inPalette = false;
-    Manager.colorsInfo.forEach((colorInfo, id) => {
+    Manager.enabledColors.keys().forEach((id) => {
       const checkbox = document.getElementById("ca-color-id-" + id)?.firstElementChild;
       if (id === color.id) {
         inPalette = true;
-        colorInfo.enabled = true;
+        Manager.enabledColors.set(id, true);
         if (checkbox !== void 0) {
           checkbox.checked = true;
           checkbox.scrollIntoView({ "behavior": "smooth", "block": "center" });
@@ -380,7 +380,7 @@ function addListeners() {
           displayStatus("Selected color is already completed");
         }
       } else {
-        colorInfo.enabled = false;
+        Manager.enabledColors.set(id, false);
         if (checkbox !== void 0)
           checkbox.checked = false;
       }
@@ -544,15 +544,6 @@ var Template = class _Template {
     Manager.worker.postMessage(message);
     return template;
   }
-  computeBase64Data() {
-    const message = {
-      name: "ComputeBase64Data",
-      data: {
-        name: this.name
-      }
-    };
-    Manager.worker.postMessage(message);
-  }
   overlaps(tile) {
     return this.tiles.has(tile);
   }
@@ -579,7 +570,7 @@ var Template = class _Template {
         patternSize: Manager.patternSize,
         trackProgress,
         wrongHighlight: Manager.settings.wrongHighlight,
-        enabled: Manager.colorsInfo.entries().toArray().map(([id, info]) => [id, info.enabled]),
+        enabled: Manager.enabledColors.entries().toArray(),
         modifyPixels: this.modifyPixels,
         canvasWidth: ctx.canvas.width,
         canvas: canvasImageData.buffer
@@ -595,27 +586,10 @@ var Template = class _Template {
       this.tiles.set(tile.toIndex(), new Map(result.colorsProgress));
       this.updateTotalProgress();
       updateTemplatePixelCount(this);
-    }
-    for (const [id, info] of result.colorsInfo) {
-      let colorInfo = Manager.colorsInfo.get(id);
-      if (colorInfo === void 0) {
-        colorInfo = { enabled: true, unpainted: /* @__PURE__ */ new Set(), wrong: /* @__PURE__ */ new Set() };
-        Manager.colorsInfo.set(id, colorInfo);
-      }
-      for (const i of info.unpainted.delete)
-        colorInfo.unpainted.delete(i);
-      for (const i of info.wrong.delete)
-        colorInfo.wrong.delete(i);
-      for (const i of info.unpainted.add) {
-        if (colorInfo.unpainted.size >= 100)
-          break;
-        colorInfo.unpainted.add(i);
-      }
-      for (const i of info.wrong.add) {
-        if (colorInfo.wrong.size >= 100)
-          break;
-        colorInfo.wrong.add(i);
-      }
+      const tilePixels = /* @__PURE__ */ new Map();
+      Manager.teleportPixels.set(tile.toIndex(), tilePixels);
+      for (const [id, info] of result.teleportPixels)
+        tilePixels.set(id, { unpainted: new Set(info.unpainted), wrong: new Set(info.wrong) });
     }
   }
   updateTotalProgress() {
@@ -782,7 +756,7 @@ function workerFunction() {
     const isFirstX = template.coords.tx === tile.x;
     const isFirstY = template.coords.ty === tile.y;
     const colorsProgress = /* @__PURE__ */ new Map();
-    const colorsInfo = /* @__PURE__ */ new Map();
+    const teleportPixels = /* @__PURE__ */ new Map();
     for (let iy = isFirstY ? 0 : (tile.y - template.coords.ty) * 1e3 - template.coords.py, cy = isFirstY ? template.coords.py : 0; iy < template.height && cy < 1e3; iy++, cy++)
       for (let ix = isFirstX ? 0 : (tile.x - template.coords.tx) * 1e3 - template.coords.px, cx = isFirstX ? template.coords.px : 0; ix < template.width && cx < 1e3; ix++, cx++) {
         const imagePixelIndex = (iy * template.width + ix) * 4;
@@ -792,16 +766,14 @@ function workerFunction() {
         let color = getColor2(template.imageData[imagePixelIndex + 0], template.imageData[imagePixelIndex + 1], template.imageData[imagePixelIndex + 2]);
         const paintedColor = getClosestColor(canvasImageData[canvasPixelIndex + 0], canvasImageData[canvasPixelIndex + 1], canvasImageData[canvasPixelIndex + 2]);
         const pixelTileIndex = (tile.x * 1e4 + tile.y) * 1e6 + (cx * 1e3 + cy);
-        let colorInfo = colorsInfo.get(color.id);
-        if (colorInfo === void 0) {
-          colorInfo = { unpainted: { add: [], delete: [] }, wrong: { add: [], delete: [] } };
-          colorsInfo.set(color.id, colorInfo);
+        let teleport = teleportPixels.get(color.id);
+        if (teleport === void 0) {
+          teleport = { unpainted: [], wrong: [] };
+          teleportPixels.set(color.id, teleport);
         }
         if (modifyPixels.includes(pixelTileIndex)) {
           if (color !== paintedColor) {
             needToStoreTemplates = true;
-            colorInfo.unpainted.delete.push(pixelTileIndex);
-            colorInfo.wrong.delete.push(pixelTileIndex);
             color = paintedColor;
             template.imageData[imagePixelIndex + 0] = canvasImageData[canvasPixelIndex + 0];
             template.imageData[imagePixelIndex + 1] = canvasImageData[canvasPixelIndex + 1];
@@ -824,15 +796,16 @@ function workerFunction() {
           progress.total++;
           if (canvasImageData[canvasPixelIndex + 3] === 0) {
             progress.unpainted++;
-            if (colorInfo.unpainted.add.length < 100)
-              colorInfo.unpainted.add.push(pixelTileIndex);
+            if (teleport.unpainted.length < 100)
+              teleport.unpainted.push(pixelTileIndex);
+            else if (Math.random() < 0.01)
+              teleport.unpainted[Math.floor(Math.random() * 100)] = pixelTileIndex;
           } else if (color !== paintedColor) {
             progress.wrong++;
-            if (colorInfo.wrong.add.length < 100)
-              colorInfo.wrong.add.push(pixelTileIndex);
-          } else {
-            colorInfo.unpainted.delete.push(pixelTileIndex);
-            colorInfo.wrong.delete.push(pixelTileIndex);
+            if (teleport.wrong.length < 100)
+              teleport.wrong.push(pixelTileIndex);
+            else if (Math.random() < 0.01)
+              teleport.wrong[Math.floor(Math.random() * 100)] = pixelTileIndex;
           }
         }
         if (enabledMap.get(color.id)) {
@@ -858,7 +831,7 @@ function workerFunction() {
       data: {
         key,
         colorsProgress: colorsProgress.entries().toArray(),
-        colorsInfo: colorsInfo.entries().toArray(),
+        teleportPixels: teleportPixels.entries().toArray().filter(([_, teleport]) => teleport.unpainted.length + teleport.wrong.length > 0),
         canvas: canvasImageData.buffer
       }
     };
@@ -871,7 +844,8 @@ var ManagerClass = class _ManagerClass {
   patternSize = 3;
   templates;
   tilesInfo;
-  colorsInfo;
+  enabledColors;
+  teleportPixels;
   lastClickedCoords;
   loggedIn;
   settings;
@@ -900,7 +874,8 @@ var ManagerClass = class _ManagerClass {
   constructor() {
     this.templates = [];
     this.tilesInfo = /* @__PURE__ */ new Map();
-    this.colorsInfo = /* @__PURE__ */ new Map();
+    this.enabledColors = /* @__PURE__ */ new Map();
+    this.teleportPixels = /* @__PURE__ */ new Map();
     this.lastClickedCoords = null;
     this.loggedIn = false;
     this.settings = {
@@ -941,13 +916,13 @@ var ManagerClass = class _ManagerClass {
       document.getElementById("ca-setting-hide-completed").checked = this.settings.hideCompleted;
     }
     if (stored.enabledColors !== void 0)
-      this.colorsInfo = new Map(stored.enabledColors.map(([id, enabled]) => [id, { enabled, wrong: /* @__PURE__ */ new Set(), unpainted: /* @__PURE__ */ new Set() }]));
+      this.enabledColors = new Map(stored.enabledColors);
   }
   storeGlobal(overrides) {
     _ManagerClass.#storeValue("global", {
       inputCoords: overrides?.inputCoords ?? this.getInputCoords(),
       settings: this.settings,
-      enabledColors: this.colorsInfo.entries().toArray().map(([id, colorInfo]) => [id, colorInfo.enabled])
+      enabledColors: this.enabledColors.entries().toArray()
     });
   }
   async loadTemplates() {
@@ -1078,9 +1053,9 @@ var ManagerClass = class _ManagerClass {
               anyWrong = true;
           }
     }
-    for (const id of this.colorsInfo.keys()) {
+    for (const id of this.enabledColors.keys()) {
       if (!colorProgress.has(id))
-        this.colorsInfo.delete(id);
+        this.enabledColors.delete(id);
     }
     const colorsArray = colorProgress.entries().toArray();
     switch (this.settings.colorSorting) {
@@ -1109,8 +1084,8 @@ var ManagerClass = class _ManagerClass {
     if (this.settings.colorSortingReversed)
       colorsArray.reverse();
     for (const [id, progress] of colorsArray) {
-      if (!this.colorsInfo.has(id))
-        this.colorsInfo.set(id, { enabled: true, wrong: /* @__PURE__ */ new Set(), unpainted: /* @__PURE__ */ new Set() });
+      if (!this.enabledColors.has(id))
+        this.enabledColors.set(id, true);
       if (!this.settings.hideCompleted || (this.settings.colorSorting === "Wrong" && anyWrong ? 0 : progress.unpainted) + progress.wrong > 0)
         addColorRow(id, progress);
     }
@@ -1154,8 +1129,8 @@ var ManagerClass = class _ManagerClass {
   }
   async drawOnTile(tile, blob, trackProgress) {
     let allDisabled = true;
-    for (const enabled of this.colorsInfo.values()) {
-      if (enabled) {
+    for (const enabled of this.enabledColors.values()) {
+      if (enabled === true) {
         allDisabled = false;
         break;
       }
@@ -1753,9 +1728,9 @@ function addColorRow(colorId, progress) {
   div.style.setProperty("--ca-color-progress", (progress.total - progress.unpainted - progress.wrong) / progress.total * 100 + "%");
   div.style.setProperty("--ca-color-wrong", (progress.total - progress.unpainted) / progress.total * 100 + "%");
   const enable = row.querySelector("input");
-  enable.checked = Manager.colorsInfo.get(colorId).enabled;
+  enable.checked = Manager.enabledColors.get(colorId) === true;
   enable.addEventListener("change", (e) => {
-    Manager.colorsInfo.get(colorId).enabled = e.target.checked;
+    Manager.enabledColors.set(colorId, e.target.checked);
     Manager.tilesInfo.clear();
     Manager.storeGlobal();
   });
@@ -1764,7 +1739,7 @@ function addColorRow(colorId, progress) {
   color.addEventListener("click", (e) => {
     [...document.getElementsByClassName("ca-color-row")].forEach((r) => r.firstElementChild.checked = false);
     e.target.previousElementSibling.checked = true;
-    Manager.colorsInfo.forEach((_, key) => Manager.colorsInfo.get(key).enabled = key === colorId);
+    Manager.enabledColors.forEach((_, key) => Manager.enabledColors.set(key, key === colorId));
     Manager.tilesInfo.clear();
     Manager.storeGlobal();
   });
@@ -1786,14 +1761,17 @@ function addColorRow(colorId, progress) {
     });
   });
   paint.addEventListener("dblclick", () => {
-    const colorInfo = Manager.colorsInfo.get(colorId);
-    if (colorInfo === void 0)
-      return;
+    const teleport = Manager.teleportPixels.values().toArray().reduce((t, map) => {
+      return {
+        unpainted: t.unpainted.union(map.get(colorId)?.unpainted ?? /* @__PURE__ */ new Set()),
+        wrong: t.wrong.union(map.get(colorId)?.wrong ?? /* @__PURE__ */ new Set())
+      };
+    }, { unpainted: /* @__PURE__ */ new Set(), wrong: /* @__PURE__ */ new Set() });
     let picked;
-    if (colorInfo.wrong.size > 0)
-      picked = pickRandomSet(colorInfo.wrong);
-    else if (colorInfo.unpainted.size > 0)
-      picked = pickRandomSet(colorInfo.unpainted);
+    if (teleport.wrong.size > 0)
+      picked = pickRandomSet(teleport.wrong);
+    else if (teleport.unpainted.size > 0)
+      picked = pickRandomSet(teleport.unpainted);
     else
       return;
     const coords = PixelCoords.fromIndex(picked);

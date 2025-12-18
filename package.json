@@ -10,7 +10,7 @@
   },
   "scripts": {
     "build": "tsc --build && node build/build.js",
-    "clean": "tsc --build && node build/build.js && rmdir /s /q dist"
+    "clean": "tsc --build && node build/build.js && del /q dist"
   },
   "author": "Sonyo",
   "license": "ISC",

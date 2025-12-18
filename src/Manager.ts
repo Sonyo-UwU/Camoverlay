@@ -3,7 +3,7 @@ import { addColorRow, addTemplateRow, displayStatus, removeTemplateRow } from '.
 import { addCanvasListeners } from './eventListeners';
 import { MessageCreateTemplate, MessageDrawOnTile, MessageInit, WorkerResponse } from './Messages';
 import Template from './Template';
-import { ColorInfo, JsonifiedValue, PixelIndex, PromiseResolve, TileIndex, TileInfo, TileProgress, UserSettings, WplaceColorId, WplaceMap } from './types';
+import { JsonifiedValue, PromiseResolve, TeleportPixels, TileIndex, TileInfo, TileProgress, UserSettings, WplaceColorId, WplaceMap } from './types';
 import { ColorSortingOptions, computeHue, computeLuminance, functionBody, rgbColorMap } from './utils';
 import { workerFunction } from './worker';
 
@@ -20,7 +20,8 @@ class ManagerClass {
     readonly patternSize: number = 3;
     templates: Template[];
     tilesInfo: Map<TileIndex, TileInfo>;
-    colorsInfo: Map<WplaceColorId, ColorInfo>;
+    enabledColors: Map<WplaceColorId, boolean>;
+    teleportPixels: Map<TileIndex, Map<WplaceColorId, TeleportPixels>>;
     lastClickedCoords: PixelCoords | null;
     loggedIn: boolean;
     settings: UserSettings;
@@ -54,7 +55,8 @@ class ManagerClass {
     constructor() {
         this.templates = [];
         this.tilesInfo = new Map();
-        this.colorsInfo = new Map();
+        this.enabledColors = new Map();
+        this.teleportPixels = new Map();
         this.lastClickedCoords = null;
         this.loggedIn = false;
         this.settings = {
@@ -104,14 +106,14 @@ class ManagerClass {
         }
 
         if (stored.enabledColors !== undefined)
-            this.colorsInfo = new Map(stored.enabledColors.map(([id, enabled]) => [id, { enabled: enabled, wrong: new Set<PixelIndex>(), unpainted: new Set<PixelIndex>() }]));
+            this.enabledColors = new Map(stored.enabledColors);
     }
 
     storeGlobal(overrides?: Partial<StorageValues['global']>): void {
         ManagerClass.#storeValue('global', {
             inputCoords: overrides?.inputCoords ?? this.getInputCoords(),
             settings: this.settings,
-            enabledColors: this.colorsInfo.entries().toArray().map(([id, colorInfo]) => [id, colorInfo.enabled])
+            enabledColors: this.enabledColors.entries().toArray()
         });
     }
 
@@ -276,9 +278,9 @@ class ManagerClass {
                     }
         }
 
-        for (const id of this.colorsInfo.keys()) {
+        for (const id of this.enabledColors.keys()) {
             if (!colorProgress.has(id))
-                this.colorsInfo.delete(id);
+                this.enabledColors.delete(id);
         }
 
         const colorsArray = colorProgress.entries().toArray();
@@ -311,8 +313,9 @@ class ManagerClass {
             colorsArray.reverse();
 
         for (const [id, progress] of colorsArray) {
-            if (!this.colorsInfo.has(id))
-                this.colorsInfo.set(id, { enabled: true, wrong: new Set<PixelIndex>(), unpainted: new Set<PixelIndex>() });
+            if (!this.enabledColors.has(id))
+                this.enabledColors.set(id, true);
+
             if (!this.settings.hideCompleted || ((this.settings.colorSorting === ColorSortingOptions.Wrong && anyWrong) ? 0 : progress.unpainted) + progress.wrong > 0)
                 addColorRow(id, progress);
         }
@@ -372,8 +375,8 @@ class ManagerClass {
 
     async drawOnTile(tile: TileCoords, blob: Blob, trackProgress: boolean): Promise<Blob> {
         let allDisabled = true;
-        for (const enabled of this.colorsInfo.values()) {
-            if (enabled) {
+        for (const enabled of this.enabledColors.values()) {
+            if (enabled === true) {
                 allDisabled = false;
                 break;
             }

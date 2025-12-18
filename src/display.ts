@@ -1,7 +1,7 @@
 ﻿import { PixelCoords } from './Coords';
 import { Manager } from './Manager';
 import Template from './Template';
-import type { PixelIndex, TileProgress, UserData, WplaceColorId } from './types';
+import type { PixelIndex, TeleportPixels, TileProgress, UserData, WplaceColorId } from './types';
 import { ColorSortingOptions, getZoomLevelForPixelSize, otherColor, pickRandomSet, rgbColorMap, rgbToCss } from './utils';
 
 declare function GM_addStyle(css: string): void;
@@ -55,9 +55,9 @@ export function addColorRow(colorId: WplaceColorId, progress: TileProgress): voi
     div.style.setProperty('--ca-color-wrong', ((progress.total - progress.unpainted) / progress.total * 100) + '%');
 
     const enable = row.querySelector('input')!;
-    enable.checked = Manager.colorsInfo.get(colorId)!.enabled;
+    enable.checked = Manager.enabledColors.get(colorId) === true;
     enable.addEventListener('change', e => {
-        Manager.colorsInfo.get(colorId)!.enabled = (e.target as HTMLInputElement).checked;
+        Manager.enabledColors.set(colorId, (e.target as HTMLInputElement).checked);
         Manager.tilesInfo.clear();
         Manager.storeGlobal();
     });
@@ -67,7 +67,7 @@ export function addColorRow(colorId: WplaceColorId, progress: TileProgress): voi
     color.addEventListener('click', e => {
         [...document.getElementsByClassName('ca-color-row')].forEach(r => (r.firstElementChild as HTMLInputElement).checked = false);
         ((e.target as HTMLDivElement).previousElementSibling! as HTMLInputElement).checked = true;
-        Manager.colorsInfo.forEach((_, key) => Manager.colorsInfo.get(key)!.enabled = key === colorId);
+        Manager.enabledColors.forEach((_, key) => Manager.enabledColors.set(key, key === colorId));
         Manager.tilesInfo.clear();
         Manager.storeGlobal();
     });
@@ -90,16 +90,21 @@ export function addColorRow(colorId: WplaceColorId, progress: TileProgress): voi
         });
     });
     paint.addEventListener('dblclick', () => {
-        const colorInfo = Manager.colorsInfo.get(colorId);
-        if (colorInfo === undefined)
-            return;
+        const teleport = Manager.teleportPixels.values().toArray().reduce<TeleportPixels>(
+            (t, map) => {
+                return {
+                    unpainted: t.unpainted.union(map.get(colorId)?.unpainted ?? new Set()),
+                    wrong: t.wrong.union(map.get(colorId)?.wrong ?? new Set())
+                };
+            },
+            { unpainted: new Set(), wrong: new Set() });
 
         let picked: PixelIndex;
 
-        if (colorInfo.wrong.size > 0)
-            picked = pickRandomSet(colorInfo.wrong)!;
-        else if (colorInfo.unpainted.size > 0)
-            picked = pickRandomSet(colorInfo.unpainted)!;
+        if (teleport.wrong.size > 0)
+            picked = pickRandomSet(teleport.wrong)!;
+        else if (teleport.unpainted.size > 0)
+            picked = pickRandomSet(teleport.unpainted)!;
         else
             return;
 

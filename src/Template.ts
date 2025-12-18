@@ -1,8 +1,8 @@
 import { PixelCoords, TileCoords } from './Coords';
 import { updateTemplatePixelCount } from './display';
 import { Manager } from './Manager';
-import { MessageComputeBase64Data, MessageCreateTemplate, MessageDrawOnTile, MessageTemplateFromStorage } from './Messages';
-import { JsonifiedValue, PixelIndex, TileIndex, TileProgress, WplaceColorId } from './types';
+import { MessageCreateTemplate, MessageDrawOnTile, MessageTemplateFromStorage } from './Messages';
+import { JsonifiedValue, PixelIndex, TeleportPixels, TileIndex, TileProgress, WplaceColorId } from './types';
 
 type StoredTemplate = JsonifiedValue<Omit<Template, 'toJSON' | 'imageData' | 'tiles' | 'totalProgress' | 'modifyPixels'> & {
     tiles: [TileIndex, [WplaceColorId, number][]][];
@@ -128,16 +128,6 @@ export default class Template {
         return template;
     }
 
-    computeBase64Data() {
-        const message: MessageComputeBase64Data['message'] = {
-            name: 'ComputeBase64Data',
-            data: {
-                name: this.name
-            }
-        };
-        Manager.worker.postMessage(message);
-    }
-
     overlaps(tile: TileIndex): boolean {
         return this.tiles.has(tile);
     }
@@ -170,7 +160,7 @@ export default class Template {
                 patternSize: Manager.patternSize,
                 trackProgress: trackProgress,
                 wrongHighlight: Manager.settings.wrongHighlight,
-                enabled: Manager.colorsInfo.entries().toArray().map(([id, info]) => [id, info.enabled]),
+                enabled: Manager.enabledColors.entries().toArray(),
                 modifyPixels: this.modifyPixels,
                 canvasWidth: ctx.canvas.width,
                 canvas: canvasImageData.buffer
@@ -191,29 +181,11 @@ export default class Template {
             this.tiles.set(tile.toIndex(), new Map(result.colorsProgress));
             this.updateTotalProgress();
             updateTemplatePixelCount(this);
-        }
 
-        for (const [id, info] of result.colorsInfo) {
-            let colorInfo = Manager.colorsInfo.get(id);
-            if (colorInfo === undefined) {
-                colorInfo = { enabled: true, unpainted: new Set<PixelIndex>(), wrong: new Set<PixelIndex>() };
-                Manager.colorsInfo.set(id, colorInfo);
-            }
-
-            for (const i of info.unpainted.delete)
-                colorInfo.unpainted.delete(i);
-            for (const i of info.wrong.delete)
-                colorInfo.wrong.delete(i);
-            for (const i of info.unpainted.add) {
-                if (colorInfo.unpainted.size >= 100)
-                    break;
-                colorInfo.unpainted.add(i);
-            }
-            for (const i of info.wrong.add) {
-                if (colorInfo.wrong.size >= 100)
-                    break;
-                colorInfo.wrong.add(i);
-            }
+            const tilePixels = new Map<WplaceColorId, TeleportPixels>();
+            Manager.teleportPixels.set(tile.toIndex(), tilePixels);
+            for (const [id, info] of result.teleportPixels)
+                tilePixels.set(id, { unpainted: new Set<PixelIndex>(info.unpainted), wrong: new Set<PixelIndex>(info.wrong) });
         }
     }
 

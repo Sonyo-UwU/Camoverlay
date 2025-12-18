@@ -205,7 +205,7 @@ export function workerFunction() {
         const isFirstX = template.coords.tx === tile.x;
         const isFirstY = template.coords.ty === tile.y;
         const colorsProgress = new Map<WplaceColorId, TileProgress>();
-        const colorsInfo = new Map<WplaceColorId, { unpainted: { add: PixelIndex[], delete: PixelIndex[]; }, wrong: { add: PixelIndex[], delete: PixelIndex[]; }; }>();
+        const teleportPixels = new Map<WplaceColorId, { unpainted: PixelIndex[], wrong: PixelIndex[]; }>();
 
         for (let iy = isFirstY ? 0 : (tile.y - template.coords.ty) * 1000 - template.coords.py,
             cy = isFirstY ? template.coords.py : 0;
@@ -226,18 +226,15 @@ export function workerFunction() {
 
 
                 const pixelTileIndex = (tile.x * 10000 + tile.y) * 1000000 + (cx * 1000 + cy) as PixelIndex;
-                let colorInfo = colorsInfo.get(color.id);
-                if (colorInfo === undefined) {
-                    colorInfo = { unpainted: { add: [], delete: [] }, wrong: { add: [], delete: [] } };
-                    colorsInfo.set(color.id, colorInfo);
+                let teleport = teleportPixels.get(color.id);
+                if (teleport === undefined) {
+                    teleport = { unpainted: [], wrong: [] };
+                    teleportPixels.set(color.id, teleport);
                 }
 
                 if (modifyPixels.includes(pixelTileIndex)) {
                     if (color !== paintedColor) {
                         needToStoreTemplates = true;
-
-                        colorInfo.unpainted.delete.push(pixelTileIndex);
-                        colorInfo.wrong.delete.push(pixelTileIndex);
 
                         color = paintedColor;
                         template.imageData[imagePixelIndex + 0] = canvasImageData[canvasPixelIndex + 0]!;
@@ -269,20 +266,19 @@ export function workerFunction() {
                         // Unpainted
                         progress.unpainted++;
 
-                        if (colorInfo.unpainted.add.length < 100)
-                            colorInfo.unpainted.add.push(pixelTileIndex);
+                        if (teleport.unpainted.length < 100)
+                            teleport.unpainted.push(pixelTileIndex);
+                        else if (Math.random() < 0.01)
+                            teleport.unpainted[Math.floor(Math.random() * 100)] = pixelTileIndex;
                     }
                     else if (color !== paintedColor) {
                         // Wrong
                         progress.wrong++;
 
-                        if (colorInfo.wrong.add.length < 100)
-                            colorInfo.wrong.add.push(pixelTileIndex);
-                    }
-                    else {
-                        // Correct
-                        colorInfo.unpainted.delete.push(pixelTileIndex);
-                        colorInfo.wrong.delete.push(pixelTileIndex);
+                        if (teleport.wrong.length < 100)
+                            teleport.wrong.push(pixelTileIndex);
+                        else if (Math.random() < 0.01)
+                            teleport.wrong[Math.floor(Math.random() * 100)] = pixelTileIndex;
                     }
                 }
 
@@ -313,7 +309,7 @@ export function workerFunction() {
             data: {
                 key: key,
                 colorsProgress: colorsProgress.entries().toArray(),
-                colorsInfo: colorsInfo.entries().toArray(),
+                teleportPixels: teleportPixels.entries().toArray().filter(([_, teleport]) => teleport.unpainted.length + teleport.wrong.length > 0),
                 canvas: canvasImageData.buffer
             }
         };
