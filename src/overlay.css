@@ -124,13 +124,17 @@ div#ca-overlay {
     margin-left: 0;
 }
 
+#ca-header {
+    align-items: center;
+    display: flex;
+    gap: 1ch;
+    justify-content: space-between;
+}
+
 #ca-image-collapse {
     border-radius: 12px;
     cursor: pointer;
-    display: inline-block;
     height: 2.5em;
-    margin-right: 1ch;
-    vertical-align: middle;
 }
 
 .ca-icon-button {

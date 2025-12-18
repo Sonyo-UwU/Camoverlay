@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.4.8
+// @version      1.4.9
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -286,6 +286,9 @@ function addListeners() {
       overlay.style.overflow = "hidden";
       overlay.classList.add("collapsed");
     }
+  });
+  document.getElementById("ca-fly-hq").addEventListener("click", () => {
+    Manager.flyToFit(new PixelCoords(1054, 713, 337, 494), 2269, 1537, 1);
   });
   function pasted(e) {
     const values = e.clipboardData?.getData("text").split(" ").filter((n) => n).map(Number).filter((n) => !isNaN(n));
@@ -1198,6 +1201,14 @@ var ManagerClass = class _ManagerClass {
   flyTo(coords, zoom = 13) {
     this.wplaceMap?.flyTo({ center: coords.toGeoCoords(false), zoom });
   }
+  flyToFit(topLeft, width, height, extraProportion = 1.1) {
+    if (this.wplaceMap === null)
+      return;
+    const xZoom = getZoomLevelForPixelSize(this.wplaceMap._canvas.width / width / extraProportion);
+    const yZoom = getZoomLevelForPixelSize(this.wplaceMap._canvas.height / height / extraProportion);
+    const finalZoom = Math.max(10.7, Math.min(18, xZoom, yZoom));
+    this.flyTo(new PixelCoords(topLeft.tx, topLeft.ty, topLeft.px + width / 2, topLeft.py + height / 2), finalZoom);
+  }
 };
 var Manager = new ManagerClass();
 
@@ -1251,6 +1262,7 @@ function injectOverlay() {
     <div id="ca-header">
         <img id="ca-image-collapse" src="https://cdn.bsky.app/img/avatar/plain/did:plc:kwmxodxbf5nshavpy5r5l3jj/bafkreiaddzuq5vgrpi3aeufp7gwkbameb426d4vb4zlxvc6c4vo23wkn5a@jpeg" />
         <h1>Camoverlay</h1>
+        <button id="ca-fly-hq" class="ca-icon-button">✈️</button>
     </div>
     <hr />
     <div>
@@ -1476,13 +1488,17 @@ div#ca-overlay {
     margin-left: 0;
 }
 
+#ca-header {
+    align-items: center;
+    display: flex;
+    gap: 1ch;
+    justify-content: space-between;
+}
+
 #ca-image-collapse {
     border-radius: 12px;
     cursor: pointer;
-    display: inline-block;
     height: 2.5em;
-    margin-right: 1ch;
-    vertical-align: middle;
 }
 
 .ca-icon-button {
@@ -1828,12 +1844,7 @@ function addTemplateRow(template) {
   row.firstElementChild.id = `ca-template-id-${template.name}`;
   const fly = row.querySelector(".ca-template-fly");
   fly.addEventListener("click", () => {
-    if (Manager.wplaceMap === null)
-      return;
-    const xZoom = getZoomLevelForPixelSize(Manager.wplaceMap._canvas.width / template.width / 1.1);
-    const yZoom = getZoomLevelForPixelSize(Manager.wplaceMap._canvas.height / template.height / 1.1);
-    const finalZoom = Math.max(10.7, Math.min(18, xZoom, yZoom));
-    Manager.flyTo(new PixelCoords(template.coords.tx, template.coords.ty, template.coords.px + template.width / 2, template.coords.py + template.height / 2), finalZoom);
+    Manager.flyToFit(template.coords, template.width, template.height);
   });
   const text = row.querySelector(".ca-template-name");
   text.textContent = template.name;

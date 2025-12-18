@@ -2,7 +2,7 @@
 import { Manager } from './Manager';
 import Template from './Template';
 import type { PixelIndex, TeleportPixels, TileProgress, UserData, WplaceColorId } from './types';
-import { ColorSortingOptions, getZoomLevelForPixelSize, otherColor, pickRandomSet, rgbColorMap, rgbToCss } from './utils';
+import { ColorSortingOptions, otherColor, pickRandomSet, rgbColorMap, rgbToCss } from './utils';
 
 declare function GM_addStyle(css: string): void;
 
@@ -169,14 +169,7 @@ export function addTemplateRow(template: Template) {
 
     const fly = row.querySelector('.ca-template-fly') as HTMLButtonElement;
     fly.addEventListener('click', () => {
-        if (Manager.wplaceMap === null)
-            return;
-
-        const xZoom = getZoomLevelForPixelSize(Manager.wplaceMap._canvas.width / template.width / 1.1);
-        const yZoom = getZoomLevelForPixelSize(Manager.wplaceMap._canvas.height / template.height / 1.1);
-        const finalZoom = Math.max(10.7, Math.min(18, xZoom, yZoom));
-
-        Manager.flyTo(new PixelCoords(template.coords.tx, template.coords.ty, template.coords.px + template.width / 2, template.coords.py + template.height / 2), finalZoom);
+        Manager.flyToFit(template.coords, template.width, template.height);
     });
 
     const text = row.querySelector('.ca-template-name') as HTMLSpanElement;

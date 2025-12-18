@@ -4,7 +4,7 @@ import { addCanvasListeners } from './eventListeners';
 import { MessageCreateTemplate, MessageDrawOnTile, MessageInit, WorkerResponse } from './Messages';
 import Template from './Template';
 import { JsonifiedValue, PromiseResolve, TeleportPixels, TileIndex, TileInfo, TileProgress, UserSettings, WplaceColorId, WplaceMap } from './types';
-import { ColorSortingOptions, computeHue, computeLuminance, functionBody, rgbColorMap } from './utils';
+import { ColorSortingOptions, computeHue, computeLuminance, functionBody, getZoomLevelForPixelSize, rgbColorMap } from './utils';
 import { workerFunction } from './worker';
 
 declare type StorageValues = {
@@ -461,6 +461,17 @@ class ManagerClass {
 
     flyTo(coords: PixelCoords, zoom: number = 13) {
         this.wplaceMap?.flyTo({ center: coords.toGeoCoords(false), zoom: zoom });
+    }
+    
+    flyToFit(topLeft: PixelCoords, width: number, height: number, extraProportion: number = 1.1): void {
+        if (this.wplaceMap === null)
+            return;
+
+        const xZoom = getZoomLevelForPixelSize(this.wplaceMap._canvas.width / width / extraProportion);
+        const yZoom = getZoomLevelForPixelSize(this.wplaceMap._canvas.height / height / extraProportion);
+        const finalZoom = Math.max(10.7, Math.min(18, xZoom, yZoom));
+
+        this.flyTo(new PixelCoords(topLeft.tx, topLeft.ty, topLeft.px + width / 2, topLeft.py + height / 2), finalZoom);
     }
 }
 

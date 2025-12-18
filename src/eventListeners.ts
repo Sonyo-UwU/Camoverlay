@@ -81,6 +81,10 @@ export function addListeners() {
         }
     });
 
+    document.getElementById('ca-fly-hq')!.addEventListener('click', () => {
+        Manager.flyToFit(new PixelCoords(1054, 713, 337, 494), 2269, 1537, 1);
+    });
+
     function pasted(e: ClipboardEvent) {
         const values = e.clipboardData?.getData('text').split(" ").filter(n => n).map(Number).filter(n => !isNaN(n));
         if (values === undefined || values.length !== 4)
