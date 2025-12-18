@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.4.5
+// @version      1.4.6
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -568,13 +568,14 @@ var Template = class _Template {
     const canvasImageData = imageData.data;
     const { promise, resolve, reject } = Promise.withResolvers();
     setTimeout(reject, 10 * 1e3);
-    const key = this.name + tile.toIndex().toString();
+    const key = Math.random().toString();
     Manager.workerDrawOnTileResolve.set(key, resolve);
     const message = {
       name: "DrawOnTile",
       data: {
         name: this.name,
         tile: { x: tile.x, y: tile.y },
+        key,
         patternSize: Manager.patternSize,
         trackProgress,
         wrongHighlight: Manager.settings.wrongHighlight,
@@ -771,7 +772,7 @@ function workerFunction() {
     };
     self.postMessage(response);
   }
-  function drawOnTile({ name, tile, patternSize, trackProgress, wrongHighlight, enabled, modifyPixels, canvasWidth, canvas }) {
+  function drawOnTile({ name, tile, key, patternSize, trackProgress, wrongHighlight, enabled, modifyPixels, canvasWidth, canvas }) {
     const template = templates.get(name);
     if (template === void 0)
       return;
@@ -855,8 +856,7 @@ function workerFunction() {
     const message = {
       name: "DrawOnTile",
       data: {
-        name,
-        tile,
+        key,
         colorsProgress: colorsProgress.entries().toArray(),
         colorsInfo: colorsInfo.entries().toArray(),
         canvas: canvasImageData.buffer
@@ -1003,7 +1003,7 @@ var ManagerClass = class _ManagerClass {
         Manager.storeTemplates();
         break;
       case "DrawOnTile":
-        Manager.workerDrawOnTileResolve.get(m.data.name + TileCoords.toIndex(m.data.tile.x, m.data.tile.y).toString())?.(m.data);
+        Manager.workerDrawOnTileResolve.get(m.data.key)?.(m.data);
         break;
       default:
         const n = m;

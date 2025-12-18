@@ -61,6 +61,7 @@ export type MessageDrawOnTile = Message<
     {
         name: string,
         tile: TileCoordsObject,
+        key: string,
         patternSize: number,
         trackProgress: boolean,
         wrongHighlight: boolean,
@@ -70,8 +71,7 @@ export type MessageDrawOnTile = Message<
         canvas: Extract<Transferable, ArrayBuffer>;
     },
     {
-        name: string,
-        tile: TileCoordsObject,
+        key: string
         colorsProgress: [WplaceColorId, TileProgress][],
         colorsInfo: [WplaceColorId, { unpainted: { add: PixelIndex[], delete: PixelIndex[]; }, wrong: { add: PixelIndex[], delete: PixelIndex[]; }; }][],
         canvas: Extract<Transferable, ArrayBuffer>;

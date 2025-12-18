@@ -189,7 +189,7 @@ export function workerFunction() {
         self.postMessage(response);
     }
 
-    function drawOnTile({ name, tile, patternSize, trackProgress, wrongHighlight, enabled, modifyPixels, canvasWidth, canvas }: MessageDrawOnTile['message']['data']): void {
+    function drawOnTile({ name, tile, key, patternSize, trackProgress, wrongHighlight, enabled, modifyPixels, canvasWidth, canvas }: MessageDrawOnTile['message']['data']): void {
         const template = templates.get(name);
         if (template === undefined)
             return;
@@ -311,8 +311,7 @@ export function workerFunction() {
         const message: MessageDrawOnTile['response'] = {
             name: 'DrawOnTile',
             data: {
-                name: name,
-                tile: tile,
+                key: key,
                 colorsProgress: colorsProgress.entries().toArray(),
                 colorsInfo: colorsInfo.entries().toArray(),
                 canvas: canvasImageData.buffer

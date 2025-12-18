@@ -180,7 +180,7 @@ class ManagerClass {
                 Manager.storeTemplates();
                 break;
             case 'DrawOnTile':
-                Manager.workerDrawOnTileResolve.get(m.data.name + TileCoords.toIndex(m.data.tile.x, m.data.tile.y).toString())?.(m.data);
+                Manager.workerDrawOnTileResolve.get(m.data.key)?.(m.data);
                 break;
             default:
                 const n: never = m;

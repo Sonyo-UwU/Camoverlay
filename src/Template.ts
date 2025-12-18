@@ -158,7 +158,7 @@ export default class Template {
         const { promise, resolve, reject } = Promise.withResolvers<MessageDrawOnTile['response']['data']>();
         setTimeout(reject, 10 * 1000);
 
-        const key = this.name + tile.toIndex().toString();
+        const key = Math.random().toString(); //this.name + tile.toIndex().toString() + Manager.workerDrawOnTileResolve.size.toString();
         Manager.workerDrawOnTileResolve.set(key, resolve);
 
         const message: MessageDrawOnTile['message'] = {
@@ -166,6 +166,7 @@ export default class Template {
             data: {
                 name: this.name,
                 tile: { x: tile.x, y: tile.y },
+                key: key,
                 patternSize: Manager.patternSize,
                 trackProgress: trackProgress,
                 wrongHighlight: Manager.settings.wrongHighlight,
