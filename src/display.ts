@@ -6,6 +6,13 @@ import { ColorSortingOptions, getZoomLevelForPixelSize, otherColor, pickRandomSe
 
 declare function GM_addStyle(css: string): void;
 
+function numberOrHehe(n: number): string {
+    return n === 69 ? '<img src="https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_48b39bc882fd42f6b669d41e4053a36e/default/light/1.0" style="display: inline; height: 1.5em;">' : n.toString();
+}
+function numberOrHeheLocale(n: number): string {
+    return n === 69 ? '<img src="https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_48b39bc882fd42f6b669d41e4053a36e/default/light/1.0" style="display: inline; height: 1.5em;">' : n.toLocaleString();
+}
+
 export function injectOverlay() {
     // Inject HTML
     document.body.appendChild(document.createElement('div')).outerHTML = `
@@ -38,9 +45,9 @@ export function displayUserData(data: UserData) {
     const username = document.getElementById('ca-user-name');
     if (username !== null) {
         username.innerText = data.name;
-        document.getElementById('ca-user-droplets')!.innerText = data.droplets.toLocaleString();
-        document.getElementById('ca-user-level')!.innerText = Math.floor(data.level + 1).toLocaleString();
-        document.getElementById('ca-user-pixels')!.innerText = nextLevelPixels.toLocaleString();
+        document.getElementById('ca-user-droplets')!.innerHTML = numberOrHeheLocale(data.droplets);
+        document.getElementById('ca-user-level')!.innerHTML = numberOrHeheLocale(Math.floor(data.level + 1));
+        document.getElementById('ca-user-pixels')!.innerHTML = numberOrHeheLocale(nextLevelPixels);
     }
 }
 
@@ -113,25 +120,28 @@ export function addColorRow(colorId: WplaceColorId, progress: TileProgress): voi
         Manager.flyTo(coords, 17.5);
     });
 
+    let countToShow: number;
     switch (Manager.settings.colorSorting) {
         case ColorSortingOptions.Total:
-            row.querySelector('.ca-color-count')!.textContent = progress.total.toString();
+            countToShow = progress.total;
             break;
         case ColorSortingOptions.Remaining:
         case ColorSortingOptions.Original:
         case ColorSortingOptions.Luminance:
         case ColorSortingOptions.Hue:
-            row.querySelector('.ca-color-count')!.textContent = (progress.unpainted + progress.wrong).toString();
+            countToShow = progress.unpainted + progress.wrong;
             break;
         case ColorSortingOptions.Wrong:
-            row.querySelector('.ca-color-count')!.textContent = progress.wrong.toString();
+            countToShow = progress.wrong;
             break;
 
         default:
             const n: never = Manager.settings.colorSorting;
             n;
-            break;
+            return;
     }
+
+    row.querySelector('.ca-color-count')!.innerHTML = numberOrHehe(countToShow);
     row.querySelector('.ca-color-name')!.textContent = c.name;
 
     document.getElementById('ca-color-list')!.appendChild(row);
@@ -227,7 +237,7 @@ export function updateTemplatePixelCount(template: Template) {
     if (row) {
         const count = row.querySelector('.ca-pixel-count')!;
         const painted = template.totalProgress.total - template.totalProgress.unpainted - template.totalProgress.wrong;
-        count.textContent = `${painted} / ${template.totalProgress.total} (${Math.round(painted / template.totalProgress.total * 1000) / 10}%)`;
+        count.innerHTML = `${numberOrHehe(painted)} / ${numberOrHehe(template.totalProgress.total)} (${numberOrHehe(Math.round(painted / template.totalProgress.total * 1000) / 10)}%)`;
 
         const wrong = row.querySelector('.ca-wrong-count')!;
         wrong.textContent = template.totalProgress.wrong > 0 ? ` • ${template.totalProgress.wrong}❌` : '';
