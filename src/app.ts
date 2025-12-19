@@ -32,7 +32,7 @@ unsafeWindow.fetch = async function (input: Parameters<typeof window.fetch>[0], 
     const contentType = response.headers.get('content-type') ?? '';
 
     // Me
-    if (contentType.includes('application/json') && url.includes('/me') && method === 'GET') {
+    if (contentType.includes('application/json') && url.endsWith('/me') && method === 'GET') {
         const json = await response.clone().json() as UserData;
         if (json.status && json.status.toString()[0] !== '2') {
             // Not logged in / server down
@@ -47,7 +47,7 @@ unsafeWindow.fetch = async function (input: Parameters<typeof window.fetch>[0], 
         }
     }
 
-    else if (contentType.includes('application/json') && url.includes('/pixel')) {
+    else if (contentType.includes('application/json') && url.includes('/pixel/')) {
         // Pixel
         if (method === 'GET') {
             const coords = parsePixelCoordsFromURL(url);

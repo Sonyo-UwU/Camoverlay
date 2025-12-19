@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.4.9
+// @version      1.4.10
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -1951,7 +1951,7 @@ unsafeWindow.fetch = async function(input, init) {
   const method = init?.method ?? "GET";
   const response = await originalFetch(input, init);
   const contentType = response.headers.get("content-type") ?? "";
-  if (contentType.includes("application/json") && url.includes("/me") && method === "GET") {
+  if (contentType.includes("application/json") && url.endsWith("/me") && method === "GET") {
     const json = await response.clone().json();
     if (json.status && json.status.toString()[0] !== "2") {
       displayStatus("Could not fetch user data, are you logged in?");
@@ -1962,7 +1962,7 @@ unsafeWindow.fetch = async function(input, init) {
       document.querySelectorAll(".ca-color-row button").forEach((b) => b.style.display = "");
       Manager.loggedIn = true;
     }
-  } else if (contentType.includes("application/json") && url.includes("/pixel")) {
+  } else if (contentType.includes("application/json") && url.includes("/pixel/")) {
     if (method === "GET") {
       const coords = parsePixelCoordsFromURL(url);
       Manager.lastClickedCoords = coords;
