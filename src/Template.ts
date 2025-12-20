@@ -185,7 +185,7 @@ export default class Template {
             const tilePixels = new Map<WplaceColorId, TeleportPixels>();
             Manager.teleportPixels.set(tile.toIndex(), tilePixels);
             for (const [id, info] of result.teleportPixels)
-                tilePixels.set(id, { unpainted: new Set<PixelIndex>(info.unpainted), wrong: new Set<PixelIndex>(info.wrong) });
+                tilePixels.set(id, { unpainted: info.unpainted, unpaintedCurrent: 0, wrong: info.wrong, wrongCurrent: 0 });
         }
     }
 

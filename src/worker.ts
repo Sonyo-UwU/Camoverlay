@@ -29,6 +29,15 @@ declare const LZString: {
     decompress(compressed: string): string;
 };
 
+declare global {
+    /**
+     * Randomize array in-place using Durstenfeld shuffle algorithm and returns the reference to the array.
+     */
+    interface Array<T> {
+        shuffle(): Array<T>;
+    }
+}
+
 export function workerFunction() {
     //#region Utils
 
@@ -64,6 +73,17 @@ export function workerFunction() {
                 return color;
         }
         return otherColor;
+    }
+
+    Array.prototype.shuffle = function<T>(this: Array<T>) {
+        for (let i = this.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            const temp = this[i]!;
+            this[i] = this[j]!;
+            this[j] = temp;
+        }
+
+        return this;
     }
 
     //#endregion
@@ -265,20 +285,12 @@ export function workerFunction() {
                     if (canvasImageData[canvasPixelIndex + 3] === 0) {
                         // Unpainted
                         progress.unpainted++;
-
-                        if (teleport.unpainted.length < 100)
-                            teleport.unpainted.push(pixelTileIndex);
-                        else if (Math.random() < 0.01)
-                            teleport.unpainted[Math.floor(Math.random() * 100)] = pixelTileIndex;
+                        teleport.unpainted.push(pixelTileIndex);
                     }
                     else if (color !== paintedColor) {
                         // Wrong
                         progress.wrong++;
-
-                        if (teleport.wrong.length < 100)
-                            teleport.wrong.push(pixelTileIndex);
-                        else if (Math.random() < 0.01)
-                            teleport.wrong[Math.floor(Math.random() * 100)] = pixelTileIndex;
+                        teleport.wrong.push(pixelTileIndex);
                     }
                 }
 
@@ -303,6 +315,11 @@ export function workerFunction() {
 
         if (needToStoreTemplates)
             setTimeout(() => computeBase64Data(name));
+
+        teleportPixels.forEach(t => {
+            t.unpainted.shuffle().splice(100);
+            t.wrong.shuffle().splice(100);
+        });
 
         const message: MessageDrawOnTile['response'] = {
             name: 'DrawOnTile',

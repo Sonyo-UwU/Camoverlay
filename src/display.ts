@@ -1,8 +1,8 @@
 ﻿import { PixelCoords } from './Coords';
 import { Manager } from './Manager';
 import Template from './Template';
-import type { PixelIndex, TeleportPixels, TileProgress, UserData, WplaceColorId } from './types';
-import { ColorSortingOptions, otherColor, pickRandomSet, rgbColorMap, rgbToCss } from './utils';
+import type { PixelIndex, TileProgress, UserData, WplaceColorId } from './types';
+import { ColorSortingOptions, otherColor, rgbColorMap, rgbToCss } from './utils';
 
 declare function GM_addStyle(css: string): void;
 
@@ -97,27 +97,22 @@ export function addColorRow(colorId: WplaceColorId, progress: TileProgress): voi
         });
     });
     paint.addEventListener('dblclick', () => {
-        const teleport = Manager.teleportPixels.values().toArray().reduce<TeleportPixels>(
-            (t, map) => {
-                return {
-                    unpainted: t.unpainted.union(map.get(colorId)?.unpainted ?? new Set()),
-                    wrong: t.wrong.union(map.get(colorId)?.wrong ?? new Set())
-                };
-            },
-            { unpainted: new Set(), wrong: new Set() });
+        const all = Manager.teleportPixels.values().toArray().map(x => x.get(colorId)).filter(x => x !== undefined);
+        let picked: PixelIndex | null = null;
+        for (const teleports of all) {
+            if (teleports.wrong.length > 0) {
+                picked = teleports.wrong[teleports.wrongCurrent]!;
+                teleports.wrongCurrent = (teleports.wrongCurrent + 1) % teleports.wrong.length;
+                break;
+            }
+            if (teleports.unpainted.length > 0) {
+                picked = teleports.unpainted[teleports.unpaintedCurrent]!;
+                teleports.unpaintedCurrent = (teleports.unpaintedCurrent + 1) % teleports.unpainted.length;
+            }
+        }
 
-        let picked: PixelIndex;
-
-        if (teleport.wrong.size > 0)
-            picked = pickRandomSet(teleport.wrong)!;
-        else if (teleport.unpainted.size > 0)
-            picked = pickRandomSet(teleport.unpainted)!;
-        else
-            return;
-
-        const coords = PixelCoords.fromIndex(picked);
-
-        Manager.flyTo(coords, 17.5);
+        if (picked !== null)
+            Manager.flyTo(PixelCoords.fromIndex(picked), 17.5);
     });
 
     let countToShow: string;

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.4.10
+// @version      1.4.11
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -89,14 +89,6 @@ function parseTileCoordsFromURL(url) {
 }
 function getZoomLevelForPixelSize(x) {
   return Math.log2(x / 100) + 18.6;
-}
-function pickRandomSet(s) {
-  const index = Math.floor(Math.random() * s.size);
-  let cntr = 0;
-  for (const key of s.values())
-    if (cntr++ === index)
-      return key;
-  return null;
 }
 function functionBody(f) {
   return f.substring(f.indexOf("{") + 1, f.lastIndexOf("}"));
@@ -592,7 +584,7 @@ var Template = class _Template {
       const tilePixels = /* @__PURE__ */ new Map();
       Manager.teleportPixels.set(tile.toIndex(), tilePixels);
       for (const [id, info] of result.teleportPixels)
-        tilePixels.set(id, { unpainted: new Set(info.unpainted), wrong: new Set(info.wrong) });
+        tilePixels.set(id, { unpainted: info.unpainted, unpaintedCurrent: 0, wrong: info.wrong, wrongCurrent: 0 });
     }
   }
   updateTotalProgress() {
@@ -650,6 +642,15 @@ function workerFunction() {
     }
     return otherColor2;
   }
+  Array.prototype.shuffle = function() {
+    for (let i = this.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const temp = this[i];
+      this[i] = this[j];
+      this[j] = temp;
+    }
+    return this;
+  };
   const templates = /* @__PURE__ */ new Map();
   self.onmessage = (e) => {
     const m = e.data;
@@ -799,16 +800,10 @@ function workerFunction() {
           progress.total++;
           if (canvasImageData[canvasPixelIndex + 3] === 0) {
             progress.unpainted++;
-            if (teleport.unpainted.length < 100)
-              teleport.unpainted.push(pixelTileIndex);
-            else if (Math.random() < 0.01)
-              teleport.unpainted[Math.floor(Math.random() * 100)] = pixelTileIndex;
+            teleport.unpainted.push(pixelTileIndex);
           } else if (color !== paintedColor) {
             progress.wrong++;
-            if (teleport.wrong.length < 100)
-              teleport.wrong.push(pixelTileIndex);
-            else if (Math.random() < 0.01)
-              teleport.wrong[Math.floor(Math.random() * 100)] = pixelTileIndex;
+            teleport.wrong.push(pixelTileIndex);
           }
         }
         if (enabledMap.get(color.id)) {
@@ -829,6 +824,10 @@ function workerFunction() {
       }
     if (needToStoreTemplates)
       setTimeout(() => computeBase64Data(name));
+    teleportPixels.forEach((t) => {
+      t.unpainted.shuffle().splice(100);
+      t.wrong.shuffle().splice(100);
+    });
     const message = {
       name: "DrawOnTile",
       data: {
@@ -1787,21 +1786,21 @@ function addColorRow(colorId, progress) {
     });
   });
   paint.addEventListener("dblclick", () => {
-    const teleport = Manager.teleportPixels.values().toArray().reduce((t, map) => {
-      return {
-        unpainted: t.unpainted.union(map.get(colorId)?.unpainted ?? /* @__PURE__ */ new Set()),
-        wrong: t.wrong.union(map.get(colorId)?.wrong ?? /* @__PURE__ */ new Set())
-      };
-    }, { unpainted: /* @__PURE__ */ new Set(), wrong: /* @__PURE__ */ new Set() });
-    let picked;
-    if (teleport.wrong.size > 0)
-      picked = pickRandomSet(teleport.wrong);
-    else if (teleport.unpainted.size > 0)
-      picked = pickRandomSet(teleport.unpainted);
-    else
-      return;
-    const coords = PixelCoords.fromIndex(picked);
-    Manager.flyTo(coords, 17.5);
+    const all = Manager.teleportPixels.values().toArray().map((x) => x.get(colorId)).filter((x) => x !== void 0);
+    let picked = null;
+    for (const teleports of all) {
+      if (teleports.wrong.length > 0) {
+        picked = teleports.wrong[teleports.wrongCurrent];
+        teleports.wrongCurrent = (teleports.wrongCurrent + 1) % teleports.wrong.length;
+        break;
+      }
+      if (teleports.unpainted.length > 0) {
+        picked = teleports.unpainted[teleports.unpaintedCurrent];
+        teleports.unpaintedCurrent = (teleports.unpaintedCurrent + 1) % teleports.unpainted.length;
+      }
+    }
+    if (picked !== null)
+      Manager.flyTo(PixelCoords.fromIndex(picked), 17.5);
   });
   let countToShow;
   switch (Manager.settings.colorSorting) {
