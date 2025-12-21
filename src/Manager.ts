@@ -22,6 +22,7 @@ class ManagerClass {
     tilesInfo: Map<TileIndex, TileInfo>;
     enabledColors: Map<WplaceColorId, boolean>;
     teleportPixels: Map<TileIndex, Map<WplaceColorId, TeleportPixels>>;
+    teleportCurrentIndex: number;
     lastClickedCoords: PixelCoords | null;
     loggedIn: boolean;
     settings: UserSettings;
@@ -57,6 +58,7 @@ class ManagerClass {
         this.tilesInfo = new Map();
         this.enabledColors = new Map();
         this.teleportPixels = new Map();
+        this.teleportCurrentIndex = 0;
         this.lastClickedCoords = null;
         this.loggedIn = false;
         this.settings = {

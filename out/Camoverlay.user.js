@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.4.12
+// @version      1.4.13
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -584,7 +584,8 @@ var Template = class _Template {
       const tilePixels = /* @__PURE__ */ new Map();
       Manager.teleportPixels.set(tile.toIndex(), tilePixels);
       for (const [id, info] of result.teleportPixels)
-        tilePixels.set(id, { unpainted: info.unpainted, unpaintedCurrent: 0, wrong: info.wrong, wrongCurrent: 0 });
+        tilePixels.set(id, { unpainted: info.unpainted, wrong: info.wrong });
+      Manager.teleportCurrentIndex = 0;
     }
   }
   updateTotalProgress() {
@@ -848,6 +849,7 @@ var ManagerClass = class _ManagerClass {
   tilesInfo;
   enabledColors;
   teleportPixels;
+  teleportCurrentIndex;
   lastClickedCoords;
   loggedIn;
   settings;
@@ -878,6 +880,7 @@ var ManagerClass = class _ManagerClass {
     this.tilesInfo = /* @__PURE__ */ new Map();
     this.enabledColors = /* @__PURE__ */ new Map();
     this.teleportPixels = /* @__PURE__ */ new Map();
+    this.teleportCurrentIndex = 0;
     this.lastClickedCoords = null;
     this.loggedIn = false;
     this.settings = {
@@ -1771,6 +1774,7 @@ function addColorRow(colorId, progress) {
   const paint = row.querySelector("button");
   if (!Manager.loggedIn)
     paint.style.display = "none";
+  paint.title = "Double click to teleport to an incorrect pixel";
   paint.addEventListener("click", () => {
     document.getElementsByClassName("btn btn-primary btn-lg sm:btn-xl relative z-30")[0]?.click();
     setTimeout(() => {
@@ -1786,21 +1790,22 @@ function addColorRow(colorId, progress) {
     });
   });
   paint.addEventListener("dblclick", () => {
-    const all = Manager.teleportPixels.values().toArray().map((x) => x.get(colorId)).filter((x) => x !== void 0);
-    let picked = null;
-    for (const teleports of all) {
-      if (teleports.wrong.length > 0) {
-        picked = teleports.wrong[teleports.wrongCurrent];
-        teleports.wrongCurrent = (teleports.wrongCurrent + 1) % teleports.wrong.length;
-        break;
-      }
-      if (teleports.unpainted.length > 0) {
-        picked = teleports.unpainted[teleports.unpaintedCurrent];
-        teleports.unpaintedCurrent = (teleports.unpaintedCurrent + 1) % teleports.unpainted.length;
-      }
-    }
-    if (picked !== null)
-      Manager.flyTo(PixelCoords.fromIndex(picked), 17.5);
+    debugger;
+    const all = Manager.teleportPixels.values().toArray().map((x) => x.get(colorId)).filter((x) => x !== void 0).reduce((acc, curr) => {
+      acc.unpainted.push(...curr.unpainted);
+      acc.wrong.push(...curr.wrong);
+      return acc;
+    }, { unpainted: [], wrong: [] });
+    let picked;
+    if (all.wrong.length > 0) {
+      Manager.teleportCurrentIndex = (Manager.teleportCurrentIndex + 1) % all.wrong.length;
+      picked = all.wrong[Manager.teleportCurrentIndex];
+    } else if (all.unpainted.length > 0) {
+      Manager.teleportCurrentIndex = (Manager.teleportCurrentIndex + 1) % all.unpainted.length;
+      picked = all.unpainted[Manager.teleportCurrentIndex];
+    } else
+      return;
+    Manager.flyTo(PixelCoords.fromIndex(picked), 17.5);
   });
   let countToShow;
   switch (Manager.settings.colorSorting) {

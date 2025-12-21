@@ -82,6 +82,7 @@ export function addColorRow(colorId: WplaceColorId, progress: TileProgress): voi
     const paint = row.querySelector('button')!;
     if (!Manager.loggedIn)
         paint.style.display = 'none';
+    paint.title = 'Double click to teleport to an incorrect pixel';
     paint.addEventListener('click', () => {
         (document.getElementsByClassName('btn btn-primary btn-lg sm:btn-xl relative z-30')[0] as HTMLElement | undefined)?.click();
         setTimeout(() => {
@@ -97,22 +98,28 @@ export function addColorRow(colorId: WplaceColorId, progress: TileProgress): voi
         });
     });
     paint.addEventListener('dblclick', () => {
-        const all = Manager.teleportPixels.values().toArray().map(x => x.get(colorId)).filter(x => x !== undefined);
-        let picked: PixelIndex | null = null;
-        for (const teleports of all) {
-            if (teleports.wrong.length > 0) {
-                picked = teleports.wrong[teleports.wrongCurrent]!;
-                teleports.wrongCurrent = (teleports.wrongCurrent + 1) % teleports.wrong.length;
-                break;
-            }
-            if (teleports.unpainted.length > 0) {
-                picked = teleports.unpainted[teleports.unpaintedCurrent]!;
-                teleports.unpaintedCurrent = (teleports.unpaintedCurrent + 1) % teleports.unpainted.length;
-            }
-        }
+        debugger;
+        const all = Manager.teleportPixels.values().toArray()
+            .map(x => x.get(colorId))
+            .filter(x => x !== undefined)
+            .reduce((acc, curr) => { acc.unpainted.push(...curr.unpainted); acc.wrong.push(...curr.wrong); return acc; }, { unpainted: [], wrong: [] });
 
-        if (picked !== null)
-            Manager.flyTo(PixelCoords.fromIndex(picked), 17.5);
+        let picked: PixelIndex;
+
+        if (all.wrong.length > 0) {
+            // Modulo first, because teleportCurrentIndex is global, not per color
+            // (makes enumeration start at 1, but doesn't matter since the array is shuffled anyway)
+            Manager.teleportCurrentIndex = (Manager.teleportCurrentIndex + 1) % all.wrong.length;
+            picked = all.wrong[Manager.teleportCurrentIndex]!;
+        }
+        else if (all.unpainted.length > 0) {
+            Manager.teleportCurrentIndex = (Manager.teleportCurrentIndex + 1) % all.unpainted.length;
+            picked = all.unpainted[Manager.teleportCurrentIndex]!;
+        }
+        else
+            return;
+
+        Manager.flyTo(PixelCoords.fromIndex(picked), 17.5);
     });
 
     let countToShow: string;

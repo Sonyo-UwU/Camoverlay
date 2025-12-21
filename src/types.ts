@@ -10,9 +10,7 @@ export type TileInfo = {
 
 export type TeleportPixels = {
     wrong: PixelIndex[],
-    wrongCurrent: number,
-    unpainted: PixelIndex[],
-    unpaintedCurrent: number;
+    unpainted: PixelIndex[];
 };
 
 export type TileProgress = {
