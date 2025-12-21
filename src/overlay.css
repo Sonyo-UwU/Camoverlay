@@ -34,6 +34,13 @@
     transition-property: max-height, max-width;
     width: auto;
     white-space: nowrap;
+    z-index: 49;
+}
+
+/* Go behind other popups when not hovering a tooltip */
+#ca-overlay:not(:has(.tooltip:hover)) {
+    transition-delay: .2s;
+    transition-property: z-index;
     z-index: 29;
 }
 
@@ -205,6 +212,9 @@ div#ca-overlay {
 }
 #ca-enable-selected svg {
     width: 80%;
+}
+#ca-teleport-incorret {
+    width: 84%;
 }
 
 #ca-sorting {

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.4.13
+// @version      1.4.14
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -384,6 +384,17 @@ function addListeners() {
       displayStatus(`${color.name} is not in palette`);
     Manager.tilesInfo.clear();
     Manager.storeGlobal();
+  });
+  document.getElementById("ca-teleport-incorrect").addEventListener("click", () => {
+    const all = Manager.teleportPixels.values().toArray().reduce((acc, curr) => {
+      acc.push(...curr.values().toArray());
+      return acc;
+    }, []).reduce((acc, curr) => {
+      acc.unpainted.push(...curr.unpainted);
+      acc.wrong.push(...curr.wrong);
+      return acc;
+    }, { unpainted: [], wrong: [] });
+    Manager.flyToNextIncorrect(all);
   });
   document.getElementById("ca-select-button").addEventListener("click", () => {
     document.getElementById("ca-file-input").click();
@@ -1211,6 +1222,18 @@ var ManagerClass = class _ManagerClass {
     const finalZoom = Math.max(10.7, Math.min(18, xZoom, yZoom));
     this.flyTo(new PixelCoords(topLeft.tx, topLeft.ty, topLeft.px + width / 2, topLeft.py + height / 2), finalZoom);
   }
+  flyToNextIncorrect(t) {
+    let picked;
+    if (t.wrong.length > 0) {
+      Manager.teleportCurrentIndex = (Manager.teleportCurrentIndex + 1) % t.wrong.length;
+      picked = t.wrong[Manager.teleportCurrentIndex];
+    } else if (t.unpainted.length > 0) {
+      Manager.teleportCurrentIndex = (Manager.teleportCurrentIndex + 1) % t.unpainted.length;
+      picked = t.unpainted[Manager.teleportCurrentIndex];
+    } else
+      return;
+    this.flyTo(PixelCoords.fromIndex(picked), 17.5);
+  }
 };
 var Manager = new ManagerClass();
 
@@ -1323,22 +1346,33 @@ function injectOverlay() {
         <div id="ca-color-list-buttons">
             <button id="ca-enable-all" class="tooltip">
                 <div class="tooltip-content">
+                    Enable all colors
                     <kbd class="kbd kbd-xs text-base-content touchscreen:hidden ml-0.5 rounded-md">A</kbd>
                 </div>
-                Enable All
+                Enable all
             </button>
             <button id="ca-disable-all" class="tooltip">
                 <div class="tooltip-content">
+                    Disable all colors
                     <kbd class="kbd kbd-xs text-base-content touchscreen:hidden ml-0.5 rounded-md">D</kbd>
                 </div>
-                Disable All
+                Disable all
             </button>
             <button id="ca-enable-selected" class="ca-icon-button tooltip">
                 <div class="tooltip-content">
+                    Enable selected color
                     <kbd class="kbd kbd-xs text-base-content touchscreen:hidden ml-0.5 rounded-md">V</kbd>
                 </div>
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
                     <path d="M120-120v-190l358-358-58-56 58-56 76 76 124-124q5-5 12.5-8t15.5-3q8 0 15 3t13 8l94 94q5 6 8 13t3 15q0 8-3 15.5t-8 12.5L705-555l76 78-57 57-56-58-358 358H120Zm80-80h78l332-334-76-76-334 332v78Zm447-410 96-96-37-37-96 96 37 37Zm0 0-37-37 37 37Z"></path>
+                </svg>
+            </button>
+            <button id="ca-teleport-incorrect" class="ca-icon-button tooltip">
+                <div class="tooltip-content">
+                    Teleport to a random<br>incorrect pixel
+                </div>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" style="width: 84%;">
+                    <path d="M300-240q25 0 42.5-17.5T360-300t-17.5-42.5T300-360t-42.5 17.5T240-300t17.5 42.5T300-240m0-360q25 0 42.5-17.5T360-660t-17.5-42.5T300-720t-42.5 17.5T240-660t17.5 42.5T300-600m180 180q25 0 42.5-17.5T540-480t-17.5-42.5T480-540t-42.5 17.5T420-480t17.5 42.5T480-420m180 180q25 0 42.5-17.5T720-300t-17.5-42.5T660-360t-42.5 17.5T600-300t17.5 42.5T660-240m0-360q25 0 42.5-17.5T720-660t-17.5-42.5T660-720t-42.5 17.5T600-660t17.5 42.5T660-600M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120zm0-80h560v-560H200zm0-560v560z"></path>
                 </svg>
             </button>
         </div>
@@ -1400,6 +1434,13 @@ function injectOverlay() {
     transition-property: max-height, max-width;
     width: auto;
     white-space: nowrap;
+    z-index: 49;
+}
+
+/* Go behind other popups when not hovering a tooltip */
+#ca-overlay:not(:has(.tooltip:hover)) {
+    transition-delay: .2s;
+    transition-property: z-index;
     z-index: 29;
 }
 
@@ -1571,6 +1612,9 @@ div#ca-overlay {
 }
 #ca-enable-selected svg {
     width: 80%;
+}
+#ca-teleport-incorret {
+    width: 84%;
 }
 
 #ca-sorting {
@@ -1790,22 +1834,12 @@ function addColorRow(colorId, progress) {
     });
   });
   paint.addEventListener("dblclick", () => {
-    debugger;
     const all = Manager.teleportPixels.values().toArray().map((x) => x.get(colorId)).filter((x) => x !== void 0).reduce((acc, curr) => {
       acc.unpainted.push(...curr.unpainted);
       acc.wrong.push(...curr.wrong);
       return acc;
     }, { unpainted: [], wrong: [] });
-    let picked;
-    if (all.wrong.length > 0) {
-      Manager.teleportCurrentIndex = (Manager.teleportCurrentIndex + 1) % all.wrong.length;
-      picked = all.wrong[Manager.teleportCurrentIndex];
-    } else if (all.unpainted.length > 0) {
-      Manager.teleportCurrentIndex = (Manager.teleportCurrentIndex + 1) % all.unpainted.length;
-      picked = all.unpainted[Manager.teleportCurrentIndex];
-    } else
-      return;
-    Manager.flyTo(PixelCoords.fromIndex(picked), 17.5);
+    Manager.flyToNextIncorrect(all);
   });
   let countToShow;
   switch (Manager.settings.colorSorting) {
@@ -1941,6 +1975,15 @@ function displayTileCoords(coords) {
 }
 
 // dist/app.js
+Array.prototype.shuffle = function() {
+  for (let i = this.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const temp = this[i];
+    this[i] = this[j];
+    this[j] = temp;
+  }
+  return this;
+};
 await Manager.createWorker();
 Manager.getMapObject();
 importFont();

@@ -1,7 +1,7 @@
 ﻿import { PixelCoords } from './Coords';
 import { Manager } from './Manager';
 import Template from './Template';
-import type { PixelIndex, TileProgress, UserData, WplaceColorId } from './types';
+import type { TileProgress, UserData, WplaceColorId } from './types';
 import { ColorSortingOptions, otherColor, rgbColorMap, rgbToCss } from './utils';
 
 declare function GM_addStyle(css: string): void;
@@ -98,28 +98,12 @@ export function addColorRow(colorId: WplaceColorId, progress: TileProgress): voi
         });
     });
     paint.addEventListener('dblclick', () => {
-        debugger;
         const all = Manager.teleportPixels.values().toArray()
             .map(x => x.get(colorId))
             .filter(x => x !== undefined)
             .reduce((acc, curr) => { acc.unpainted.push(...curr.unpainted); acc.wrong.push(...curr.wrong); return acc; }, { unpainted: [], wrong: [] });
 
-        let picked: PixelIndex;
-
-        if (all.wrong.length > 0) {
-            // Modulo first, because teleportCurrentIndex is global, not per color
-            // (makes enumeration start at 1, but doesn't matter since the array is shuffled anyway)
-            Manager.teleportCurrentIndex = (Manager.teleportCurrentIndex + 1) % all.wrong.length;
-            picked = all.wrong[Manager.teleportCurrentIndex]!;
-        }
-        else if (all.unpainted.length > 0) {
-            Manager.teleportCurrentIndex = (Manager.teleportCurrentIndex + 1) % all.unpainted.length;
-            picked = all.unpainted[Manager.teleportCurrentIndex]!;
-        }
-        else
-            return;
-
-        Manager.flyTo(PixelCoords.fromIndex(picked), 17.5);
+        Manager.flyToNextIncorrect(all);
     });
 
     let countToShow: string;

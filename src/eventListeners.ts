@@ -1,6 +1,7 @@
 import { PixelCoords } from './Coords';
 import { displayStatus } from './display';
 import { Manager } from './Manager';
+import { TeleportPixels } from './types';
 import { ColorSortingOptions, getColor } from './utils';
 
 
@@ -216,6 +217,14 @@ export function addListeners() {
 
         Manager.tilesInfo.clear();
         Manager.storeGlobal();
+    });
+
+    document.getElementById('ca-teleport-incorrect')!.addEventListener('click', () => {
+        const all = Manager.teleportPixels.values().toArray()
+            .reduce((acc, curr) => { acc.push(...curr.values().toArray()); return acc; }, [] as TeleportPixels[])
+            .reduce((acc, curr) => { acc.unpainted.push(...curr.unpainted); acc.wrong.push(...curr.wrong); return acc; }, { unpainted: [], wrong: [] });
+
+        Manager.flyToNextIncorrect(all);
     });
 
     document.getElementById('ca-select-button')!.addEventListener('click', () => {

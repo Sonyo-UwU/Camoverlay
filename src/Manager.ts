@@ -3,7 +3,7 @@ import { addColorRow, addTemplateRow, displayStatus, removeTemplateRow } from '.
 import { addCanvasListeners } from './eventListeners';
 import { MessageCreateTemplate, MessageDrawOnTile, MessageInit, WorkerResponse } from './Messages';
 import Template from './Template';
-import { JsonifiedValue, PromiseResolve, TeleportPixels, TileIndex, TileInfo, TileProgress, UserSettings, WplaceColorId, WplaceMap } from './types';
+import { JsonifiedValue, PixelIndex, PromiseResolve, TeleportPixels, TileIndex, TileInfo, TileProgress, UserSettings, WplaceColorId, WplaceMap } from './types';
 import { ColorSortingOptions, computeHue, computeLuminance, functionBody, getZoomLevelForPixelSize, rgbColorMap } from './utils';
 import { workerFunction } from './worker';
 
@@ -474,6 +474,25 @@ class ManagerClass {
         const finalZoom = Math.max(10.7, Math.min(18, xZoom, yZoom));
 
         this.flyTo(new PixelCoords(topLeft.tx, topLeft.ty, topLeft.px + width / 2, topLeft.py + height / 2), finalZoom);
+    }
+
+    flyToNextIncorrect(t: TeleportPixels): void {
+        let picked: PixelIndex;
+
+        if (t.wrong.length > 0) {
+            // Modulo first, because teleportCurrentIndex is global, not per color
+            // (makes enumeration start at 1, but doesn't matter since the array is shuffled anyway)
+            Manager.teleportCurrentIndex = (Manager.teleportCurrentIndex + 1) % t.wrong.length;
+            picked = t.wrong[Manager.teleportCurrentIndex]!;
+        }
+        else if (t.unpainted.length > 0) {
+            Manager.teleportCurrentIndex = (Manager.teleportCurrentIndex + 1) % t.unpainted.length;
+            picked = t.unpainted[Manager.teleportCurrentIndex]!;
+        }
+        else
+            return;
+
+        this.flyTo(PixelCoords.fromIndex(picked), 17.5);
     }
 }
 
