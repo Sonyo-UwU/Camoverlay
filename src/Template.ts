@@ -159,7 +159,6 @@ export default class Template {
                 key: key,
                 patternSize: Manager.patternSize,
                 trackProgress: trackProgress,
-                wrongHighlight: Manager.settings.wrongHighlight,
                 enabled: Manager.enabledColors.entries().toArray(),
                 modifyPixels: this.modifyPixels,
                 canvasWidth: ctx.canvas.width,

@@ -209,7 +209,7 @@ export function workerFunction() {
         self.postMessage(response);
     }
 
-    function drawOnTile({ name, tile, key, patternSize, trackProgress, wrongHighlight, enabled, modifyPixels, canvasWidth, canvas }: MessageDrawOnTile['message']['data']): void {
+    function drawOnTile({ name, tile, key, patternSize, trackProgress, enabled, modifyPixels, canvasWidth, canvas }: MessageDrawOnTile['message']['data']): void {
         const template = templates.get(name);
         if (template === undefined)
             return;
@@ -295,17 +295,6 @@ export function workerFunction() {
                 }
 
                 if (enabledMap.get(color.id)) {
-                    if (wrongHighlight && canvasImageData[canvasPixelIndex + 3] !== 0 && color !== paintedColor) {
-                        // Wrong pixel highlight
-                        for (const [dx, dy] of [[0, 1], [1, 0], [2, 1], [1, 2]]) {
-                            const idx = ((cy * patternSize + dy!) * canvasWidth + cx * patternSize + dx!) * 4;
-                            canvasImageData[idx + 0] = 255;
-                            canvasImageData[idx + 1] = 0;
-                            canvasImageData[idx + 2] = 0;
-                            canvasImageData[idx + 3] = 255;
-                        }
-                    }
-
                     canvasImageData[canvasPixelIndex + 0] = template.imageData[imagePixelIndex + 0]!;
                     canvasImageData[canvasPixelIndex + 1] = template.imageData[imagePixelIndex + 1]!;
                     canvasImageData[canvasPixelIndex + 2] = template.imageData[imagePixelIndex + 2]!;

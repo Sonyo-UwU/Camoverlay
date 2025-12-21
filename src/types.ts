@@ -22,7 +22,6 @@ export type TileProgress = {
 export type UserSettings = {
     colorSorting: ColorSortingOptions,
     colorSortingReversed: boolean
-    wrongHighlight: boolean,
     hideCompleted: boolean;
 };
 

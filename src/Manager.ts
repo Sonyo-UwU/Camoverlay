@@ -64,7 +64,6 @@ class ManagerClass {
         this.settings = {
             colorSorting: ColorSortingOptions.Total,
             colorSortingReversed: false,
-            wrongHighlight: false,
             hideCompleted: false
         };
         this.wplaceMap = null;
@@ -97,10 +96,6 @@ class ManagerClass {
 
             if (stored.settings.colorSortingReversed !== undefined)
                 this.settings.colorSortingReversed = stored.settings.colorSortingReversed;
-
-            if (stored.settings.wrongHighlight !== undefined)
-                this.settings.wrongHighlight = stored.settings.wrongHighlight;
-            (document.getElementById('ca-setting-wrong-highlight') as HTMLInputElement).checked = this.settings.wrongHighlight;
 
             if (stored.settings.hideCompleted !== undefined)
                 this.settings.hideCompleted = stored.settings.hideCompleted;

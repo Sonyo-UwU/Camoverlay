@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.4.14
+// @version      1.4.15
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -312,11 +312,6 @@ function addListeners() {
       setTimeout(() => svg.style.fill = "", 500);
     }
   });
-  document.getElementById("ca-setting-wrong-highlight").addEventListener("change", (e) => {
-    Manager.settings.wrongHighlight = e.target.checked;
-    Manager.tilesInfo.clear();
-    Manager.storeGlobal();
-  });
   document.getElementById("ca-setting-hide-completed").addEventListener("change", (e) => {
     Manager.settings.hideCompleted = e.target.checked;
     Manager.storeGlobal();
@@ -575,7 +570,6 @@ var Template = class _Template {
         key,
         patternSize: Manager.patternSize,
         trackProgress,
-        wrongHighlight: Manager.settings.wrongHighlight,
         enabled: Manager.enabledColors.entries().toArray(),
         modifyPixels: this.modifyPixels,
         canvasWidth: ctx.canvas.width,
@@ -762,7 +756,7 @@ function workerFunction() {
     };
     self.postMessage(response);
   }
-  function drawOnTile({ name, tile, key, patternSize, trackProgress, wrongHighlight, enabled, modifyPixels, canvasWidth, canvas }) {
+  function drawOnTile({ name, tile, key, patternSize, trackProgress, enabled, modifyPixels, canvasWidth, canvas }) {
     const template = templates.get(name);
     if (template === void 0)
       return;
@@ -819,15 +813,6 @@ function workerFunction() {
           }
         }
         if (enabledMap.get(color.id)) {
-          if (wrongHighlight && canvasImageData[canvasPixelIndex + 3] !== 0 && color !== paintedColor) {
-            for (const [dx, dy] of [[0, 1], [1, 0], [2, 1], [1, 2]]) {
-              const idx = ((cy * patternSize + dy) * canvasWidth + cx * patternSize + dx) * 4;
-              canvasImageData[idx + 0] = 255;
-              canvasImageData[idx + 1] = 0;
-              canvasImageData[idx + 2] = 0;
-              canvasImageData[idx + 3] = 255;
-            }
-          }
           canvasImageData[canvasPixelIndex + 0] = template.imageData[imagePixelIndex + 0];
           canvasImageData[canvasPixelIndex + 1] = template.imageData[imagePixelIndex + 1];
           canvasImageData[canvasPixelIndex + 2] = template.imageData[imagePixelIndex + 2];
@@ -897,7 +882,6 @@ var ManagerClass = class _ManagerClass {
     this.settings = {
       colorSorting: "Total",
       colorSortingReversed: false,
-      wrongHighlight: false,
       hideCompleted: false
     };
     this.wplaceMap = null;
@@ -924,9 +908,6 @@ var ManagerClass = class _ManagerClass {
       document.getElementById("ca-sort-select").value = this.settings.colorSorting;
       if (stored.settings.colorSortingReversed !== void 0)
         this.settings.colorSortingReversed = stored.settings.colorSortingReversed;
-      if (stored.settings.wrongHighlight !== void 0)
-        this.settings.wrongHighlight = stored.settings.wrongHighlight;
-      document.getElementById("ca-setting-wrong-highlight").checked = this.settings.wrongHighlight;
       if (stored.settings.hideCompleted !== void 0)
         this.settings.hideCompleted = stored.settings.hideCompleted;
       document.getElementById("ca-setting-hide-completed").checked = this.settings.hideCompleted;
@@ -1317,10 +1298,6 @@ function injectOverlay() {
             </button>
         </div>
         <div id="ca-settings">
-            <div>
-                <input id="ca-setting-wrong-highlight" type="checkbox">
-                Highlight wrong pixels
-            </div>
             <div>
                 <input id="ca-setting-hide-completed" type="checkbox">
                 Hide completed colors

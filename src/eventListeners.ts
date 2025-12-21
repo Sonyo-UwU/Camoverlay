@@ -126,12 +126,6 @@ export function addListeners() {
         }
     });
 
-    document.getElementById('ca-setting-wrong-highlight')!.addEventListener('change', e => {
-        Manager.settings.wrongHighlight = (e.target as HTMLInputElement).checked;
-        Manager.tilesInfo.clear();
-        Manager.storeGlobal();
-    });
-
     document.getElementById('ca-setting-hide-completed')!.addEventListener('change', e => {
         Manager.settings.hideCompleted = (e.target as HTMLInputElement).checked;
         Manager.storeGlobal();

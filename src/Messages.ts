@@ -64,7 +64,6 @@ export type MessageDrawOnTile = Message<
         key: string,
         patternSize: number,
         trackProgress: boolean,
-        wrongHighlight: boolean,
         enabled: [WplaceColorId, boolean][],
         modifyPixels: PixelIndex[],
         canvasWidth: number,
