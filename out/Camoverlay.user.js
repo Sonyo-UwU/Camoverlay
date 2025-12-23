@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.4.16
+// @version      1.4.17
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -320,6 +320,14 @@ function addListeners() {
       svg.style.fill = "#2b8f1f";
       setTimeout(() => svg.style.fill = "", 500);
     }
+  });
+  document.getElementById("ca-setting-ui-size").addEventListener("change", (e) => {
+    Manager.settings.uiSize = e.target.value;
+    Manager.storeGlobal();
+    const overlay = document.getElementById("ca-overlay");
+    overlay.style.transition = "none";
+    overlay.style.setProperty("--ca-ui-size", Manager.settings.uiSize + "%");
+    setTimeout(() => document.getElementById("ca-overlay").style.transition = "");
   });
   document.getElementById("ca-setting-hide-completed").addEventListener("change", (e) => {
     Manager.settings.hideCompleted = e.target.checked;
@@ -893,6 +901,7 @@ var ManagerClass = class _ManagerClass {
     this.settings = {
       colorSorting: "Total",
       colorSortingReversed: false,
+      uiSize: "100",
       hideCompleted: false
     };
     this.wplaceMap = null;
@@ -919,6 +928,10 @@ var ManagerClass = class _ManagerClass {
       document.getElementById("ca-sort-select").value = this.settings.colorSorting;
       if (stored.settings.colorSortingReversed !== void 0)
         this.settings.colorSortingReversed = stored.settings.colorSortingReversed;
+      if (stored.settings.uiSize !== void 0)
+        this.settings.uiSize = stored.settings.uiSize;
+      document.getElementById("ca-setting-ui-size").value = this.settings.uiSize;
+      document.getElementById("ca-overlay").style.setProperty("--ca-ui-size", this.settings.uiSize + "%");
       if (stored.settings.hideCompleted !== void 0)
         this.settings.hideCompleted = stored.settings.hideCompleted;
       document.getElementById("ca-setting-hide-completed").checked = this.settings.hideCompleted;
@@ -1238,7 +1251,7 @@ function numberOrHeheLocale(n) {
 }
 function injectOverlay() {
   document.body.appendChild(document.createElement("div")).outerHTML = `
-<div id="ca-overlay">
+<div id="ca-overlay" style="--ca-ui-size: 100%;">
     <template id="ca-coords-template">
         <div class="ca-display-coords">
             <span>Tile X: 1056, Tile Y: 714 ; Pixel X: 304, Pixel Y: 744</span>
@@ -1311,8 +1324,12 @@ function injectOverlay() {
         </div>
         <div id="ca-settings">
             <div>
-                <input id="ca-setting-hide-completed" type="checkbox">
+                UI size
+                <input id="ca-setting-ui-size" type="range" min="40" max="100" step="10">
+            </div>
+            <div>
                 Hide completed colors
+                <input id="ca-setting-hide-completed" type="checkbox">
             </div>
         </div>
         <div id="ca-sorting">
@@ -1411,16 +1428,19 @@ function injectOverlay() {
 
 #ca-overlay {
     background-color: #5D1F18E6;
-    border-radius: 8px;
+    border-radius: 0.5em;
     color: white;
+    font-size: var(--ca-ui-size);
     max-height: 100%;
-    max-width: 300px;
-    padding: 10px;
+    max-width: 19em;
+    padding: 0.625em;
     position: absolute;
     right: 75px;
     top: 10px;
-    transition-duration: 500ms;
-    transition-property: max-height, max-width;
+    transition:
+        max-height 500ms,
+        max-width 500ms,
+        z-index 200ms;
     width: auto;
     white-space: nowrap;
     z-index: 49;
@@ -1428,15 +1448,13 @@ function injectOverlay() {
 
 /* Go behind other popups when not hovering a tooltip */
 #ca-overlay:not(:has(.tooltip:hover)) {
-    transition-delay: .2s;
-    transition-property: z-index;
     z-index: 29;
 }
 
 /* Collapsing */
 #ca-overlay.collapsed {
-    max-width: 60px;
-    max-height: 60px;
+    max-width: 3.75em;
+    max-height: 3.75em;
 }
 
 #ca-overlay > :not(#ca-header), #ca-overlay h1 {
@@ -1462,7 +1480,7 @@ div#ca-overlay {
 
 #ca-overlay h1 {
     display: inline-block;
-    font-size: x-large;
+    font-size: 150%;
     font-weight: bold;
     vertical-align: middle;
 }
@@ -1472,7 +1490,7 @@ div#ca-overlay {
 }
 
 #ca-overlay small {
-    font-size: x-small;
+    font-size: 75%;
     color: lightgray;
     margin-top: 0;
     text-align: right;
@@ -1494,11 +1512,20 @@ div#ca-overlay {
     cursor: not-allowed;
 }
 
+#ca-overlay input[type="checkbox"] {
+    height: 1.2em;
+}
+#ca-overlay input[type="range"] {
+    height: 2em;
+    flex: 1 0 auto;
+    zoom: var(--ca-ui-size);
+}
+
 #ca-overlay select {
     border: white 1px solid;
     border-radius: 0.5em;
     background-color: #ab2314;
-    font-size: small;
+    font-size: 81%;
 }
 #ca-overlay select:hover, #ca-overlay select:open {
     background-color: #b14438;
@@ -1528,7 +1555,7 @@ div#ca-overlay {
 }
 
 #ca-image-collapse {
-    border-radius: 12px;
+    border-radius: 0.75em;
     cursor: pointer;
     height: 2.5em;
 }
@@ -1559,7 +1586,7 @@ div#ca-overlay {
     width: 5.5ch;
     background-color: rgba(0, 0, 0, 0.2);
     padding: 0 0.5ch;
-    font-size: small;
+    font-size: 81%;
 }
 .ca-coords-input::-webkit-outer-spin-button,
 .ca-coords-input::-webkit-inner-spin-button {
@@ -1584,9 +1611,11 @@ div#ca-overlay {
     text-align: center;
 }
 #ca-settings > div {
+    align-items: center;
     display: flex;
     gap: 1ch;
-    width: fit-content;
+    justify-content: space-between;
+    width: 100%;
 }
 #ca-settings input {
     filter: hue-rotate(160deg);
@@ -1621,7 +1650,7 @@ div#ca-overlay {
 #ca-sort-reverse > svg {
     width: 65%;
     stroke: #111;
-    stroke-width: 10px;
+    stroke-width: 0.625em;
 }
 
 #ca-color-list {
@@ -1631,9 +1660,9 @@ div#ca-overlay {
     border-width: 1px;
     font-size: 75%;
     margin-top: 0.5em;
-    max-height: 120px;
+    max-height: 10em;
     overflow: auto;
-    padding: 5px;
+    padding: 0.42em;
 }
 #ca-color-list:empty {
     display: none;
@@ -1744,7 +1773,7 @@ div#ca-overlay {
 }
 
 #ca-output {
-    font-size: small;
+    font-size: 81%;
     background-color: rgba(0, 0, 0, 0.2);
     padding: 0 0.5ch;
     margin-top: 0.5em;

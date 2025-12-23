@@ -66,6 +66,7 @@ class ManagerClass {
         this.settings = {
             colorSorting: ColorSortingOptions.Total,
             colorSortingReversed: false,
+            uiSize: '100',
             hideCompleted: false
         };
         this.wplaceMap = null;
@@ -98,6 +99,11 @@ class ManagerClass {
 
             if (stored.settings.colorSortingReversed !== undefined)
                 this.settings.colorSortingReversed = stored.settings.colorSortingReversed;
+
+            if (stored.settings.uiSize !== undefined)
+                this.settings.uiSize = stored.settings.uiSize;
+            (document.getElementById('ca-setting-ui-size') as HTMLInputElement).value = this.settings.uiSize;
+            (document.getElementById('ca-overlay') as HTMLDivElement).style.setProperty('--ca-ui-size', this.settings.uiSize + '%');
 
             if (stored.settings.hideCompleted !== undefined)
                 this.settings.hideCompleted = stored.settings.hideCompleted;

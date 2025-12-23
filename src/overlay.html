@@ -1,4 +1,4 @@
-<div id="ca-overlay">
+<div id="ca-overlay" style="--ca-ui-size: 100%;">
     <template id="ca-coords-template">
         <div class="ca-display-coords">
             <span>Tile X: 1056, Tile Y: 714 ; Pixel X: 304, Pixel Y: 744</span>
@@ -71,8 +71,12 @@
         </div>
         <div id="ca-settings">
             <div>
-                <input id="ca-setting-hide-completed" type="checkbox">
+                UI size
+                <input id="ca-setting-ui-size" type="range" min="40" max="100" step="10">
+            </div>
+            <div>
                 Hide completed colors
+                <input id="ca-setting-hide-completed" type="checkbox">
             </div>
         </div>
         <div id="ca-sorting">

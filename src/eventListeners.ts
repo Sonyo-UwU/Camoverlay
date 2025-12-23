@@ -126,6 +126,16 @@ export function addListeners() {
         }
     });
 
+    document.getElementById('ca-setting-ui-size')!.addEventListener('change', e => {
+        Manager.settings.uiSize = (e.target as HTMLInputElement).value;
+        Manager.storeGlobal();
+
+        const overlay = document.getElementById('ca-overlay') as HTMLDivElement;
+        overlay.style.transition = 'none';
+        overlay.style.setProperty('--ca-ui-size', Manager.settings.uiSize + '%');
+        setTimeout(() => (document.getElementById('ca-overlay') as HTMLDivElement).style.transition = '', 100);
+    });
+
     document.getElementById('ca-setting-hide-completed')!.addEventListener('change', e => {
         Manager.settings.hideCompleted = (e.target as HTMLInputElement).checked;
         Manager.storeGlobal();
