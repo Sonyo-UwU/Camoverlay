@@ -64,6 +64,8 @@ export type UserData = {
     discordId: string,
     droplets: number,
     equippedFlag: number,
+    equippedFrameId: number,
+    equippedFrameUrl: string,
     experiments: {
         "2025-09_discord_linking": {
             enabled: boolean;
@@ -73,13 +75,14 @@ export type UserData = {
         };
     },
     extraColorsBitmap: number,
-    favoriteLocations: {
+    favoriteLocations: Array<{
         id: number,
         name: string,
         latitude: number,
         longitude: number;
-    }[],
+    }>,
     flagsBitmap: string,
+    freeFlag: boolean,
     id: number,
     isCustomer: boolean,
     level: number,

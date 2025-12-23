@@ -1,6 +1,16 @@
 import { PixelCoords, TileCoords } from './Coords';
 import { WplaceColor, WplaceColorId } from './types';
 
+
+export const enum ColorSortingOptions {
+    Total = 'Total',
+    Remaining = 'Remaining',
+    Wrong = 'Wrong',
+    Progress = 'Progress',
+    Original = 'Original',
+    Luminance = 'Luminance',
+    Hue = 'Hue'
+};
 export function parsePixelCoordsFromURL(url: string): PixelCoords {
     const urlSplitted = url.split('/');
     const last = urlSplitted[urlSplitted.length - 1]!;
@@ -25,23 +35,27 @@ export function getZoomLevelForPixelSize(x: number): number {
     return Math.log2(x / 100) + 18.6;
 }
 
-export const enum ColorSortingOptions {
-    Total = 'Total',
-    Remaining = 'Remaining',
-    Wrong = 'Wrong',
-    Progress = 'Progress',
-    Original = 'Original',
-    Luminance = 'Luminance',
-    Hue = 'Hue'
-};
-
 export function functionBody(f: string): string {
     return f.substring(f.indexOf('{') + 1, f.lastIndexOf('}'));
 }
 
 
+function twoDigits(n: number): string {
+    return n < 10 ? '0' + n.toString() : n.toString();
+}
+
 function twoHexDigits(n: number): string {
     return n < 16 ? '0' + n.toString(16) : n.toString(16);
+}
+
+
+export function formatTimeRemaining(end: Date): string {
+    const seconds = Math.max(0, end.getTime() - Date.now()) / 1000;
+
+    if (seconds > 3600)
+        return `${twoDigits(Math.round(seconds / 3600))}h${twoDigits(Math.round(seconds / 60) % 60)}m`;
+    else
+        return `${twoDigits(Math.round(seconds / 60))}m${twoDigits(Math.round(seconds) % 60)}s`;
 }
 
 

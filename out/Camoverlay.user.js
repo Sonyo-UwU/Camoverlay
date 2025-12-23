@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.4.15
+// @version      1.4.16
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -11,7 +11,6 @@
 // @downloadURL  https://raw.githubusercontent.com/Sonyo-UwU/Camoverlay/main/out/Camoverlay.user.js
 // @match        https://wplace.live/*
 // @run-at       document-body
-// @require      https://cdn.jsdelivr.net/gh/pieroxy/lz-string/libs/lz-string.min.js
 // @grant        GM_addStyle
 // @grant        GM_getValue
 // @grant        GM_setValue
@@ -93,8 +92,18 @@ function getZoomLevelForPixelSize(x) {
 function functionBody(f) {
   return f.substring(f.indexOf("{") + 1, f.lastIndexOf("}"));
 }
+function twoDigits(n) {
+  return n < 10 ? "0" + n.toString() : n.toString();
+}
 function twoHexDigits(n) {
   return n < 16 ? "0" + n.toString(16) : n.toString(16);
+}
+function formatTimeRemaining(end) {
+  const seconds = Math.max(0, end.getTime() - Date.now()) / 1e3;
+  if (seconds > 3600)
+    return `${twoDigits(Math.round(seconds / 3600))}h${twoDigits(Math.round(seconds / 60) % 60)}m`;
+  else
+    return `${twoDigits(Math.round(seconds / 60))}m${twoDigits(Math.round(seconds) % 60)}s`;
 }
 function rgbToId(r, g, b) {
   return r * 1e3 * 1e3 + g * 1e3 + b;
@@ -848,6 +857,7 @@ var ManagerClass = class _ManagerClass {
   teleportCurrentIndex;
   lastClickedCoords;
   loggedIn;
+  userFullCharges;
   settings;
   wplaceMap;
   worker;
@@ -879,6 +889,7 @@ var ManagerClass = class _ManagerClass {
     this.teleportCurrentIndex = 0;
     this.lastClickedCoords = null;
     this.loggedIn = false;
+    this.userFullCharges = /* @__PURE__ */ new Date();
     this.settings = {
       colorSorting: "Total",
       colorSortingReversed: false,
@@ -1271,12 +1282,13 @@ function injectOverlay() {
         <button id="ca-fly-hq" class="ca-icon-button">✈️</button>
     </div>
     <hr />
-    <div>
+    <div id="ca-user-info" style="display: none;">
         <p>Username: <b id="ca-user-name"></b></p>
         <p>Droplets: <b id="ca-user-droplets"></b></p>
         <p>Level <b id="ca-user-level">0</b> in <b id="ca-user-pixels">0</b> pixels</p>
+        <p>Full charges in <b id="ca-user-charges" class="tooltip"></b></p>
+        <hr />
     </div>
-    <hr />
     <div id="ca-automation">
         <div id="ca-coords">
             <button id="ca-coords-button" class="ca-icon-button">
@@ -1761,12 +1773,15 @@ function displayStatus(message) {
 }
 function displayUserData(data) {
   const nextLevelPixels = Math.ceil(Math.pow(Math.floor(data.level) * Math.pow(30, 0.65), 1 / 0.65) - data.pixelsPainted);
+  Manager.userFullCharges = new Date(Date.now() + (data.charges.max - data.charges.count) * data.charges.cooldownMs);
   const username = document.getElementById("ca-user-name");
   if (username !== null) {
     username.innerText = data.name;
     document.getElementById("ca-user-droplets").innerHTML = numberOrHeheLocale(data.droplets);
     document.getElementById("ca-user-level").innerHTML = numberOrHeheLocale(Math.floor(data.level + 1));
     document.getElementById("ca-user-pixels").innerHTML = numberOrHeheLocale(nextLevelPixels);
+    document.getElementById("ca-user-charges").innerText = formatTimeRemaining(Manager.userFullCharges);
+    document.getElementById("ca-user-charges").setAttribute("data-tip", Manager.userFullCharges.toLocaleString());
   }
 }
 function addColorRow(colorId, progress) {
@@ -1969,6 +1984,11 @@ addListeners();
 Manager.loadGlobals();
 await Manager.loadTemplates();
 document.getElementById("ca-version").innerText = "version " + GM_info.script.version;
+setTimeout(() => {
+  if (!Manager.loggedIn) {
+    fetch("https://backend.wplace.live/me");
+  }
+}, 1e4);
 var originalFetch = unsafeWindow.fetch;
 unsafeWindow.fetch = async function(input, init) {
   const url = input instanceof Request ? input.url : input;
@@ -1980,10 +2000,12 @@ unsafeWindow.fetch = async function(input, init) {
     if (json.status && json.status.toString()[0] !== "2") {
       displayStatus("Could not fetch user data, are you logged in?");
       document.querySelectorAll(".ca-color-row button").forEach((b) => b.style.display = "none");
+      document.getElementById("ca-user-info").style.display = "none";
       Manager.loggedIn = false;
     } else {
       displayUserData(json);
       document.querySelectorAll(".ca-color-row button").forEach((b) => b.style.display = "");
+      document.getElementById("ca-user-info").style.display = "";
       Manager.loggedIn = true;
     }
   } else if (contentType.includes("application/json") && url.includes("/pixel/")) {

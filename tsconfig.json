@@ -25,6 +25,7 @@
     "exactOptionalPropertyTypes": true,
 
     // Style Options
+    "allowUnreachableCode": false,
     "noImplicitReturns": true,
     "noImplicitOverride": true,
     "noUnusedLocals": true,

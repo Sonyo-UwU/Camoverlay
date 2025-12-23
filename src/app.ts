@@ -40,6 +40,13 @@ await Manager.loadTemplates();
 // Display version
 document.getElementById('ca-version')!.innerText = 'version ' + GM_info.script.version;
 
+setTimeout(() => {
+    if (!Manager.loggedIn) {
+        // Maybe the first /me request was not intercepted, try sending another
+        fetch('https://backend.wplace.live/me');
+    }
+}, 10000);
+
 // Override fetch
 const originalFetch = unsafeWindow.fetch;
 unsafeWindow.fetch = async function (input: Parameters<typeof window.fetch>[0], init?: Parameters<typeof window.fetch>[1]): ReturnType<typeof window.fetch> {
@@ -57,11 +64,13 @@ unsafeWindow.fetch = async function (input: Parameters<typeof window.fetch>[0], 
             // Not logged in / server down
             displayStatus('Could not fetch user data, are you logged in?');
             document.querySelectorAll('.ca-color-row button').forEach(b => (b as HTMLButtonElement).style.display = 'none');
+            document.getElementById('ca-user-info')!.style.display = 'none';
             Manager.loggedIn = false;
         }
         else {
             displayUserData(json);
             document.querySelectorAll('.ca-color-row button').forEach(b => (b as HTMLButtonElement).style.display = '');
+            document.getElementById('ca-user-info')!.style.display = '';
             Manager.loggedIn = true;
         }
     }

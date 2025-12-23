@@ -2,7 +2,7 @@
 import { Manager } from './Manager';
 import Template from './Template';
 import type { TileProgress, UserData, WplaceColorId } from './types';
-import { ColorSortingOptions, otherColor, rgbColorMap, rgbToCss } from './utils';
+import { ColorSortingOptions, formatTimeRemaining, otherColor, rgbColorMap, rgbToCss } from './utils';
 
 declare function GM_addStyle(css: string): void;
 
@@ -39,8 +39,11 @@ export function displayStatus(message: string) {
 }
 
 export function displayUserData(data: UserData) {
-    // Calculates pixels to the next level
+    // Calculate pixels to the next level
     const nextLevelPixels = Math.ceil(Math.pow(Math.floor(data.level) * Math.pow(30, 0.65), (1 / 0.65)) - data.pixelsPainted);
+
+    // Calculate full charges time
+    Manager.userFullCharges = new Date(Date.now() + (data.charges.max - data.charges.count) * data.charges.cooldownMs);
 
     const username = document.getElementById('ca-user-name');
     if (username !== null) {
@@ -48,6 +51,8 @@ export function displayUserData(data: UserData) {
         document.getElementById('ca-user-droplets')!.innerHTML = numberOrHeheLocale(data.droplets);
         document.getElementById('ca-user-level')!.innerHTML = numberOrHeheLocale(Math.floor(data.level + 1));
         document.getElementById('ca-user-pixels')!.innerHTML = numberOrHeheLocale(nextLevelPixels);
+        document.getElementById('ca-user-charges')!.innerText = formatTimeRemaining(Manager.userFullCharges);
+        document.getElementById('ca-user-charges')!.setAttribute('data-tip', Manager.userFullCharges.toLocaleString());
     }
 }
 

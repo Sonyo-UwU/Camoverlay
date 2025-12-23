@@ -25,6 +25,7 @@ class ManagerClass {
     teleportCurrentIndex: number;
     lastClickedCoords: PixelCoords | null;
     loggedIn: boolean;
+    userFullCharges: Date;
     settings: UserSettings;
     wplaceMap: WplaceMap | null;
     worker!: Worker;
@@ -61,6 +62,7 @@ class ManagerClass {
         this.teleportCurrentIndex = 0;
         this.lastClickedCoords = null;
         this.loggedIn = false;
+        this.userFullCharges = new Date();
         this.settings = {
             colorSorting: ColorSortingOptions.Total,
             colorSortingReversed: false,
