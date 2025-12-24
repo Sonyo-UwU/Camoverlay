@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.4.17
+// @version      1.4.18
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -327,7 +327,7 @@ function addListeners() {
     const overlay = document.getElementById("ca-overlay");
     overlay.style.transition = "none";
     overlay.style.setProperty("--ca-ui-size", Manager.settings.uiSize + "%");
-    setTimeout(() => document.getElementById("ca-overlay").style.transition = "");
+    setTimeout(() => document.getElementById("ca-overlay").style.transition = "", 100);
   });
   document.getElementById("ca-setting-hide-completed").addEventListener("change", (e) => {
     Manager.settings.hideCompleted = e.target.checked;
@@ -2015,7 +2015,7 @@ await Manager.loadTemplates();
 document.getElementById("ca-version").innerText = "version " + GM_info.script.version;
 setTimeout(() => {
   if (!Manager.loggedIn) {
-    fetch("https://backend.wplace.live/me");
+    fetch("https://backend.wplace.live/me", { credentials: "include" });
   }
 }, 1e4);
 var originalFetch = unsafeWindow.fetch;

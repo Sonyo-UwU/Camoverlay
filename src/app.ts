@@ -43,7 +43,7 @@ document.getElementById('ca-version')!.innerText = 'version ' + GM_info.script.v
 setTimeout(() => {
     if (!Manager.loggedIn) {
         // Maybe the first /me request was not intercepted, try sending another
-        fetch('https://backend.wplace.live/me');
+        fetch('https://backend.wplace.live/me', { credentials: 'include' });
     }
 }, 10000);
 
