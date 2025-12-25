@@ -7,25 +7,6 @@ import { parsePixelCoordsFromURL, parseTileCoordsFromURL } from './utils';
 declare const GM_info: ScriptGetInfo;
 declare const unsafeWindow: typeof window;
 
-declare global {
-    /**
-     * Randomize array in-place using Durstenfeld shuffle algorithm and returns the reference to the array.
-     */
-    interface Array<T> {
-        shuffle(): Array<T>;
-    }
-}
-Array.prototype.shuffle = function <T>(this: Array<T>) {
-    for (let i = this.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        const temp = this[i]!;
-        this[i] = this[j]!;
-        this[j] = temp;
-    }
-
-    return this;
-}
-
 await Manager.createWorker();
 
 Manager.getMapObject();

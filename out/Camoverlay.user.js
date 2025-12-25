@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.4.20
+// @version      1.4.21
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -2000,15 +2000,6 @@ function displayTileCoords(coords) {
 }
 
 // dist/app.js
-Array.prototype.shuffle = function() {
-  for (let i = this.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    const temp = this[i];
-    this[i] = this[j];
-    this[j] = temp;
-  }
-  return this;
-};
 await Manager.createWorker();
 Manager.getMapObject();
 importFont();
