@@ -40,22 +40,8 @@ export function functionBody(f: string): string {
 }
 
 
-function twoDigits(n: number): string {
-    return n < 10 ? '0' + n.toString() : n.toString();
-}
-
-function twoHexDigits(n: number): string {
-    return n < 16 ? '0' + n.toString(16) : n.toString(16);
-}
-
-
-export function formatTimeRemaining(end: Date): string {
-    const seconds = Math.max(0, end.getTime() - Date.now()) / 1000;
-
-    if (seconds > 3600)
-        return `${twoDigits(Math.round(seconds / 3600))}h${twoDigits(Math.round(seconds / 60) % 60)}m`;
-    else
-        return `${twoDigits(Math.round(seconds / 60))}m${twoDigits(Math.round(seconds) % 60)}s`;
+export function twoDigits(n: number, radix: number = 10): string {
+    return n < radix ? '0' + n.toString(radix) : n.toString(radix);
 }
 
 
@@ -71,7 +57,7 @@ function rgbToId(r: number, g: number, b: number): WplaceColorId {
 }
 
 export function rgbToCss(rgb: [number, number, number]): string {
-    return twoHexDigits(rgb[0]) + twoHexDigits(rgb[1]) + twoHexDigits(rgb[2]);
+    return twoDigits(rgb[0], 16) + twoDigits(rgb[1], 16) + twoDigits(rgb[2], 16);
 }
 
 export const otherColor: WplaceColor = { internalId: -1, id: rgbToId(136, 136, 136), name: 'Other', rgb: [136, 136, 136], wplaceOrder: 64 };

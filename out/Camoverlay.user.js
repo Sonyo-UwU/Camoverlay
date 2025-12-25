@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.4.19
+// @version      1.4.20
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -92,24 +92,14 @@ function getZoomLevelForPixelSize(x) {
 function functionBody(f) {
   return f.substring(f.indexOf("{") + 1, f.lastIndexOf("}"));
 }
-function twoDigits(n) {
-  return n < 10 ? "0" + n.toString() : n.toString();
-}
-function twoHexDigits(n) {
-  return n < 16 ? "0" + n.toString(16) : n.toString(16);
-}
-function formatTimeRemaining(end) {
-  const seconds = Math.max(0, end.getTime() - Date.now()) / 1e3;
-  if (seconds > 3600)
-    return `${twoDigits(Math.round(seconds / 3600))}h${twoDigits(Math.round(seconds / 60) % 60)}m`;
-  else
-    return `${twoDigits(Math.round(seconds / 60))}m${twoDigits(Math.round(seconds) % 60)}s`;
+function twoDigits(n, radix = 10) {
+  return n < radix ? "0" + n.toString(radix) : n.toString(radix);
 }
 function rgbToId(r, g, b) {
   return r * 1e3 * 1e3 + g * 1e3 + b;
 }
 function rgbToCss(rgb) {
-  return twoHexDigits(rgb[0]) + twoHexDigits(rgb[1]) + twoHexDigits(rgb[2]);
+  return twoDigits(rgb[0], 16) + twoDigits(rgb[1], 16) + twoDigits(rgb[2], 16);
 }
 var otherColor = { internalId: -1, id: rgbToId(136, 136, 136), name: "Other", rgb: [136, 136, 136], wplaceOrder: 64 };
 function getColor(r, g, b) {
@@ -1800,6 +1790,20 @@ function displayStatus(message) {
   if (textArea !== null)
     textArea.value = message;
 }
+function displayFullCharges() {
+  const ms = Math.max(0, Manager.userFullCharges.getTime() - Date.now());
+  const s = ms / 1e3;
+  let text;
+  if (s > 3600)
+    text = `${twoDigits(Math.round(s / 3600))}h${twoDigits(Math.round(s / 60) % 60)}m`;
+  else
+    text = `${twoDigits(Math.round(s / 60))}m${twoDigits(Math.round(s) % 60)}s`;
+  document.getElementById("ca-user-charges").innerText = text;
+  if (s > 3601)
+    setTimeout(displayFullCharges, ms % 6e4);
+  else
+    setTimeout(displayFullCharges, ms % 1e3);
+}
 function displayUserData(data) {
   const nextLevelPixels = Math.ceil(Math.pow(Math.floor(data.level) * Math.pow(30, 0.65), 1 / 0.65) - data.pixelsPainted);
   Manager.userFullCharges = new Date(Date.now() + (data.charges.max - data.charges.count) * data.charges.cooldownMs);
@@ -1809,8 +1813,8 @@ function displayUserData(data) {
     document.getElementById("ca-user-droplets").innerHTML = numberOrHeheLocale(data.droplets);
     document.getElementById("ca-user-level").innerHTML = numberOrHeheLocale(Math.floor(data.level + 1));
     document.getElementById("ca-user-pixels").innerHTML = numberOrHeheLocale(nextLevelPixels);
-    document.getElementById("ca-user-charges").innerText = formatTimeRemaining(Manager.userFullCharges);
     document.getElementById("ca-user-charges").setAttribute("data-tip", Manager.userFullCharges.toLocaleString());
+    displayFullCharges();
   }
 }
 function addColorRow(colorId, progress) {
