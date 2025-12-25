@@ -8,7 +8,11 @@ import { ColorSortingOptions, computeHue, computeLuminance, functionBody, getZoo
 import { workerFunction } from './worker';
 
 declare type StorageValues = {
-    'global': { inputCoords: PixelCoords | null, settings: UserSettings, enabledColors: [WplaceColorId, boolean][] },
+    'global': {
+        inputCoords: PixelCoords | null;
+        settings: UserSettings;
+        enabledColors: [WplaceColorId, boolean][];
+    };
     'templates': Template[];
 };
 

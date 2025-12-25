@@ -1,7 +1,15 @@
 import { PixelIndex, TileIndex } from './types';
 
-export type TileCoordsObject = { readonly x: number, readonly y: number; };
-export type PixelCoordsObject = { readonly tx: number, readonly ty: number, readonly px: number, readonly py: number; };
+export type TileCoordsObject = {
+    readonly x: number;
+    readonly y: number;
+};
+export type PixelCoordsObject = {
+    readonly tx: number;
+    readonly ty: number;
+    readonly px: number;
+    readonly py: number;
+};
 
 export class TileCoords {
     readonly x: number;

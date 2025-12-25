@@ -3,12 +3,12 @@ import type { WplaceColorId, WorkerWplaceColor, TileIndex, TileProgress, PixelIn
 
 type Message<N extends string, M, R = never> = {
     message: {
-        name: N,
+        name: N;
         data: M;
     };
 } & {
     response: [R] extends [never] ? never : {
-        name: N,
+        name: N;
         data: R;
     };
 };
@@ -19,26 +19,26 @@ export type MessageInit = Message<
     {
         rgbColorMap: [WplaceColorId, WorkerWplaceColor][];
     }>;
-    
+
 export type MessageCreateTemplate = Message<
     'CreateTemplate',
     {
-        name: string,
-        bitmap: Extract<Transferable, ImageBitmap>,
+        name: string;
+        bitmap: Extract<Transferable, ImageBitmap>;
         coords: PixelCoordsObject;
     },
     {
-        name: string,
+        name: string;
         tiles: [TileIndex, [WplaceColorId, number][]][];
     }>;
 
 export type MessageTemplateFromStorage = Message<
     'TemplateFromStorage',
     {
-        name: string,
-        width: number,
-        height: number,
-        coords: PixelCoordsObject,
+        name: string;
+        width: number;
+        height: number;
+        coords: PixelCoordsObject;
         base64Data: string;
     },
     {
@@ -52,27 +52,27 @@ export type MessageComputeBase64Data = Message<
         name: string;
     },
     {
-        name: string,
+        name: string;
         base64Data: string;
     }>;
 
 export type MessageDrawOnTile = Message<
     'DrawOnTile',
     {
-        name: string,
-        tile: TileCoordsObject,
-        key: string,
-        patternSize: number,
-        trackProgress: boolean,
-        enabled: [WplaceColorId, boolean][],
-        modifyPixels: PixelIndex[],
-        canvasWidth: number,
+        name: string;
+        tile: TileCoordsObject;
+        key: string;
+        patternSize: number;
+        trackProgress: boolean;
+        enabled: [WplaceColorId, boolean][];
+        modifyPixels: PixelIndex[];
+        canvasWidth: number;
         canvas: Extract<Transferable, ArrayBuffer>;
     },
     {
-        key: string,
-        colorsProgress: [WplaceColorId, TileProgress][],
-        teleportPixels: [WplaceColorId, { unpainted: PixelIndex[], wrong: PixelIndex[]; }][],
+        key: string;
+        colorsProgress: [WplaceColorId, TileProgress][];
+        teleportPixels: [WplaceColorId, { unpainted: PixelIndex[], wrong: PixelIndex[]; }][];
         canvas: Extract<Transferable, ArrayBuffer>;
     }>;
 

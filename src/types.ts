@@ -4,34 +4,34 @@ export type TileIndex = number & { readonly b: unique symbol; };
 export type PixelIndex = number & { readonly b: unique symbol; };
 
 export type TileInfo = {
-    lastModified: EpochTimeStamp,
+    lastModified: EpochTimeStamp;
     blob: Blob | null;
 };
 
 export type TeleportPixels = {
-    wrong: PixelIndex[],
+    wrong: PixelIndex[];
     unpainted: PixelIndex[];
 };
 
 export type TileProgress = {
-    total: number,
-    unpainted: number,
+    total: number;
+    unpainted: number;
     wrong: number;
 };
 
 export type UserSettings = {
-    colorSorting: ColorSortingOptions,
-    colorSortingReversed: boolean,
-    uiSize: string,
+    colorSorting: ColorSortingOptions;
+    colorSortingReversed: boolean;
+    uiSize: string;
     hideCompleted: boolean;
 };
 
 export type WplaceColorId = number & { readonly b: unique symbol; };
 export type WplaceColor = {
-    internalId: number,
-    id: WplaceColorId,
-    name: string,
-    wplaceOrder: number,
+    internalId: number;
+    id: WplaceColorId;
+    name: string;
+    wplaceOrder: number;
     rgb: [number, number, number];
 };
 export type WorkerWplaceColor = Pick<WplaceColor, 'id' | 'rgb'>;
@@ -52,133 +52,133 @@ export type JsonifiedValue<T> = T extends string | number | null | boolean
 export type PromiseResolve<T> = (value: T | PromiseLike<T>) => void;
 
 export type UserData = {
-    allianceId: number,
-    allianceRole: string,
-    banned: boolean,
+    allianceId: number;
+    allianceRole: string;
+    banned: boolean;
     charges: {
-        cooldownMs: number,
-        count: number,
+        cooldownMs: number;
+        count: number;
         max: number;
-    },
-    country: string,
-    discord: string,
-    discordId: string,
-    droplets: number,
-    equippedFlag: number,
-    equippedFrameId: number,
-    equippedFrameUrl: string,
+    };
+    country: string;
+    discord: string;
+    discordId: string;
+    droplets: number;
+    equippedFlag: number;
+    equippedFrameId: number;
+    equippedFrameUrl: string;
     experiments: {
         "2025-09_discord_linking": {
             enabled: boolean;
-        },
+        };
         "2025-09_pawtect": {
             variant: string;
         };
-    },
-    extraColorsBitmap: number,
+    };
+    extraColorsBitmap: number;
     favoriteLocations: Array<{
-        id: number,
-        name: string,
-        latitude: number,
+        id: number;
+        name: string;
+        latitude: number;
         longitude: number;
-    }>,
-    flagsBitmap: string,
-    freeFlag: boolean,
-    id: number,
-    isCustomer: boolean,
-    level: number,
-    maxFavoriteLocations: number,
-    name: string,
-    needsPhoneVerification: boolean,
-    picture: string,
-    pixelsPainted: number,
-    showLastPixel: boolean,
-    status?: number,
+    }>;
+    flagsBitmap: string;
+    freeFlag: boolean;
+    id: number;
+    isCustomer: boolean;
+    level: number;
+    maxFavoriteLocations: number;
+    name: string;
+    needsPhoneVerification: boolean;
+    picture: string;
+    pixelsPainted: number;
+    showLastPixel: boolean;
+    status?: number;
     timeoutUntil: string;
 };
 
 export type WplaceMap = {
-    flyTo: (e: { center: [number, number], zoom: number; }, o?: never) => void,
+    flyTo: (e: { center: [number, number]; zoom: number; }, o?: never) => void;
     _canvas: HTMLCanvasElement;
 };
 
 export type ScriptGetInfo = {
     container?: { // 5.3+ | Firefox only
-        id: string,
+        id: string;
         name?: string;
-    },
-    downloadMode: string,
-    isFirstPartyIsolation?: boolean,
-    isIncognito: boolean,
-    sandboxMode: SandboxMode, // 4.18+
-    scriptHandler: string,
-    scriptMetaStr: string | null,
-    scriptUpdateURL: string | null,
-    scriptWillUpdate: boolean,
-    userAgentData: UADataValues, // 4.19+
-    version?: string,
+    };
+    downloadMode: string;
+    isFirstPartyIsolation?: boolean;
+    isIncognito: boolean;
+    sandboxMode: SandboxMode; // 4.18+
+    scriptHandler: string;
+    scriptMetaStr: string | null;
+    scriptUpdateURL: string | null;
+    scriptWillUpdate: boolean;
+    userAgentData: UADataValues; // 4.19+
+    version?: string;
     script: {
-        antifeatures: { [antifeature: string]: { [locale: string]: string; }; },
-        author: string | null,
-        blockers: string[],
-        connects: string[],
-        copyright: string | null,
-        deleted?: number | undefined,
-        description_i18n: { [locale: string]: string; } | null,
-        description: string,
-        downloadURL: string | null,
-        excludes: string[],
-        fileURL: string | null,
-        grant: string[],
-        header: string | null,
-        homepage: string | null,
-        icon: string | null,
-        icon64: string | null,
-        includes: string[],
-        lastModified: number,
-        matches: string[],
-        name_i18n: { [locale: string]: string; } | null,
-        name: string,
-        namespace: string | null,
-        position: number,
-        resources: Resource[],
-        supportURL: string | null,
-        system?: boolean | undefined,
-        'run-at': string | null,
-        'run-in': string[] | null, // 5.3+
-        unwrap: boolean | null,
-        updateURL: string | null,
-        version: string,
-        webRequest: WebRequestRule[] | null,
+        antifeatures: { [antifeature: string]: { [locale: string]: string; }; };
+        author: string | null;
+        blockers: string[];
+        connects: string[];
+        copyright: string | null;
+        deleted?: number | undefined;
+        description_i18n: { [locale: string]: string; } | null;
+        description: string;
+        downloadURL: string | null;
+        excludes: string[];
+        fileURL: string | null;
+        grant: string[];
+        header: string | null;
+        homepage: string | null;
+        icon: string | null;
+        icon64: string | null;
+        includes: string[];
+        lastModified: number;
+        matches: string[];
+        name_i18n: { [locale: string]: string; } | null;
+        name: string;
+        namespace: string | null;
+        position: number;
+        resources: Resource[];
+        supportURL: string | null;
+        system?: boolean | undefined;
+        'run-at': string | null;
+        'run-in': string[] | null; // 5.3+
+        unwrap: boolean | null;
+        updateURL: string | null;
+        version: string;
+        webRequest: WebRequestRule[] | null;
         options: {
-            check_for_updates: boolean,
-            comment: string | null,
-            compatopts_for_requires: boolean,
-            compat_wrappedjsobject: boolean,
-            compat_metadata: boolean,
-            compat_foreach: boolean,
-            compat_powerful_this: boolean | null,
-            sandbox: string | null,
-            noframes: boolean | null,
-            unwrap: boolean | null,
-            run_at: string | null,
-            run_in: string | null, // 5.3+
+            check_for_updates: boolean;
+            comment: string | null;
+            compatopts_for_requires: boolean;
+            compat_wrappedjsobject: boolean;
+            compat_metadata: boolean;
+            compat_foreach: boolean;
+            compat_powerful_this: boolean | null;
+            sandbox: string | null;
+            noframes: boolean | null;
+            unwrap: boolean | null;
+            run_at: string | null;
+            run_in: string | null; // 5.3+
             override: {
-                use_includes: string[],
-                orig_includes: string[],
-                merge_includes: boolean,
-                use_matches: string[],
-                orig_matches: string[],
-                merge_matches: boolean,
-                use_excludes: string[],
-                orig_excludes: string[],
-                merge_excludes: boolean,
-                use_connects: string[],
-                orig_connects: string[],
-                merge_connects: boolean,
-                use_blockers: string[],
-                orig_run_at: string | null,
-                orig_run_in: string[] | null, // 5.3+
+                use_includes: string[];
+                orig_includes: string[];
+                merge_includes: boolean;
+                use_matches: string[];
+                orig_matches: string[];
+                merge_matches: boolean;
+                use_excludes: string[];
+                orig_excludes: string[];
+                merge_excludes: boolean;
+                use_connects: string[];
+                orig_connects: string[];
+                merge_connects: boolean;
+                use_blockers: string[];
+                orig_run_at: string | null;
+                orig_run_in: string[] | null; // 5.3+
                 orig_noframes: boolean | null;
             };
         };
@@ -188,20 +188,24 @@ export type ScriptGetInfo = {
 type SandboxMode = 'js' | 'raw' | 'dom';
 
 type Resource = {
-    name: string,
-    url: string,
-    error?: string,
-    content?: string,
+    name: string;
+    url: string;
+    error?: string;
+    content?: string;
     meta?: string;
 };
 
 type WebRequestRule = {
-    selector: { include?: string | string[], match?: string | string[], exclude?: string | string[]; } | string,
+    selector: {
+        include?: string | string[];
+        match?: string | string[];
+        exclude?: string | string[];
+    } | string;
     action: string | {
-        cancel?: boolean,
+        cancel?: boolean;
         redirect?: {
-            url: string,
-            from?: string,
+            url: string;
+            from?: string;
             to?: string;
         } | string;
     };
@@ -211,9 +215,9 @@ type UADataValues = {
     brands?: {
         brand: string;
         version: string;
-    }[],
-    mobile?: boolean,
-    platform?: string,
-    architecture?: string,
+    }[];
+    mobile?: boolean;
+    platform?: string;
+    architecture?: string;
     bitness?: string;
 };

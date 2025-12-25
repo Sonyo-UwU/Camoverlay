@@ -5,9 +5,9 @@ import type { MessageComputeBase64Data, MessageCreateTemplate, MessageDrawOnTile
 import type { PixelIndex, TileIndex, TileProgress, WorkerWplaceColor, WplaceColorId } from './types';
 
 type WorkerTemplate = {
-    imageData: Uint8ClampedArray,
-    width: number,
-    height: number,
+    imageData: Uint8ClampedArray;
+    width: number;
+    height: number;
     coords: PixelCoordsObject;
 };
 
