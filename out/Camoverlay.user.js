@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.4.21
+// @version      1.4.22
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -1795,9 +1795,9 @@ function displayFullCharges() {
   const s = ms / 1e3;
   let text;
   if (s > 3600)
-    text = `${twoDigits(Math.round(s / 3600))}h${twoDigits(Math.round(s / 60) % 60)}m`;
+    text = `${twoDigits(Math.floor(s / 3600))}h${twoDigits(Math.floor(s / 60) % 60)}m`;
   else
-    text = `${twoDigits(Math.round(s / 60))}m${twoDigits(Math.round(s) % 60)}s`;
+    text = `${twoDigits(Math.floor(s / 60))}m${twoDigits(Math.floor(s) % 60)}s`;
   document.getElementById("ca-user-charges").innerText = text;
   if (s > 3601)
     setTimeout(displayFullCharges, ms % 6e4);

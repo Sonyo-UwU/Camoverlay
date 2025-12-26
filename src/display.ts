@@ -45,9 +45,9 @@ function displayFullCharges(): void {
     let text: string;
 
     if (s > 3600)
-        text = `${twoDigits(Math.round(s / 3600))}h${twoDigits(Math.round(s / 60) % 60)}m`;
+        text = `${twoDigits(Math.floor(s / 3600))}h${twoDigits(Math.floor(s / 60) % 60)}m`;
     else
-        text = `${twoDigits(Math.round(s / 60))}m${twoDigits(Math.round(s) % 60)}s`;
+        text = `${twoDigits(Math.floor(s / 60))}m${twoDigits(Math.floor(s) % 60)}s`;
 
     document.getElementById('ca-user-charges')!.innerText = text;
 
