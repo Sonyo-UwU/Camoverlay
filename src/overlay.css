@@ -327,6 +327,8 @@ div#ca-overlay {
 
 #ca-template-list {
     font-size: 80%;
+    max-height: 10.1em;
+    overflow: auto;
 }
 #ca-template-list:empty {
     display: none;
@@ -345,6 +347,16 @@ div#ca-overlay {
 .ca-template-flex > * {
     flex: 0 0 auto;
 }
+.ca-template-copy {
+    margin-left: 1ch;
+}
+.ca-template-copy > svg {
+    fill: white;
+    stroke: #111;
+    transition-property: fill;
+    transition-duration: 250ms;
+    width: 70%;
+}
 .ca-template-name {
     flex: unset;
     white-space: nowrap;
@@ -355,6 +367,7 @@ div#ca-overlay {
     font-weight: bold;
 }
 .ca-template-right {
+    align-items: center;
     display: flex;
 }
 .ca-template-right input {

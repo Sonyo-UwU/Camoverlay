@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.4.22
+// @version      1.5.0
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -1265,7 +1265,15 @@ function injectOverlay() {
     <template id="ca-template-template">
         <div class="ca-template-row">
             <div class="ca-template-flex">
-                <button class="ca-icon-button ca-template-fly">✈️</button>
+                <div>
+                    <button class="ca-icon-button ca-template-fly">✈️</button>
+                    <button class="ca-icon-button ca-template-copy">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                            <path d="M11 7h6v6h-6z" />
+                            <path d="M6.5 3h8.1c2.24 0 3.36 0 4.216.436a4 4 0 0 1 1.748 1.748C21 6.04 21 7.16 21 9.4v7.1M6.2 21h8.1c1.12 0 1.68 0 2.108-.218a2 2 0 0 0 .874-.874c.218-.428.218-.988.218-2.108V9.7c0-1.12 0-1.68-.218-2.108a2 2 0 0 0-.874-.874C15.98 6.5 15.42 6.5 14.3 6.5H6.2c-1.12 0-1.68 0-2.108.218a2 2 0 0 0-.874.874C3 8.02 3 8.58 3 9.7v8.1c0 1.12 0 1.68.218 2.108a2 2 0 0 0 .874.874C4.52 21 5.08 21 6.2 21" stroke-width="2" stroke-linecap="round" />
+                        </svg>
+                    </button>
+                </div>
                 <span class="ca-template-name"></span>
                 <div class="ca-template-right">
                     <input type="checkbox" />
@@ -1723,6 +1731,8 @@ div#ca-overlay {
 
 #ca-template-list {
     font-size: 80%;
+    max-height: 10.1em;
+    overflow: auto;
 }
 #ca-template-list:empty {
     display: none;
@@ -1741,6 +1751,16 @@ div#ca-overlay {
 .ca-template-flex > * {
     flex: 0 0 auto;
 }
+.ca-template-copy {
+    margin-left: 1ch;
+}
+.ca-template-copy > svg {
+    fill: white;
+    stroke: #111;
+    transition-property: fill;
+    transition-duration: 250ms;
+    width: 70%;
+}
 .ca-template-name {
     flex: unset;
     white-space: nowrap;
@@ -1751,6 +1771,7 @@ div#ca-overlay {
     font-weight: bold;
 }
 .ca-template-right {
+    align-items: center;
     display: flex;
 }
 .ca-template-right input {
@@ -1908,6 +1929,17 @@ function addTemplateRow(template) {
   const fly = row.querySelector(".ca-template-fly");
   fly.addEventListener("click", () => {
     Manager.flyToFit(template.coords, template.width, template.height);
+  });
+  const copy = row.querySelector(".ca-template-copy");
+  copy.addEventListener("click", async (e) => {
+    const s = `${template.coords.tx} ${template.coords.ty} ${template.coords.px} ${template.coords.py}`;
+    await navigator.clipboard.writeText(s);
+    const target = e.target;
+    const svg = target.tagName.toLowerCase() === "path" ? target.parentElement : target.firstElementChild;
+    if (svg !== null) {
+      svg.style.fill = "#2b8f1f";
+      setTimeout(() => svg.style.fill = "", 500);
+    }
   });
   const text = row.querySelector(".ca-template-name");
   text.textContent = template.name;

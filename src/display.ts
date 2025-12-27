@@ -182,6 +182,21 @@ export function addTemplateRow(template: Template) {
         Manager.flyToFit(template.coords, template.width, template.height);
     });
 
+    const copy = row.querySelector('.ca-template-copy') as HTMLButtonElement;
+    copy.addEventListener('click', async e => {
+        const s = `${template.coords.tx} ${template.coords.ty} ${template.coords.px} ${template.coords.py}`;
+
+        await navigator.clipboard.writeText(s);
+
+        // Animation
+        const target = e.target as HTMLElement;
+        const svg = (target.tagName.toLowerCase() === 'path' ? target.parentElement : target.firstElementChild) as HTMLElement | null;
+        if (svg !== null) {
+            svg.style.fill = '#2b8f1f';
+            setTimeout(() => svg.style.fill = '', 500);
+        }
+    });
+
     const text = row.querySelector('.ca-template-name') as HTMLSpanElement;
     text.textContent = template.name;
     text.addEventListener('click', e => {
