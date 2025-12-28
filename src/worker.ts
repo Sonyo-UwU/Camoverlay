@@ -134,7 +134,7 @@ export function workerFunction() {
                 if (imageData.data[pixelIndex + 3]! < 128)
                     continue;
 
-                const tileIndex = (coords.tx + Math.floor(coords.px / 1000)) % 2048 * 10000 + (coords.ty + Math.floor(coords.py / 1000)) % 2048 as TileIndex;
+                const tileIndex = (coords.tx + Math.floor((coords.px + x) / 1000)) % 2048 * 10000 + (coords.ty + Math.floor((coords.py + y) / 1000)) % 2048 as TileIndex;
                 let tile = tiles.get(tileIndex);
                 if (tile === undefined) {
                     tile = new Map();

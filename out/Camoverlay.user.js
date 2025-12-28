@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.5.0
+// @version      1.5.1
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -702,7 +702,7 @@ function workerFunction() {
         const pixelIndex = (y * imageData.width + x) * 4;
         if (imageData.data[pixelIndex + 3] < 128)
           continue;
-        const tileIndex = (coords.tx + Math.floor(coords.px / 1e3)) % 2048 * 1e4 + (coords.ty + Math.floor(coords.py / 1e3)) % 2048;
+        const tileIndex = (coords.tx + Math.floor((coords.px + x) / 1e3)) % 2048 * 1e4 + (coords.ty + Math.floor((coords.py + y) / 1e3)) % 2048;
         let tile = tiles.get(tileIndex);
         if (tile === void 0) {
           tile = /* @__PURE__ */ new Map();
