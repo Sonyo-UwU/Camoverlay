@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.5.1
+// @version      1.5.2
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -2078,7 +2078,8 @@ unsafeWindow.fetch = async function(input, init) {
     const start = performance.now();
     const modified = await Manager.processTile(coords, response);
     const time = performance.now() - start;
-    console.log("Processed tile" + coords.toString() + " in " + time + "ms");
+    if (time >= 2)
+      console.log("Processed tile" + coords.toString() + " in " + time + "ms");
     return modified;
   }
   return response;

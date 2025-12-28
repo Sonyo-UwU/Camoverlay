@@ -79,7 +79,8 @@ unsafeWindow.fetch = async function (input: Parameters<typeof window.fetch>[0], 
         const start = performance.now();
         const modified = await Manager.processTile(coords, response);
         const time = performance.now() - start;
-        console.log('Processed tile' + coords.toString() + ' in ' + time + 'ms');
+        if (time >= 2)
+            console.log('Processed tile' + coords.toString() + ' in ' + time + 'ms');
 
         return modified;
     }
