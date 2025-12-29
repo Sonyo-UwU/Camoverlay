@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.5.2
+// @version      1.5.3
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -1212,8 +1212,11 @@ var ManagerClass = class _ManagerClass {
   flyToFit(topLeft, width, height, extraProportion = 1.1) {
     if (this.wplaceMap === null)
       return;
-    const xZoom = getZoomLevelForPixelSize(this.wplaceMap._canvas.clientWidth / width / extraProportion);
-    const yZoom = getZoomLevelForPixelSize(this.wplaceMap._canvas.clientHeight / height / extraProportion);
+    const canvas = document.getElementsByClassName("maplibregl-canvas")[0];
+    if (canvas === void 0)
+      return;
+    const xZoom = getZoomLevelForPixelSize(canvas.clientWidth / width / extraProportion);
+    const yZoom = getZoomLevelForPixelSize(canvas.clientHeight / height / extraProportion);
     const finalZoom = Math.max(10.7, Math.min(18, xZoom, yZoom));
     this.flyTo(new PixelCoords(topLeft.tx, topLeft.ty, topLeft.px + width / 2, topLeft.py + height / 2), finalZoom);
   }

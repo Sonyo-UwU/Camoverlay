@@ -99,7 +99,6 @@ export type UserData = {
 
 export type WplaceMap = {
     flyTo: (e: { center: [number, number]; zoom: number; }, o?: never) => void;
-    _canvas: HTMLCanvasElement;
 };
 
 export type ScriptGetInfo = {

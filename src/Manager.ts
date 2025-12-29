@@ -476,8 +476,12 @@ class ManagerClass {
         if (this.wplaceMap === null)
             return;
 
-        const xZoom = getZoomLevelForPixelSize(this.wplaceMap._canvas.clientWidth / width / extraProportion);
-        const yZoom = getZoomLevelForPixelSize(this.wplaceMap._canvas.clientHeight / height / extraProportion);
+        const canvas = document.getElementsByClassName('maplibregl-canvas')[0];
+        if (canvas === undefined)
+            return;
+
+        const xZoom = getZoomLevelForPixelSize(canvas.clientWidth / width / extraProportion);
+        const yZoom = getZoomLevelForPixelSize(canvas.clientHeight / height / extraProportion);
         const finalZoom = Math.max(10.7, Math.min(18, xZoom, yZoom));
 
         this.flyTo(new PixelCoords(topLeft.tx, topLeft.ty, topLeft.px + width / 2, topLeft.py + height / 2), finalZoom);
