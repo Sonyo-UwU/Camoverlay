@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.5.3
+// @version      1.5.4
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -1236,11 +1236,8 @@ var ManagerClass = class _ManagerClass {
 var Manager = new ManagerClass();
 
 // dist/display.js
-function numberOrHehe(n) {
-  return n === 69 ? '<img src="https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_48b39bc882fd42f6b669d41e4053a36e/default/light/1.0" style="display: inline; height: 1.5em;">' : n.toString();
-}
-function numberOrHeheLocale(n) {
-  return n === 69 ? '<img src="https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_48b39bc882fd42f6b669d41e4053a36e/default/light/1.0" style="display: inline; height: 1.5em;">' : n.toLocaleString();
+function hehe(s) {
+  return s.toString().replaceAll("69", '<img class="ca-hehe" src="https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_48b39bc882fd42f6b669d41e4053a36e/default/light/1.0">');
 }
 function injectOverlay() {
   document.body.appendChild(document.createElement("div")).outerHTML = `
@@ -1548,6 +1545,14 @@ div#ca-overlay {
     margin-left: 0;
 }
 
+.ca-hehe {
+    display: inline;
+    height: 1.5em;
+}
+#ca-overlay *:has(> .ca-hehe) {
+    display: inline-flex;
+}
+
 #ca-header {
     align-items: center;
     display: flex;
@@ -1834,9 +1839,9 @@ function displayUserData(data) {
   const username = document.getElementById("ca-user-name");
   if (username !== null) {
     username.innerText = data.name;
-    document.getElementById("ca-user-droplets").innerHTML = numberOrHeheLocale(data.droplets);
-    document.getElementById("ca-user-level").innerHTML = numberOrHeheLocale(Math.floor(data.level + 1));
-    document.getElementById("ca-user-pixels").innerHTML = numberOrHeheLocale(nextLevelPixels);
+    document.getElementById("ca-user-droplets").innerHTML = hehe(data.droplets.toLocaleString());
+    document.getElementById("ca-user-level").innerHTML = hehe(Math.floor(data.level + 1).toLocaleString());
+    document.getElementById("ca-user-pixels").innerHTML = hehe(nextLevelPixels.toLocaleString());
     document.getElementById("ca-user-charges").setAttribute("data-tip", Manager.userFullCharges.toLocaleString());
     displayFullCharges();
   }
@@ -1893,26 +1898,26 @@ function addColorRow(colorId, progress) {
   let countToShow;
   switch (Manager.settings.colorSorting) {
     case "Total":
-      countToShow = numberOrHehe(progress.total);
+      countToShow = progress.total;
       break;
     case "Remaining":
     case "Original":
     case "Luminance":
     case "Hue":
-      countToShow = numberOrHehe(progress.unpainted + progress.wrong);
+      countToShow = progress.unpainted + progress.wrong;
       break;
     case "Wrong":
-      countToShow = numberOrHehe(progress.wrong);
+      countToShow = progress.wrong;
       break;
     case "Progress":
-      countToShow = numberOrHehe(Math.round((progress.total - progress.unpainted - progress.wrong) / progress.total * 100)) + "%";
+      countToShow = Math.round((progress.total - progress.unpainted - progress.wrong) / progress.total * 100) + "%";
       break;
     default:
       const n = Manager.settings.colorSorting;
       n;
       return;
   }
-  row.querySelector(".ca-color-count").innerHTML = countToShow;
+  row.querySelector(".ca-color-count").innerHTML = hehe(countToShow);
   row.querySelector(".ca-color-name").textContent = c.name;
   document.getElementById("ca-color-list").appendChild(row);
 }
@@ -1997,7 +2002,7 @@ function updateTemplatePixelCount(template) {
   if (row) {
     const count = row.querySelector(".ca-pixel-count");
     const painted = template.totalProgress.total - template.totalProgress.unpainted - template.totalProgress.wrong;
-    count.innerHTML = `${numberOrHehe(painted)} / ${numberOrHehe(template.totalProgress.total)} (${numberOrHehe(Math.round(painted / template.totalProgress.total * 1e3) / 10)}%)`;
+    count.innerHTML = `${hehe(painted)} / ${hehe(template.totalProgress.total)} (${hehe(Math.round(painted / template.totalProgress.total * 1e3) / 10)}%)`;
     const wrong = row.querySelector(".ca-wrong-count");
     wrong.textContent = template.totalProgress.wrong > 0 ? ` \u2022 ${template.totalProgress.wrong}\u274C` : "";
   }

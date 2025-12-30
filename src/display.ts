@@ -6,11 +6,8 @@ import { ColorSortingOptions, otherColor, rgbColorMap, rgbToCss, twoDigits } fro
 
 declare function GM_addStyle(css: string): void;
 
-function numberOrHehe(n: number): string {
-    return n === 69 ? '<img src="https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_48b39bc882fd42f6b669d41e4053a36e/default/light/1.0" style="display: inline; height: 1.5em;">' : n.toString();
-}
-function numberOrHeheLocale(n: number): string {
-    return n === 69 ? '<img src="https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_48b39bc882fd42f6b669d41e4053a36e/default/light/1.0" style="display: inline; height: 1.5em;">' : n.toLocaleString();
+function hehe(s: string | number): string {
+    return s.toString().replaceAll('69', '<img class="ca-hehe" src="https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_48b39bc882fd42f6b669d41e4053a36e/default/light/1.0">');
 }
 
 export function injectOverlay() {
@@ -67,9 +64,9 @@ export function displayUserData(data: UserData) {
     const username = document.getElementById('ca-user-name');
     if (username !== null) {
         username.innerText = data.name;
-        document.getElementById('ca-user-droplets')!.innerHTML = numberOrHeheLocale(data.droplets);
-        document.getElementById('ca-user-level')!.innerHTML = numberOrHeheLocale(Math.floor(data.level + 1));
-        document.getElementById('ca-user-pixels')!.innerHTML = numberOrHeheLocale(nextLevelPixels);
+        document.getElementById('ca-user-droplets')!.innerHTML = hehe(data.droplets.toLocaleString());
+        document.getElementById('ca-user-level')!.innerHTML = hehe(Math.floor(data.level + 1).toLocaleString());
+        document.getElementById('ca-user-pixels')!.innerHTML = hehe(nextLevelPixels.toLocaleString());
         document.getElementById('ca-user-charges')!.setAttribute('data-tip', Manager.userFullCharges.toLocaleString());
         displayFullCharges();
     }
@@ -130,22 +127,22 @@ export function addColorRow(colorId: WplaceColorId, progress: TileProgress): voi
         Manager.flyToNextIncorrect(all);
     });
 
-    let countToShow: string;
+    let countToShow: string | number;
     switch (Manager.settings.colorSorting) {
         case ColorSortingOptions.Total:
-            countToShow = numberOrHehe(progress.total);
+            countToShow = progress.total;
             break;
         case ColorSortingOptions.Remaining:
         case ColorSortingOptions.Original:
         case ColorSortingOptions.Luminance:
         case ColorSortingOptions.Hue:
-            countToShow = numberOrHehe(progress.unpainted + progress.wrong);
+            countToShow = progress.unpainted + progress.wrong;
             break;
         case ColorSortingOptions.Wrong:
-            countToShow = numberOrHehe(progress.wrong);
+            countToShow = progress.wrong;
             break;
         case ColorSortingOptions.Progress:
-            countToShow = numberOrHehe(Math.round((progress.total - progress.unpainted - progress.wrong) / progress.total * 100)) + '%';
+            countToShow = Math.round((progress.total - progress.unpainted - progress.wrong) / progress.total * 100) + '%';
             break;
 
         default:
@@ -154,7 +151,7 @@ export function addColorRow(colorId: WplaceColorId, progress: TileProgress): voi
             return;
     }
 
-    row.querySelector('.ca-color-count')!.innerHTML = countToShow;
+    row.querySelector('.ca-color-count')!.innerHTML = hehe(countToShow);
     row.querySelector('.ca-color-name')!.textContent = c.name;
 
     document.getElementById('ca-color-list')!.appendChild(row);
@@ -258,7 +255,7 @@ export function updateTemplatePixelCount(template: Template) {
     if (row) {
         const count = row.querySelector('.ca-pixel-count')!;
         const painted = template.totalProgress.total - template.totalProgress.unpainted - template.totalProgress.wrong;
-        count.innerHTML = `${numberOrHehe(painted)} / ${numberOrHehe(template.totalProgress.total)} (${numberOrHehe(Math.round(painted / template.totalProgress.total * 1000) / 10)}%)`;
+        count.innerHTML = `${hehe(painted)} / ${hehe(template.totalProgress.total)} (${hehe(Math.round(painted / template.totalProgress.total * 1000) / 10)}%)`;
 
         const wrong = row.querySelector('.ca-wrong-count')!;
         wrong.textContent = template.totalProgress.wrong > 0 ? ` • ${template.totalProgress.wrong}❌` : '';

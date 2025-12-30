@@ -141,6 +141,14 @@ div#ca-overlay {
     margin-left: 0;
 }
 
+.ca-hehe {
+    display: inline;
+    height: 1.5em;
+}
+#ca-overlay *:has(> .ca-hehe) {
+    display: inline-flex;
+}
+
 #ca-header {
     align-items: center;
     display: flex;
