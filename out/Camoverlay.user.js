@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.5.4
+// @version      1.6.0
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -341,7 +341,7 @@ function addListeners() {
       if (checkbox !== void 0)
         checkbox.checked = true;
     });
-    Manager.tilesInfo.clear();
+    Manager.refreshTiles();
     Manager.storeGlobal();
   });
   document.getElementById("ca-disable-all").addEventListener("click", () => {
@@ -351,7 +351,7 @@ function addListeners() {
       if (checkbox !== void 0)
         checkbox.checked = false;
     });
-    Manager.tilesInfo.clear();
+    Manager.refreshTiles();
     Manager.storeGlobal();
   });
   document.getElementById("ca-enable-selected").addEventListener("click", () => {
@@ -384,7 +384,7 @@ function addListeners() {
     });
     if (!inPalette)
       displayStatus(`${color.name} is not in palette`);
-    Manager.tilesInfo.clear();
+    Manager.refreshTiles();
     Manager.storeGlobal();
   });
   document.getElementById("ca-teleport-incorrect").addEventListener("click", () => {
@@ -940,13 +940,14 @@ var ManagerClass = class _ManagerClass {
     const stored = _ManagerClass.#loadValue("templates");
     if (!stored)
       return;
-    while (this.templates.length > 0)
-      this.deleteTemplate(0);
+    for (const template of this.templates)
+      removeTemplateRow(template.name);
+    this.templates = [];
+    this.tilesInfo.clear();
     for (const storedTemplate of stored) {
       const template = await Template.fromStorage(storedTemplate);
       if (template === null)
         continue;
-      this.resetTiles(template.tiles.keys());
       this.templates.push(template);
       addTemplateRow(template);
     }
@@ -956,9 +957,28 @@ var ManagerClass = class _ManagerClass {
   storeTemplates() {
     _ManagerClass.#storeValue("templates", this.templates);
   }
-  resetTiles(indices) {
+  deleteTiles(indices) {
+    if (indices === void 0)
+      indices = this.tilesInfo.keys();
+    else if (!(Symbol.iterator in indices)) {
+      indices = [indices];
+    }
     for (const index of indices)
       this.tilesInfo.delete(index);
+    this.wplaceMap?.refreshTiles("pixel-art-layer");
+  }
+  refreshTiles(indices) {
+    if (indices === void 0)
+      indices = this.tilesInfo.keys();
+    else if (!(Symbol.iterator in indices)) {
+      indices = [indices];
+    }
+    for (const index of indices) {
+      const info = this.tilesInfo.get(index);
+      if (info !== void 0)
+        info.shouldUseOrig = true;
+    }
+    this.wplaceMap?.refreshTiles("pixel-art-layer");
   }
   async createWorker() {
     const lzstring = await fetch("https://cdn.jsdelivr.net/gh/pieroxy/lz-string/libs/lz-string.min.js").then((r) => r.text());
@@ -1024,7 +1044,7 @@ var ManagerClass = class _ManagerClass {
       displayStatus("Failed creating template");
       return;
     }
-    this.resetTiles(template.tiles.keys());
+    this.refreshTiles(template.tiles.keys());
     this.templates.push(template);
     addTemplateRow(template);
     this.rebuildColorList();
@@ -1034,7 +1054,7 @@ var ManagerClass = class _ManagerClass {
     const template = this.templates[index];
     if (template === void 0)
       return;
-    this.resetTiles(template.tiles.keys());
+    this.deleteTiles(template.tiles.keys());
     this.templates.splice(index, 1);
     this.storeTemplates();
     removeTemplateRow(template.name);
@@ -1120,18 +1140,21 @@ var ManagerClass = class _ManagerClass {
     if (tileInfo === void 0) {
       tileInfo = {
         lastModified: 0,
-        blob: null
+        shouldUseOrig: false,
+        origBlob: null,
+        fullBlob: null
       };
       this.tilesInfo.set(tileIndex, tileInfo);
     }
-    let modifiedBlob = tileInfo.blob;
+    let modifiedBlob = tileInfo.fullBlob;
     if (modifiedBlob === null || tileInfo.lastModified < lastModified || response.type === "basic") {
       const blob = await response.blob();
       const trackProgress = response.type !== "basic" || modifiedBlob === null;
       modifiedBlob = await this.drawOnTile(tile, blob, trackProgress);
       if (trackProgress) {
         this.rebuildColorList();
-        tileInfo.blob = modifiedBlob;
+        tileInfo.origBlob = blob;
+        tileInfo.fullBlob = modifiedBlob;
         tileInfo.lastModified = lastModified;
       }
     }
@@ -1139,6 +1162,16 @@ var ManagerClass = class _ManagerClass {
       headers: response.headers,
       status: response.status,
       statusText: response.statusText
+    });
+  }
+  async processTileFromOrig(tile) {
+    const tileInfo = this.tilesInfo.get(tile.toIndex());
+    tileInfo.shouldUseOrig = false;
+    const modifiedBlob = await this.drawOnTile(tile, tileInfo.origBlob, false);
+    tileInfo.fullBlob = modifiedBlob;
+    return new Response(modifiedBlob, {
+      headers: new Headers([["content-type", "image/png"], ["content-length", modifiedBlob.size.toString()]]),
+      status: 200
     });
   }
   async drawOnTile(tile, blob, trackProgress) {
@@ -1857,7 +1890,7 @@ function addColorRow(colorId, progress) {
   enable.checked = Manager.enabledColors.get(colorId) === true;
   enable.addEventListener("change", (e) => {
     Manager.enabledColors.set(colorId, e.target.checked);
-    Manager.tilesInfo.clear();
+    Manager.refreshTiles();
     Manager.storeGlobal();
   });
   const color = row.querySelector(".ca-color-display");
@@ -1866,7 +1899,7 @@ function addColorRow(colorId, progress) {
     [...document.getElementsByClassName("ca-color-row")].forEach((r) => r.firstElementChild.checked = false);
     e.target.previousElementSibling.checked = true;
     Manager.enabledColors.forEach((_, key) => Manager.enabledColors.set(key, key === colorId));
-    Manager.tilesInfo.clear();
+    Manager.refreshTiles();
     Manager.storeGlobal();
   });
   const paint = row.querySelector("button");
@@ -1986,7 +2019,7 @@ function addTemplateRow(template) {
   enable.checked = template.enabled;
   enable.addEventListener("change", (e) => {
     template.enabled = e.target.checked;
-    Manager.resetTiles(template.tiles.keys());
+    Manager.deleteTiles(template.tiles.keys());
     Manager.rebuildColorList();
     Manager.storeTemplates();
   });
@@ -2031,7 +2064,7 @@ function displayTileCoords(coords) {
   } else {
     button.addEventListener("click", () => {
       templateToModify.modifyPixels.push(pixelIndex);
-      Manager.tilesInfo.delete(coords.toTileIndex());
+      Manager.refreshTiles(coords.toTileIndex());
       button.disabled = true;
       paintedByText.parentElement?.firstElementChild?.lastElementChild?.click();
     });
@@ -2057,6 +2090,19 @@ var originalFetch = unsafeWindow.fetch;
 unsafeWindow.fetch = async function(input, init) {
   const url = input instanceof Request ? input.url : input;
   const method = init?.method ?? "GET";
+  if (url.includes("/tiles/") && method === "GET") {
+    const coords = parseTileCoordsFromURL(url);
+    const tileIndex = coords.toIndex();
+    const tileInfo = Manager.tilesInfo.get(tileIndex);
+    if (tileInfo?.shouldUseOrig && tileInfo.origBlob !== null) {
+      const start = performance.now();
+      const modified = await Manager.processTileFromOrig(coords);
+      const time = performance.now() - start;
+      if (time >= 2)
+        console.log("Processed tile" + coords.toString() + " in " + time + "ms");
+      return modified;
+    }
+  }
   const response = await originalFetch(input, init);
   const contentType = response.headers.get("content-type") ?? "";
   if (contentType.includes("application/json") && url.endsWith("/me") && method === "GET") {

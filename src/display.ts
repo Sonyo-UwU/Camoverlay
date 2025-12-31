@@ -86,7 +86,7 @@ export function addColorRow(colorId: WplaceColorId, progress: TileProgress): voi
     enable.checked = Manager.enabledColors.get(colorId) === true;
     enable.addEventListener('change', e => {
         Manager.enabledColors.set(colorId, (e.target as HTMLInputElement).checked);
-        Manager.tilesInfo.clear();
+        Manager.refreshTiles();
         Manager.storeGlobal();
     });
 
@@ -96,7 +96,7 @@ export function addColorRow(colorId: WplaceColorId, progress: TileProgress): voi
         [...document.getElementsByClassName('ca-color-row')].forEach(r => (r.firstElementChild as HTMLInputElement).checked = false);
         ((e.target as HTMLDivElement).previousElementSibling! as HTMLInputElement).checked = true;
         Manager.enabledColors.forEach((_, key) => Manager.enabledColors.set(key, key === colorId));
-        Manager.tilesInfo.clear();
+        Manager.refreshTiles();
         Manager.storeGlobal();
     });
 
@@ -236,7 +236,7 @@ export function addTemplateRow(template: Template) {
     enable.checked = template.enabled;
     enable.addEventListener('change', e => {
         template.enabled = (e.target as HTMLInputElement).checked;
-        Manager.resetTiles(template.tiles.keys());
+        Manager.deleteTiles(template.tiles.keys());
         Manager.rebuildColorList();
         Manager.storeTemplates();
     });
@@ -296,7 +296,7 @@ export function displayTileCoords(coords: PixelCoords) {
     else {
         button.addEventListener('click', () => {
             templateToModify.modifyPixels.push(pixelIndex);
-            Manager.tilesInfo.delete(coords.toTileIndex());
+            Manager.refreshTiles(coords.toTileIndex());
             button.disabled = true;
             (paintedByText.parentElement?.firstElementChild?.lastElementChild as HTMLButtonElement | undefined)?.click();
         });

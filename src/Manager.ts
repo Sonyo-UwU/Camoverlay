@@ -131,15 +131,16 @@ class ManagerClass {
         if (!stored)
             return;
 
-        while (this.templates.length > 0)
-            this.deleteTemplate(0);
+        for (const template of this.templates)
+            removeTemplateRow(template.name);
+        this.templates = [];
+        this.tilesInfo.clear();
 
         for (const storedTemplate of stored) {
             const template = await Template.fromStorage(storedTemplate);
             if (template === null)
                 continue;
 
-            this.resetTiles(template.tiles.keys());
             this.templates.push(template);
             addTemplateRow(template);
         }
@@ -152,9 +153,39 @@ class ManagerClass {
         ManagerClass.#storeValue('templates', this.templates);
     }
 
-    resetTiles(indices: Iterable<TileIndex>): void {
+    deleteTiles(): void;
+    deleteTiles(index: TileIndex): void;
+    deleteTiles(indices: Iterable<TileIndex>): void;
+    deleteTiles(indices?: TileIndex | Iterable<TileIndex>): void {
+        if (indices === undefined)
+            indices = this.tilesInfo.keys();
+        else if (!(Symbol.iterator in indices)) {
+            indices = [indices];
+        }
+    
         for (const index of indices)
             this.tilesInfo.delete(index);
+
+        this.wplaceMap?.refreshTiles('pixel-art-layer');
+    }
+
+    refreshTiles(): void;
+    refreshTiles(index: TileIndex): void;
+    refreshTiles(indices: Iterable<TileIndex>): void;
+    refreshTiles(indices?: TileIndex | Iterable<TileIndex>): void {
+        if (indices === undefined)
+            indices = this.tilesInfo.keys();
+        else if (!(Symbol.iterator in indices)) {
+            indices = [indices];
+        }
+
+        for (const index of indices) {
+            const info = this.tilesInfo.get(index);
+            if (info !== undefined)
+                info.shouldUseOrig = true;
+        }
+
+        this.wplaceMap?.refreshTiles('pixel-art-layer');
     }
 
     async createWorker(): Promise<void> {
@@ -234,7 +265,7 @@ class ManagerClass {
             return;
         }
 
-        this.resetTiles(template.tiles.keys());
+        this.refreshTiles(template.tiles.keys());
 
         this.templates.push(template);
         // Don't store now, wait for the base64 data
@@ -249,7 +280,7 @@ class ManagerClass {
         if (template === undefined)
             return;
 
-        this.resetTiles(template.tiles.keys());
+        this.deleteTiles(template.tiles.keys());
         this.templates.splice(index, 1);
         this.storeTemplates();
 
@@ -355,13 +386,15 @@ class ManagerClass {
         if (tileInfo === undefined) {
             tileInfo = {
                 lastModified: 0,
-                blob: null
+                shouldUseOrig: false,
+                origBlob: null,
+                fullBlob: null
             };
             this.tilesInfo.set(tileIndex, tileInfo);
         }
 
 
-        let modifiedBlob = tileInfo.blob;
+        let modifiedBlob = tileInfo.fullBlob;
         // Update if necessary
         if (modifiedBlob === null || tileInfo.lastModified < lastModified || response.type === 'basic') {
             const blob = await response.blob();
@@ -371,7 +404,8 @@ class ManagerClass {
 
             if (trackProgress) {
                 this.rebuildColorList();
-                tileInfo.blob = modifiedBlob;
+                tileInfo.origBlob = blob;
+                tileInfo.fullBlob = modifiedBlob;
                 tileInfo.lastModified = lastModified;
             }
         }
@@ -382,6 +416,20 @@ class ManagerClass {
             headers: response.headers,
             status: response.status,
             statusText: response.statusText
+        });
+    }
+
+    async processTileFromOrig(tile: TileCoords): Promise<Response> {
+        const tileInfo = this.tilesInfo.get(tile.toIndex())!;
+        tileInfo.shouldUseOrig = false;
+
+        const modifiedBlob = await this.drawOnTile(tile, tileInfo.origBlob!, false);
+
+        tileInfo.fullBlob = modifiedBlob;
+
+        return new Response(modifiedBlob, {
+            headers: new Headers([['content-type', 'image/png'], ['content-length', modifiedBlob.size.toString()]]),
+            status: 200
         });
     }
 

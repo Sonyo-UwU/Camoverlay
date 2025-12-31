@@ -162,7 +162,7 @@ export function addListeners() {
                 checkbox.checked = true;
         });
 
-        Manager.tilesInfo.clear();
+        Manager.refreshTiles();
         Manager.storeGlobal();
     });
     document.getElementById('ca-disable-all')!.addEventListener('click', () => {
@@ -173,7 +173,7 @@ export function addListeners() {
                 checkbox.checked = false;
         });
 
-        Manager.tilesInfo.clear();
+        Manager.refreshTiles();
         Manager.storeGlobal();
     });
 
@@ -219,7 +219,7 @@ export function addListeners() {
         if (!inPalette)
             displayStatus(`${color.name} is not in palette`);
 
-        Manager.tilesInfo.clear();
+        Manager.refreshTiles();
         Manager.storeGlobal();
     });
 

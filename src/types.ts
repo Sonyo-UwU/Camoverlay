@@ -5,7 +5,9 @@ export type PixelIndex = number & { readonly b: unique symbol; };
 
 export type TileInfo = {
     lastModified: EpochTimeStamp;
-    blob: Blob | null;
+    shouldUseOrig: boolean;
+    origBlob: Blob | null;
+    fullBlob: Blob | null;
 };
 
 export type TeleportPixels = {
@@ -99,6 +101,7 @@ export type UserData = {
 
 export type WplaceMap = {
     flyTo: (e: { center: [number, number]; zoom: number; }, o?: never) => void;
+    refreshTiles: (p: string, e?: unknown) => void;
 };
 
 export type ScriptGetInfo = {

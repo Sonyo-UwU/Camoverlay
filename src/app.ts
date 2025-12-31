@@ -34,6 +34,23 @@ unsafeWindow.fetch = async function (input: Parameters<typeof window.fetch>[0], 
     const url = input instanceof Request ? input.url : input as string;
     const method = init?.method ?? 'GET';
 
+
+    if (url.includes('/tiles/') && method === 'GET') {
+        const coords = parseTileCoordsFromURL(url);
+        const tileIndex = coords.toIndex();
+        const tileInfo = Manager.tilesInfo.get(tileIndex);
+        if (tileInfo?.shouldUseOrig && tileInfo.origBlob !== null) {
+            // Skip fetch
+            const start = performance.now();
+            const modified = await Manager.processTileFromOrig(coords);
+            const time = performance.now() - start;
+            if (time >= 2)
+                console.log('Processed tile' + coords.toString() + ' in ' + time + 'ms');
+
+            return modified;
+        }
+    }
+
     const response = await originalFetch(input, init);
 
     const contentType = response.headers.get('content-type') ?? '';
