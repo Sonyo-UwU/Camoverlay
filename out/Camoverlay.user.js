@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.7.2
+// @version      1.7.3
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -1899,7 +1899,7 @@ function addColorRow(colorId, progress) {
     });
   });
   paint.addEventListener("dblclick", () => {
-    const all = Manager.templates.map((x) => x.tiles.values().toArray()).flat().map((x) => x.get(colorId)).filter((x) => x !== void 0).reduce((acc, curr) => {
+    const all = Manager.templates.filter((t) => t.enabled).map((x) => x.tiles.values().toArray()).flat().map((x) => x.get(colorId)).filter((x) => x !== void 0).reduce((acc, curr) => {
       acc.unpaintedLocations.push(...curr.unpaintedLocations);
       acc.wrongLocations.push(...curr.wrongLocations);
       return acc;

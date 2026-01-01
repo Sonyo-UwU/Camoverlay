@@ -120,6 +120,7 @@ export function addColorRow(colorId: WplaceColorId, progress: TileProgress): voi
     });
     paint.addEventListener('dblclick', () => {
         const all = Manager.templates
+            .filter(t => t.enabled)
             .map(x => x.tiles.values().toArray())
             .flat()
             .map(x => x.get(colorId))
