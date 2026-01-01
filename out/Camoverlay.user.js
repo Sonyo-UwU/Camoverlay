@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.7.0
+// @version      1.7.1
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -1369,21 +1369,18 @@ function injectOverlay() {
         <div id="ca-color-list-buttons">
             <button id="ca-enable-all" class="tooltip">
                 <div class="tooltip-content">
-                    Enable all colors
                     <kbd class="kbd kbd-xs text-base-content touchscreen:hidden ml-0.5 rounded-md">A</kbd>
                 </div>
                 Enable all
             </button>
             <button id="ca-disable-all" class="tooltip">
                 <div class="tooltip-content">
-                    Disable all colors
                     <kbd class="kbd kbd-xs text-base-content touchscreen:hidden ml-0.5 rounded-md">D</kbd>
                 </div>
                 Disable all
             </button>
             <button id="ca-enable-selected" class="ca-icon-button tooltip">
                 <div class="tooltip-content">
-                    Enable selected color
                     <kbd class="kbd kbd-xs text-base-content touchscreen:hidden ml-0.5 rounded-md">V</kbd>
                 </div>
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
