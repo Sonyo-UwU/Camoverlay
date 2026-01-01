@@ -25,7 +25,6 @@ class ManagerClass {
     templates: Template[];
     tilesInfo: Map<TileIndex, TileInfo>;
     enabledColors: Map<WplaceColorId, boolean>;
-    teleportPixels: Map<TileIndex, Map<WplaceColorId, TeleportPixels>>;
     teleportCurrentIndex: number;
     lastClickedCoords: PixelCoords | null;
     loggedIn: boolean;
@@ -62,7 +61,6 @@ class ManagerClass {
         this.templates = [];
         this.tilesInfo = new Map();
         this.enabledColors = new Map();
-        this.teleportPixels = new Map();
         this.teleportCurrentIndex = 0;
         this.lastClickedCoords = null;
         this.loggedIn = false;
@@ -442,7 +440,7 @@ class ManagerClass {
             }
         }
 
-        if (allDisabled)
+        if (allDisabled && !trackProgress)
             return blob;
 
         let canvas = new OffscreenCanvas(this.patternSize * 1000, this.patternSize * 1000);
@@ -534,19 +532,19 @@ class ManagerClass {
 
         this.flyTo(new PixelCoords(topLeft.tx, topLeft.ty, topLeft.px + width / 2, topLeft.py + height / 2), finalZoom);
     }
-
+    
     flyToNextIncorrect(t: TeleportPixels): void {
         let picked: PixelIndex;
 
-        if (t.wrong.length > 0) {
+        if (t.wrongLocations.length > 0) {
             // Modulo first, because teleportCurrentIndex is global, not per color
             // (makes enumeration start at 1, but doesn't matter since the array is shuffled anyway)
-            Manager.teleportCurrentIndex = (Manager.teleportCurrentIndex + 1) % t.wrong.length;
-            picked = t.wrong[Manager.teleportCurrentIndex]!;
-        }
-        else if (t.unpainted.length > 0) {
-            Manager.teleportCurrentIndex = (Manager.teleportCurrentIndex + 1) % t.unpainted.length;
-            picked = t.unpainted[Manager.teleportCurrentIndex]!;
+            Manager.teleportCurrentIndex = (Manager.teleportCurrentIndex + 1) % t.wrongLocations.length;
+            picked = t.wrongLocations[Manager.teleportCurrentIndex]!;
+            }
+        else if (t.unpaintedLocations.length > 0) {
+            Manager.teleportCurrentIndex = (Manager.teleportCurrentIndex + 1) % t.unpaintedLocations.length;
+            picked = t.unpaintedLocations[Manager.teleportCurrentIndex]!;
         }
         else
             return;

@@ -11,8 +11,8 @@ export type TileInfo = {
 };
 
 export type TeleportPixels = {
-    wrong: PixelIndex[];
-    unpainted: PixelIndex[];
+    wrongLocations: PixelIndex[];
+    unpaintedLocations: PixelIndex[];
 };
 
 export type TileProgress = {
@@ -20,6 +20,8 @@ export type TileProgress = {
     unpainted: number;
     wrong: number;
 };
+
+export type TileProgressLocations = TileProgress & TeleportPixels;
 
 export type UserSettings = {
     colorSorting: ColorSortingOptions;

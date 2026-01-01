@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.6.0
+// @version      1.7.0
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -387,17 +387,6 @@ function addListeners() {
     Manager.refreshTiles();
     Manager.storeGlobal();
   });
-  document.getElementById("ca-teleport-incorrect").addEventListener("click", () => {
-    const all = Manager.teleportPixels.values().toArray().reduce((acc, curr) => {
-      acc.push(...curr.values().toArray());
-      return acc;
-    }, []).reduce((acc, curr) => {
-      acc.unpainted.push(...curr.unpainted);
-      acc.wrong.push(...curr.wrong);
-      return acc;
-    }, { unpainted: [], wrong: [] });
-    Manager.flyToNextIncorrect(all);
-  });
   document.getElementById("ca-select-button").addEventListener("click", () => {
     document.getElementById("ca-file-input").click();
   });
@@ -509,7 +498,9 @@ var Template = class _Template {
         progress.set(id, {
           total,
           unpainted: total,
-          wrong: 0
+          wrong: 0,
+          unpaintedLocations: [],
+          wrongLocations: []
         });
         template.totalProgress.total += total;
         template.totalProgress.unpainted += total;
@@ -532,7 +523,9 @@ var Template = class _Template {
         progress.set(id, {
           total,
           unpainted: total,
-          wrong: 0
+          wrong: 0,
+          unpaintedLocations: [],
+          wrongLocations: []
         });
         template.totalProgress.total += total;
         template.totalProgress.unpainted += total;
@@ -593,11 +586,6 @@ var Template = class _Template {
       this.tiles.set(tile.toIndex(), new Map(result.colorsProgress));
       this.updateTotalProgress();
       updateTemplatePixelCount(this);
-      const tilePixels = /* @__PURE__ */ new Map();
-      Manager.teleportPixels.set(tile.toIndex(), tilePixels);
-      for (const [id, info] of result.teleportPixels)
-        tilePixels.set(id, { unpainted: info.unpainted, wrong: info.wrong });
-      Manager.teleportCurrentIndex = 0;
     }
   }
   updateTotalProgress() {
@@ -773,7 +761,6 @@ function workerFunction() {
     const isFirstX = template.coords.tx === tile.x;
     const isFirstY = template.coords.ty === tile.y;
     const colorsProgress = /* @__PURE__ */ new Map();
-    const teleportPixels = /* @__PURE__ */ new Map();
     for (let iy = isFirstY ? 0 : (tile.y - template.coords.ty) * 1e3 - template.coords.py, cy = isFirstY ? template.coords.py : 0; iy < template.height && cy < 1e3; iy++, cy++)
       for (let ix = isFirstX ? 0 : (tile.x - template.coords.tx) * 1e3 - template.coords.px, cx = isFirstX ? template.coords.px : 0; ix < template.width && cx < 1e3; ix++, cx++) {
         const imagePixelIndex = (iy * template.width + ix) * 4;
@@ -783,11 +770,6 @@ function workerFunction() {
         let color = getColor2(template.imageData[imagePixelIndex + 0], template.imageData[imagePixelIndex + 1], template.imageData[imagePixelIndex + 2]);
         const paintedColor = getClosestColor(canvasImageData[canvasPixelIndex + 0], canvasImageData[canvasPixelIndex + 1], canvasImageData[canvasPixelIndex + 2]);
         const pixelTileIndex = (tile.x * 1e4 + tile.y) * 1e6 + (cx * 1e3 + cy);
-        let teleport = teleportPixels.get(color.id);
-        if (teleport === void 0) {
-          teleport = { unpainted: [], wrong: [] };
-          teleportPixels.set(color.id, teleport);
-        }
         if (modifyPixels.includes(pixelTileIndex)) {
           if (color !== paintedColor) {
             needToStoreTemplates = true;
@@ -806,17 +788,19 @@ function workerFunction() {
             progress = {
               total: 0,
               unpainted: 0,
-              wrong: 0
+              wrong: 0,
+              unpaintedLocations: [],
+              wrongLocations: []
             };
             colorsProgress.set(color.id, progress);
           }
           progress.total++;
           if (canvasImageData[canvasPixelIndex + 3] === 0) {
             progress.unpainted++;
-            teleport.unpainted.push(pixelTileIndex);
+            progress.unpaintedLocations.push(pixelTileIndex);
           } else if (color !== paintedColor) {
             progress.wrong++;
-            teleport.wrong.push(pixelTileIndex);
+            progress.wrongLocations.push(pixelTileIndex);
           }
         }
         if (enabledMap.get(color.id)) {
@@ -828,16 +812,15 @@ function workerFunction() {
       }
     if (needToStoreTemplates)
       setTimeout(() => computeBase64Data(name));
-    teleportPixels.forEach((t) => {
-      t.unpainted.shuffle().splice(100);
-      t.wrong.shuffle().splice(100);
+    colorsProgress.forEach((t) => {
+      t.unpaintedLocations.shuffle().splice(100);
+      t.wrongLocations.shuffle().splice(100);
     });
     const message = {
       name: "DrawOnTile",
       data: {
         key,
         colorsProgress: colorsProgress.entries().toArray(),
-        teleportPixels: teleportPixels.entries().toArray().filter(([_, teleport]) => teleport.unpainted.length + teleport.wrong.length > 0),
         canvas: canvasImageData.buffer
       }
     };
@@ -851,7 +834,6 @@ var ManagerClass = class _ManagerClass {
   templates;
   tilesInfo;
   enabledColors;
-  teleportPixels;
   teleportCurrentIndex;
   lastClickedCoords;
   loggedIn;
@@ -883,7 +865,6 @@ var ManagerClass = class _ManagerClass {
     this.templates = [];
     this.tilesInfo = /* @__PURE__ */ new Map();
     this.enabledColors = /* @__PURE__ */ new Map();
-    this.teleportPixels = /* @__PURE__ */ new Map();
     this.teleportCurrentIndex = 0;
     this.lastClickedCoords = null;
     this.loggedIn = false;
@@ -1182,7 +1163,7 @@ var ManagerClass = class _ManagerClass {
         break;
       }
     }
-    if (allDisabled)
+    if (allDisabled && !trackProgress)
       return blob;
     let canvas = new OffscreenCanvas(this.patternSize * 1e3, this.patternSize * 1e3);
     const ctx = canvas.getContext("2d");
@@ -1255,12 +1236,12 @@ var ManagerClass = class _ManagerClass {
   }
   flyToNextIncorrect(t) {
     let picked;
-    if (t.wrong.length > 0) {
-      Manager.teleportCurrentIndex = (Manager.teleportCurrentIndex + 1) % t.wrong.length;
-      picked = t.wrong[Manager.teleportCurrentIndex];
-    } else if (t.unpainted.length > 0) {
-      Manager.teleportCurrentIndex = (Manager.teleportCurrentIndex + 1) % t.unpainted.length;
-      picked = t.unpainted[Manager.teleportCurrentIndex];
+    if (t.wrongLocations.length > 0) {
+      Manager.teleportCurrentIndex = (Manager.teleportCurrentIndex + 1) % t.wrongLocations.length;
+      picked = t.wrongLocations[Manager.teleportCurrentIndex];
+    } else if (t.unpaintedLocations.length > 0) {
+      Manager.teleportCurrentIndex = (Manager.teleportCurrentIndex + 1) % t.unpaintedLocations.length;
+      picked = t.unpaintedLocations[Manager.teleportCurrentIndex];
     } else
       return;
     this.flyTo(PixelCoords.fromIndex(picked), 17.5);
@@ -1304,6 +1285,11 @@ function injectOverlay() {
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                             <path d="M11 7h6v6h-6z" />
                             <path d="M6.5 3h8.1c2.24 0 3.36 0 4.216.436a4 4 0 0 1 1.748 1.748C21 6.04 21 7.16 21 9.4v7.1M6.2 21h8.1c1.12 0 1.68 0 2.108-.218a2 2 0 0 0 .874-.874c.218-.428.218-.988.218-2.108V9.7c0-1.12 0-1.68-.218-2.108a2 2 0 0 0-.874-.874C15.98 6.5 15.42 6.5 14.3 6.5H6.2c-1.12 0-1.68 0-2.108.218a2 2 0 0 0-.874.874C3 8.02 3 8.58 3 9.7v8.1c0 1.12 0 1.68.218 2.108a2 2 0 0 0 .874.874C4.52 21 5.08 21 6.2 21" stroke-width="2" stroke-linecap="round" />
+                        </svg>
+                    </button>
+                    <button class="ca-icon-button ca-teleport-incorrect">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor">
+                            <path d="M300-240q25 0 42.5-17.5T360-300t-17.5-42.5T300-360t-42.5 17.5T240-300t17.5 42.5T300-240m0-360q25 0 42.5-17.5T360-660t-17.5-42.5T300-720t-42.5 17.5T240-660t17.5 42.5T300-600m180 180q25 0 42.5-17.5T540-480t-17.5-42.5T480-540t-42.5 17.5T420-480t17.5 42.5T480-420m180 180q25 0 42.5-17.5T720-300t-17.5-42.5T660-360t-42.5 17.5T600-300t17.5 42.5T660-240m0-360q25 0 42.5-17.5T720-660t-17.5-42.5T660-720t-42.5 17.5T600-660t17.5 42.5T660-600M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120zm0-80h560v-560H200zm0-560v560z"></path>
                         </svg>
                     </button>
                 </div>
@@ -1402,14 +1388,6 @@ function injectOverlay() {
                 </div>
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
                     <path d="M120-120v-190l358-358-58-56 58-56 76 76 124-124q5-5 12.5-8t15.5-3q8 0 15 3t13 8l94 94q5 6 8 13t3 15q0 8-3 15.5t-8 12.5L705-555l76 78-57 57-56-58-358 358H120Zm80-80h78l332-334-76-76-334 332v78Zm447-410 96-96-37-37-96 96 37 37Zm0 0-37-37 37 37Z"></path>
-                </svg>
-            </button>
-            <button id="ca-teleport-incorrect" class="ca-icon-button tooltip">
-                <div class="tooltip-content">
-                    Teleport to a random<br>incorrect pixel
-                </div>
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" style="width: 84%;">
-                    <path d="M300-240q25 0 42.5-17.5T360-300t-17.5-42.5T300-360t-42.5 17.5T240-300t17.5 42.5T300-240m0-360q25 0 42.5-17.5T360-660t-17.5-42.5T300-720t-42.5 17.5T240-660t17.5 42.5T300-600m180 180q25 0 42.5-17.5T540-480t-17.5-42.5T480-540t-42.5 17.5T420-480t17.5 42.5T480-420m180 180q25 0 42.5-17.5T720-300t-17.5-42.5T660-360t-42.5 17.5T600-300t17.5 42.5T660-240m0-360q25 0 42.5-17.5T720-660t-17.5-42.5T660-720t-42.5 17.5T600-660t17.5 42.5T660-600M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120zm0-80h560v-560H200zm0-560v560z"></path>
                 </svg>
             </button>
         </div>
@@ -1670,9 +1648,6 @@ div#ca-overlay {
 #ca-enable-selected svg {
     width: 80%;
 }
-#ca-teleport-incorret {
-    width: 84%;
-}
 
 #ca-sorting {
     display: flex;
@@ -1793,7 +1768,7 @@ div#ca-overlay {
     flex: 0 0 auto;
 }
 .ca-template-copy {
-    margin-left: 1ch;
+    margin-left: 0.5ch;
 }
 .ca-template-copy > svg {
     fill: white;
@@ -1801,6 +1776,12 @@ div#ca-overlay {
     transition-property: fill;
     transition-duration: 250ms;
     width: 70%;
+}
+.ca-teleport-incorrect {
+    margin-left: 0.5ch;
+}
+.ca-teleport-incorrect > svg {
+    width: 87%;
 }
 .ca-template-name {
     flex: unset;
@@ -1921,11 +1902,11 @@ function addColorRow(colorId, progress) {
     });
   });
   paint.addEventListener("dblclick", () => {
-    const all = Manager.teleportPixels.values().toArray().map((x) => x.get(colorId)).filter((x) => x !== void 0).reduce((acc, curr) => {
-      acc.unpainted.push(...curr.unpainted);
-      acc.wrong.push(...curr.wrong);
+    const all = Manager.templates.map((x) => x.tiles.values().toArray()).flat().map((x) => x.get(colorId)).filter((x) => x !== void 0).reduce((acc, curr) => {
+      acc.unpaintedLocations.push(...curr.unpaintedLocations);
+      acc.wrongLocations.push(...curr.wrongLocations);
       return acc;
-    }, { unpainted: [], wrong: [] });
+    }, { unpaintedLocations: [], wrongLocations: [] });
     Manager.flyToNextIncorrect(all);
   });
   let countToShow;
@@ -1981,6 +1962,15 @@ function addTemplateRow(template) {
       svg.style.fill = "#2b8f1f";
       setTimeout(() => svg.style.fill = "", 500);
     }
+  });
+  const teleport = row.querySelector(".ca-teleport-incorrect");
+  teleport.addEventListener("click", () => {
+    const all = template.tiles.values().toArray().map((x) => x.values().toArray()).flat().reduce((acc, curr) => {
+      acc.unpaintedLocations.push(...curr.unpaintedLocations);
+      acc.wrongLocations.push(...curr.wrongLocations);
+      return acc;
+    }, { unpaintedLocations: [], wrongLocations: [] });
+    Manager.flyToNextIncorrect(all);
   });
   const text = row.querySelector(".ca-template-name");
   text.textContent = template.name;

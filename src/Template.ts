@@ -2,7 +2,7 @@ import { PixelCoords, TileCoords } from './Coords';
 import { updateTemplatePixelCount } from './display';
 import { Manager } from './Manager';
 import { MessageCreateTemplate, MessageDrawOnTile, MessageTemplateFromStorage } from './Messages';
-import { JsonifiedValue, PixelIndex, TeleportPixels, TileIndex, TileProgress, WplaceColorId } from './types';
+import { JsonifiedValue, PixelIndex, TileIndex, TileProgress, TileProgressLocations, WplaceColorId } from './types';
 
 type StoredTemplate = JsonifiedValue<Omit<Template, 'toJSON' | 'imageData' | 'tiles' | 'totalProgress' | 'modifyPixels'> & {
     tiles: [TileIndex, [WplaceColorId, number][]][];
@@ -13,7 +13,7 @@ export default class Template {
     coords: PixelCoords;
     width: number;
     height: number;
-    tiles: Map<TileIndex, Map<WplaceColorId, TileProgress>>;
+    tiles: Map<TileIndex, Map<WplaceColorId, TileProgressLocations>>;
     totalProgress: TileProgress;
     enabled: boolean;
     base64Data: string;
@@ -65,12 +65,14 @@ export default class Template {
 
         template.tiles = new Map();
         for (const [index, colors] of result.tiles) {
-            const progress = new Map<WplaceColorId, TileProgress>();
+            const progress = new Map<WplaceColorId, TileProgressLocations>();
             for (const [id, total] of colors) {
                 progress.set(id, {
                     total: total,
                     unpainted: total,
-                    wrong: 0
+                    wrong: 0,
+                    unpaintedLocations: [],
+                    wrongLocations: []
                 });
 
                 template.totalProgress.total += total;
@@ -99,12 +101,14 @@ export default class Template {
 
         template.tiles = new Map();
         for (const [index, colors] of stored.tiles) {
-            const progress = new Map<WplaceColorId, TileProgress>();
+            const progress = new Map<WplaceColorId, TileProgressLocations>();
             for (const [id, total] of colors) {
                 progress.set(id, {
                     total: total,
                     unpainted: total,
-                    wrong: 0
+                    wrong: 0,
+                    unpaintedLocations: [],
+                    wrongLocations: []
                 });
 
                 template.totalProgress.total += total;
@@ -180,12 +184,6 @@ export default class Template {
             this.tiles.set(tile.toIndex(), new Map(result.colorsProgress));
             this.updateTotalProgress();
             updateTemplatePixelCount(this);
-
-            const tilePixels = new Map<WplaceColorId, TeleportPixels>();
-            Manager.teleportPixels.set(tile.toIndex(), tilePixels);
-            for (const [id, info] of result.teleportPixels)
-                tilePixels.set(id, { unpainted: info.unpainted, wrong: info.wrong });
-            Manager.teleportCurrentIndex = 0;
         }
     }
 

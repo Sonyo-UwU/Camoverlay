@@ -2,7 +2,7 @@
 
 import type { PixelCoordsObject } from './Coords';
 import type { MessageComputeBase64Data, MessageCreateTemplate, MessageDrawOnTile, MessageTemplateFromStorage, WorkerMessage } from './Messages';
-import type { PixelIndex, TileIndex, TileProgress, WorkerWplaceColor, WplaceColorId } from './types';
+import type { PixelIndex, TileIndex, TileProgressLocations, WorkerWplaceColor, WplaceColorId } from './types';
 
 type WorkerTemplate = {
     imageData: Uint8ClampedArray;
@@ -218,14 +218,11 @@ export function workerFunction() {
 
         let needToStoreTemplates = false;
 
-        //const ctx = canvas.getContext('2d')!;
-        //const imageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
         const canvasImageData = new Uint8ClampedArray(canvas);
 
         const isFirstX = template.coords.tx === tile.x;
         const isFirstY = template.coords.ty === tile.y;
-        const colorsProgress = new Map<WplaceColorId, TileProgress>();
-        const teleportPixels = new Map<WplaceColorId, { unpainted: PixelIndex[], wrong: PixelIndex[]; }>();
+        const colorsProgress = new Map<WplaceColorId, TileProgressLocations>();
 
         for (let iy = isFirstY ? 0 : (tile.y - template.coords.ty) * 1000 - template.coords.py,
             cy = isFirstY ? template.coords.py : 0;
@@ -246,11 +243,6 @@ export function workerFunction() {
 
 
                 const pixelTileIndex = (tile.x * 10000 + tile.y) * 1000000 + (cx * 1000 + cy) as PixelIndex;
-                let teleport = teleportPixels.get(color.id);
-                if (teleport === undefined) {
-                    teleport = { unpainted: [], wrong: [] };
-                    teleportPixels.set(color.id, teleport);
-                }
 
                 if (modifyPixels.includes(pixelTileIndex)) {
                     if (color !== paintedColor) {
@@ -276,7 +268,9 @@ export function workerFunction() {
                         progress = {
                             total: 0,
                             unpainted: 0,
-                            wrong: 0
+                            wrong: 0,
+                            unpaintedLocations: [],
+                            wrongLocations: []
                         };
                         colorsProgress.set(color.id, progress);
                     }
@@ -285,12 +279,12 @@ export function workerFunction() {
                     if (canvasImageData[canvasPixelIndex + 3] === 0) {
                         // Unpainted
                         progress.unpainted++;
-                        teleport.unpainted.push(pixelTileIndex);
+                        progress.unpaintedLocations.push(pixelTileIndex);
                     }
                     else if (color !== paintedColor) {
                         // Wrong
                         progress.wrong++;
-                        teleport.wrong.push(pixelTileIndex);
+                        progress.wrongLocations.push(pixelTileIndex);
                     }
                 }
 
@@ -305,9 +299,9 @@ export function workerFunction() {
         if (needToStoreTemplates)
             setTimeout(() => computeBase64Data(name));
 
-        teleportPixels.forEach(t => {
-            t.unpainted.shuffle().splice(100);
-            t.wrong.shuffle().splice(100);
+        colorsProgress.forEach(t => {
+            t.unpaintedLocations.shuffle().splice(100);
+            t.wrongLocations.shuffle().splice(100);
         });
 
         const message: MessageDrawOnTile['response'] = {
@@ -315,7 +309,6 @@ export function workerFunction() {
             data: {
                 key: key,
                 colorsProgress: colorsProgress.entries().toArray(),
-                teleportPixels: teleportPixels.entries().toArray().filter(([_, teleport]) => teleport.unpainted.length + teleport.wrong.length > 0),
                 canvas: canvasImageData.buffer
             }
         };

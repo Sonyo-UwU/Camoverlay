@@ -1,5 +1,5 @@
 import type { PixelCoordsObject, TileCoordsObject } from './Coords';
-import type { WplaceColorId, WorkerWplaceColor, TileIndex, TileProgress, PixelIndex } from './types';
+import type { WplaceColorId, WorkerWplaceColor, TileIndex, PixelIndex, TileProgressLocations } from './types';
 
 type Message<N extends string, M, R = never> = {
     message: {
@@ -71,8 +71,7 @@ export type MessageDrawOnTile = Message<
     },
     {
         key: string;
-        colorsProgress: [WplaceColorId, TileProgress][];
-        teleportPixels: [WplaceColorId, { unpainted: PixelIndex[], wrong: PixelIndex[]; }][];
+        colorsProgress: [WplaceColorId, TileProgressLocations][];
         canvas: Extract<Transferable, ArrayBuffer>;
     }>;
 

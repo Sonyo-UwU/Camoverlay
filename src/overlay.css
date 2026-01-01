@@ -233,9 +233,6 @@ div#ca-overlay {
 #ca-enable-selected svg {
     width: 80%;
 }
-#ca-teleport-incorret {
-    width: 84%;
-}
 
 #ca-sorting {
     display: flex;
@@ -356,7 +353,7 @@ div#ca-overlay {
     flex: 0 0 auto;
 }
 .ca-template-copy {
-    margin-left: 1ch;
+    margin-left: 0.5ch;
 }
 .ca-template-copy > svg {
     fill: white;
@@ -364,6 +361,12 @@ div#ca-overlay {
     transition-property: fill;
     transition-duration: 250ms;
     width: 70%;
+}
+.ca-teleport-incorrect {
+    margin-left: 0.5ch;
+}
+.ca-teleport-incorrect > svg {
+    width: 87%;
 }
 .ca-template-name {
     flex: unset;

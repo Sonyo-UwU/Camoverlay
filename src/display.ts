@@ -1,7 +1,7 @@
 ﻿import { PixelCoords } from './Coords';
 import { Manager } from './Manager';
 import Template from './Template';
-import type { TileProgress, UserData, WplaceColorId } from './types';
+import type { TeleportPixels, TileProgress, UserData, WplaceColorId } from './types';
 import { ColorSortingOptions, otherColor, rgbColorMap, rgbToCss, twoDigits } from './utils';
 
 declare function GM_addStyle(css: string): void;
@@ -119,10 +119,12 @@ export function addColorRow(colorId: WplaceColorId, progress: TileProgress): voi
         });
     });
     paint.addEventListener('dblclick', () => {
-        const all = Manager.teleportPixels.values().toArray()
+        const all = Manager.templates
+            .map(x => x.tiles.values().toArray())
+            .flat()
             .map(x => x.get(colorId))
             .filter(x => x !== undefined)
-            .reduce((acc, curr) => { acc.unpainted.push(...curr.unpainted); acc.wrong.push(...curr.wrong); return acc; }, { unpainted: [], wrong: [] });
+            .reduce((acc: TeleportPixels, curr) => { acc.unpaintedLocations.push(...curr.unpaintedLocations); acc.wrongLocations.push(...curr.wrongLocations); return acc; }, { unpaintedLocations: [], wrongLocations: [] });
 
         Manager.flyToNextIncorrect(all);
     });
@@ -192,6 +194,16 @@ export function addTemplateRow(template: Template) {
             svg.style.fill = '#2b8f1f';
             setTimeout(() => svg.style.fill = '', 500);
         }
+    });
+
+    const teleport = row.querySelector('.ca-teleport-incorrect') as HTMLButtonElement;
+    teleport.addEventListener('click', () => {
+        const all = template.tiles.values().toArray()
+            .map(x => x.values().toArray())
+            .flat()
+            .reduce((acc: TeleportPixels, curr) => { acc.unpaintedLocations.push(...curr.unpaintedLocations); acc.wrongLocations.push(...curr.wrongLocations); return acc; }, { unpaintedLocations: [], wrongLocations: [] });
+
+        Manager.flyToNextIncorrect(all);
     });
 
     const text = row.querySelector('.ca-template-name') as HTMLSpanElement;
