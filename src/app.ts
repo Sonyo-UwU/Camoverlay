@@ -21,9 +21,9 @@ await Manager.loadTemplates();
 // Display version
 document.getElementById('ca-version')!.innerText = 'version ' + GM_info.script.version;
 
-setTimeout(() => {
+setInterval(() => {
     if (!Manager.loggedIn) {
-        // Maybe the first /me request was not intercepted, try sending another
+        // Maybe the first /me request was not intercepted or the server is down, try sending another
         fetch('https://backend.wplace.live/me', { credentials: 'include' });
     }
 }, 10000);
