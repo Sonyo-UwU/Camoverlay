@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.7.3
+// @version      1.7.4
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -941,7 +941,7 @@ var ManagerClass = class _ManagerClass {
   deleteTiles(indices) {
     if (indices === void 0)
       indices = this.tilesInfo.keys();
-    else if (!(Symbol.iterator in indices)) {
+    else if (typeof indices !== "object" || !(Symbol.iterator in indices)) {
       indices = [indices];
     }
     for (const index of indices)
@@ -951,7 +951,7 @@ var ManagerClass = class _ManagerClass {
   refreshTiles(indices) {
     if (indices === void 0)
       indices = this.tilesInfo.keys();
-    else if (!(Symbol.iterator in indices)) {
+    else if (typeof indices !== "object" || !(Symbol.iterator in indices)) {
       indices = [indices];
     }
     for (const index of indices) {

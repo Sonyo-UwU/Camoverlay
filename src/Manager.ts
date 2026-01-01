@@ -157,7 +157,7 @@ class ManagerClass {
     deleteTiles(indices?: TileIndex | Iterable<TileIndex>): void {
         if (indices === undefined)
             indices = this.tilesInfo.keys();
-        else if (!(Symbol.iterator in indices)) {
+        else if (typeof indices !== 'object' || !(Symbol.iterator in indices)) {
             indices = [indices];
         }
     
@@ -173,7 +173,7 @@ class ManagerClass {
     refreshTiles(indices?: TileIndex | Iterable<TileIndex>): void {
         if (indices === undefined)
             indices = this.tilesInfo.keys();
-        else if (!(Symbol.iterator in indices)) {
+        else if (typeof indices !== 'object' || !(Symbol.iterator in indices)) {
             indices = [indices];
         }
 
