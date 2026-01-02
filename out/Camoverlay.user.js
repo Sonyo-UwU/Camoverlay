@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.7.4
+// @version      1.7.5
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -2051,7 +2051,7 @@ function displayTileCoords(coords) {
   } else {
     button.addEventListener("click", () => {
       templateToModify.modifyPixels.push(pixelIndex);
-      Manager.refreshTiles(coords.toTileIndex());
+      Manager.deleteTiles(coords.toTileIndex());
       button.disabled = true;
       paintedByText.parentElement?.firstElementChild?.lastElementChild?.click();
     });

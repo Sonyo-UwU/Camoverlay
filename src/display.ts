@@ -309,7 +309,7 @@ export function displayTileCoords(coords: PixelCoords) {
     else {
         button.addEventListener('click', () => {
             templateToModify.modifyPixels.push(pixelIndex);
-            Manager.refreshTiles(coords.toTileIndex());
+            Manager.deleteTiles(coords.toTileIndex());
             button.disabled = true;
             (paintedByText.parentElement?.firstElementChild?.lastElementChild as HTMLButtonElement | undefined)?.click();
         });
