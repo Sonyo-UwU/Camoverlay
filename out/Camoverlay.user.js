@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.7.5
+// @version      1.7.6
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -2024,7 +2024,7 @@ function updateTemplatePixelCount(template) {
     const painted = template.totalProgress.total - template.totalProgress.unpainted - template.totalProgress.wrong;
     count.innerHTML = `${hehe(painted)} / ${hehe(template.totalProgress.total)} (${hehe(Math.round(painted / template.totalProgress.total * 1e3) / 10)}%)`;
     const wrong = row.querySelector(".ca-wrong-count");
-    wrong.textContent = template.totalProgress.wrong > 0 ? ` \u2022 ${template.totalProgress.wrong}\u274C` : "";
+    wrong.textContent = template.totalProgress.wrong > 0 ? ` \u2022 ${hehe(template.totalProgress.wrong)}\u274C` : "";
   }
 }
 function removeTemplateRow(name) {
