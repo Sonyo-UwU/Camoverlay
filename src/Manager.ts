@@ -223,9 +223,7 @@ class ManagerClass {
                 Manager.workerDrawOnTileResolve.get(m.data.key)?.(m.data);
                 break;
             default:
-                const n: never = m;
-                n;
-                break;
+                m satisfies never;
         }
     }
 
@@ -346,8 +344,7 @@ class ManagerClass {
                 break;
 
             default:
-                const n: never = this.settings.colorSorting;
-                n;
+                this.settings.colorSorting satisfies never;
         }
 
         if (this.settings.colorSortingReversed)

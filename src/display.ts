@@ -149,9 +149,7 @@ export function addColorRow(colorId: WplaceColorId, progress: TileProgress): voi
             break;
 
         default:
-            const n: never = Manager.settings.colorSorting;
-            n;
-            return;
+            return Manager.settings.colorSorting satisfies never;
     }
 
     row.querySelector('.ca-color-count')!.innerHTML = hehe(countToShow);

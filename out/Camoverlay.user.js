@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.7.6
+// @version      1.7.7
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -672,9 +672,7 @@ function workerFunction() {
         drawOnTile(m.data);
         break;
       default:
-        const n = m;
-        n;
-        break;
+        m;
     }
   };
   function templateFromBitmap({ name, bitmap, coords }) {
@@ -993,9 +991,7 @@ var ManagerClass = class _ManagerClass {
         Manager.workerDrawOnTileResolve.get(m.data.key)?.(m.data);
         break;
       default:
-        const n = m;
-        n;
-        break;
+        m;
     }
   }
   workerInit() {
@@ -1093,8 +1089,7 @@ var ManagerClass = class _ManagerClass {
         colorsArray.sort((a, b) => computeHue(b[0]) - computeHue(a[0]));
         break;
       default:
-        const n = this.settings.colorSorting;
-        n;
+        this.settings.colorSorting;
     }
     if (this.settings.colorSortingReversed)
       colorsArray.reverse();
@@ -1924,9 +1919,7 @@ function addColorRow(colorId, progress) {
       countToShow = Math.round((progress.total - progress.unpainted - progress.wrong) / progress.total * 100) + "%";
       break;
     default:
-      const n = Manager.settings.colorSorting;
-      n;
-      return;
+      return Manager.settings.colorSorting;
   }
   row.querySelector(".ca-color-count").innerHTML = hehe(countToShow);
   row.querySelector(".ca-color-name").textContent = c.name;

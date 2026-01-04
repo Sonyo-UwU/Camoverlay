@@ -109,9 +109,7 @@ export function workerFunction() {
                 drawOnTile(m.data);
                 break;
             default:
-                const n: never = m;
-                n;
-                break;
+                m satisfies never;
         }
     };
     
