@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.7.7
+// @version      1.7.8
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -623,7 +623,7 @@ function workerFunction() {
     const dr = r1 - r2;
     const dg = g1 - g2;
     const db = b1 - b2;
-    return dr * dr + dg * dg + db * db <= 100;
+    return dr * dr + dg * dg + db * db <= 57;
   }
   function getColor2(r, g, b) {
     const id = rgbToId2(r, g, b);

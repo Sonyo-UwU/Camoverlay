@@ -52,7 +52,7 @@ export function workerFunction() {
         const dr = r1 - r2;
         const dg = g1 - g2;
         const db = b1 - b2;
-        return dr * dr + dg * dg + db * db <= 100;
+        return dr * dr + dg * dg + db * db <= 57; // Min distance (squared) between 2 colors is 115 with Dark Gray and Dark Slate, so a threshold of 115/2=57.5 is used
     } function getColor(r: number, g: number, b: number): WorkerWplaceColor {
         const id = rgbToId(r, g, b);
         const color = rgbColorMap.get(id);
