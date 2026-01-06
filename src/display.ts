@@ -269,7 +269,7 @@ export function updateTemplatePixelCount(template: Template) {
         count.innerHTML = `${hehe(painted)} / ${hehe(template.totalProgress.total)} (${hehe(Math.round(painted / template.totalProgress.total * 1000) / 10)}%)`;
 
         const wrong = row.querySelector('.ca-wrong-count')!;
-        wrong.textContent = template.totalProgress.wrong > 0 ? ` • ${hehe(template.totalProgress.wrong)}❌` : '';
+        wrong.innerHTML = template.totalProgress.wrong > 0 ? ` • ${hehe(template.totalProgress.wrong)}❌` : '';
     }
 }
 
