@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.7.11
+// @version      1.7.12
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -1215,8 +1215,8 @@ var ManagerClass = class _ManagerClass {
     }
     popup.click();
   }
-  flyTo(coords, zoom = 13) {
-    this.wplaceMap?.flyTo({ center: coords.toGeoCoords(false), zoom });
+  flyTo(center, zoom = 13) {
+    this.wplaceMap?.flyTo({ center, zoom });
   }
   flyToFit(topLeft, width, height, extraProportion = 1.1) {
     if (this.wplaceMap === null)
@@ -1227,7 +1227,7 @@ var ManagerClass = class _ManagerClass {
     const xZoom = getZoomLevelForPixelSize(canvas.clientWidth / width / extraProportion);
     const yZoom = getZoomLevelForPixelSize(canvas.clientHeight / height / extraProportion);
     const finalZoom = Math.max(10.7, Math.min(18, xZoom, yZoom));
-    this.flyTo(new PixelCoords(topLeft.tx, topLeft.ty, topLeft.px + width / 2, topLeft.py + height / 2), finalZoom);
+    this.flyTo(new PixelCoords(topLeft.tx, topLeft.ty, topLeft.px + width / 2, topLeft.py + height / 2).toGeoCoords(false), finalZoom);
   }
   flyToNextIncorrect(t) {
     let picked;
@@ -1239,7 +1239,7 @@ var ManagerClass = class _ManagerClass {
       picked = t.unpaintedLocations[Manager.teleportCurrentIndex];
     } else
       return;
-    this.flyTo(PixelCoords.fromIndex(picked), 17.5);
+    this.flyTo(PixelCoords.fromIndex(picked).toGeoCoords(true), 17.5);
   }
 };
 var Manager = new ManagerClass();

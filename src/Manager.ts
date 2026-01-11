@@ -511,8 +511,8 @@ class ManagerClass {
         popup.click();
     }
 
-    flyTo(coords: PixelCoords, zoom: number = 13) {
-        this.wplaceMap?.flyTo({ center: coords.toGeoCoords(false), zoom: zoom });
+    flyTo(center: [number, number], zoom: number = 13) {
+        this.wplaceMap?.flyTo({ center: center, zoom: zoom });
     }
     
     flyToFit(topLeft: PixelCoords, width: number, height: number, extraProportion: number = 1.1): void {
@@ -527,7 +527,7 @@ class ManagerClass {
         const yZoom = getZoomLevelForPixelSize(canvas.clientHeight / height / extraProportion);
         const finalZoom = Math.max(10.7, Math.min(18, xZoom, yZoom));
 
-        this.flyTo(new PixelCoords(topLeft.tx, topLeft.ty, topLeft.px + width / 2, topLeft.py + height / 2), finalZoom);
+        this.flyTo(new PixelCoords(topLeft.tx, topLeft.ty, topLeft.px + width / 2, topLeft.py + height / 2).toGeoCoords(false), finalZoom);
     }
     
     flyToNextIncorrect(t: TeleportPixels): void {
@@ -546,7 +546,7 @@ class ManagerClass {
         else
             return;
 
-        this.flyTo(PixelCoords.fromIndex(picked), 17.5);
+        this.flyTo(PixelCoords.fromIndex(picked).toGeoCoords(true), 17.5);
     }
 }
 
