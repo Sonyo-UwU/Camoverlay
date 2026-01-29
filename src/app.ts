@@ -7,6 +7,13 @@ import { parsePixelCoordsFromURL, parseTileCoordsFromURL } from './utils';
 declare const GM_info: ScriptGetInfo;
 declare const unsafeWindow: typeof window;
 
+
+// Prevent running in iframes
+if (window.self !== window.top) {
+    throw 'Camoverlay not running in iframe';
+}
+
+
 await Manager.createWorker();
 
 Manager.getMapObject();

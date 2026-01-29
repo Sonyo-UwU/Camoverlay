@@ -68,9 +68,16 @@ export type UserData = {
     discord: string;
     discordId: string;
     droplets: number;
+	equippedBadges: Array<{
+		id: number;
+		imageUrl: string;
+		name: string;
+		rarity: string;
+	} | null>;
     equippedFlag: number;
     equippedFrameId: number;
     equippedFrameUrl: string;
+	aquippedNameCosmetic: null;
     experiments: {
         "2025-09_discord_linking": {
             enabled: boolean;

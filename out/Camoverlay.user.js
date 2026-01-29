@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.7.12
+// @version      1.7.13
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -2057,6 +2057,9 @@ function displayTileCoords(coords) {
 }
 
 // dist/app.js
+if (window.self !== window.top) {
+  throw "Camoverlay not running in iframe";
+}
 await Manager.createWorker();
 Manager.getMapObject();
 importFont();
