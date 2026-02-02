@@ -504,7 +504,7 @@ class ManagerClass {
             do {
                 await new Promise((resolve) => setTimeout(resolve, 50));
                 popup = (document.getElementsByClassName('rounded-t-box bg-base-100 border-base-300 sm:rounded-b-box w-full border-t pt-2 sm:mb-3 sm:shadow-xl')[0]
-                    ?.firstElementChild?.firstElementChild?.lastElementChild ?? null) as HTMLButtonElement | null;
+                    ?.firstElementChild?.children[1]?.lastElementChild ?? null) as HTMLButtonElement | null;
                 i++;
             } while (popup === null && i < 10);
         }

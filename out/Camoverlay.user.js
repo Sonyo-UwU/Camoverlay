@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.7.14
+// @version      1.7.15
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -1210,7 +1210,7 @@ var ManagerClass = class _ManagerClass {
       let i2 = 0;
       do {
         await new Promise((resolve) => setTimeout(resolve, 50));
-        popup = document.getElementsByClassName("rounded-t-box bg-base-100 border-base-300 sm:rounded-b-box w-full border-t pt-2 sm:mb-3 sm:shadow-xl")[0]?.firstElementChild?.firstElementChild?.lastElementChild ?? null;
+        popup = document.getElementsByClassName("rounded-t-box bg-base-100 border-base-300 sm:rounded-b-box w-full border-t pt-2 sm:mb-3 sm:shadow-xl")[0]?.firstElementChild?.children[1]?.lastElementChild ?? null;
         i2++;
       } while (popup === null && i2 < 10);
     }
@@ -2033,8 +2033,8 @@ function displayTileCoords(coords) {
   const displayCoords = document.getElementsByClassName("ca-display-coords")[0];
   if (displayCoords !== void 0)
     displayCoords.remove();
-  const paintedByText = document.getElementsByClassName("text-base-content/80 mt-1 px-3 text-sm")[0];
-  if (paintedByText === void 0)
+  const buttonsDiv = document.getElementsByClassName("max-w-full")[0];
+  if (buttonsDiv === void 0)
     return;
   const template = document.getElementById("ca-coords-template").content.cloneNode(true);
   const span = template.querySelector("span");
@@ -2051,10 +2051,10 @@ function displayTileCoords(coords) {
       templateToModify.modifyPixels.push(pixelIndex);
       Manager.deleteTiles(coords.toTileIndex());
       button.disabled = true;
-      paintedByText.parentElement?.firstElementChild?.lastElementChild?.click();
+      buttonsDiv.previousElementSibling?.previousElementSibling?.lastChild?.click();
     });
   }
-  paintedByText.parentElement?.insertBefore(template, paintedByText);
+  buttonsDiv.parentElement?.insertBefore(template, buttonsDiv);
 }
 
 // dist/app.js

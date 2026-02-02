@@ -284,8 +284,8 @@ export function displayTileCoords(coords: PixelCoords) {
     if (displayCoords !== undefined)
         displayCoords.remove();
 
-    const paintedByText = document.getElementsByClassName('text-base-content/80 mt-1 px-3 text-sm')[0];
-    if (paintedByText === undefined)
+    const buttonsDiv = document.getElementsByClassName('max-w-full')[0];
+    if (buttonsDiv === undefined)
         return;
 
     const template = (document.getElementById('ca-coords-template') as HTMLTemplateElement).content.cloneNode(true) as DocumentFragment;
@@ -309,9 +309,9 @@ export function displayTileCoords(coords: PixelCoords) {
             templateToModify.modifyPixels.push(pixelIndex);
             Manager.deleteTiles(coords.toTileIndex());
             button.disabled = true;
-            (paintedByText.parentElement?.firstElementChild?.lastElementChild as HTMLButtonElement | undefined)?.click();
+            (buttonsDiv.previousElementSibling?.previousElementSibling?.lastChild as HTMLButtonElement | undefined)?.click();
         });
     }
 
-    paintedByText.parentElement?.insertBefore(template, paintedByText);
+    buttonsDiv.parentElement?.insertBefore(template, buttonsDiv);
 }
