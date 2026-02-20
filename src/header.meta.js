@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.7.15
+// @version      1.7.16
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC

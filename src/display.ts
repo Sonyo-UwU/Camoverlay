@@ -284,7 +284,7 @@ export function displayTileCoords(coords: PixelCoords) {
     if (displayCoords !== undefined)
         displayCoords.remove();
 
-    const buttonsDiv = document.getElementsByClassName('max-w-full')[0];
+    const buttonsDiv = document.getElementsByClassName('hide-scrollbar flex max-w-full gap-1.5 overflow-x-auto px-3 pt-1 pb-2')[0];
     if (buttonsDiv === undefined)
         return;
 
@@ -309,7 +309,7 @@ export function displayTileCoords(coords: PixelCoords) {
             templateToModify.modifyPixels.push(pixelIndex);
             Manager.deleteTiles(coords.toTileIndex());
             button.disabled = true;
-            (buttonsDiv.previousElementSibling?.previousElementSibling?.lastChild as HTMLButtonElement | undefined)?.click();
+            (buttonsDiv.previousElementSibling?.previousElementSibling?.previousElementSibling?.lastChild as HTMLButtonElement | undefined)?.click();
         });
     }
 
