@@ -2,6 +2,7 @@ import { PixelCoords, TileCoords } from './Coords';
 import { addColorRow, addTemplateRow, displayStatus, removeTemplateRow } from './display';
 import { addCanvasListeners } from './eventListeners';
 import { MessageCreateTemplate, MessageDrawOnTile, MessageInit, WorkerResponse } from './Messages';
+import { splitmix32 } from './PRNG';
 import Template from './Template';
 import { JsonifiedValue, PixelIndex, PromiseResolve, TeleportPixels, TileIndex, TileInfo, TileProgress, UserSettings, WplaceColorId, WplaceMap } from './types';
 import { ColorSortingOptions, computeHue, computeLuminance, functionBody, getZoomLevelForPixelSize, rgbColorMap } from './utils';
@@ -533,12 +534,27 @@ class ManagerClass {
     flyToNextIncorrect(t: TeleportPixels): void {
         let picked: PixelIndex;
 
+        // Deterministic shuffle based on array length
+        const prng = splitmix32(t.wrongLocations.length + t.unpaintedLocations.length);
+        for (let i = t.wrongLocations.length - 1; i > 0; i--) {
+            const j = Math.floor(prng() * (i + 1));
+            const temp = t.wrongLocations[i]!;
+            t.wrongLocations[i] = t.wrongLocations[j]!;
+            t.wrongLocations[j] = temp;
+        }
+        for (let i = t.unpaintedLocations.length - 1; i > 0; i--) {
+            const j = Math.floor(prng() * (i + 1));
+            const temp = t.unpaintedLocations[i]!;
+            t.unpaintedLocations[i] = t.unpaintedLocations[j]!;
+            t.unpaintedLocations[j] = temp;
+        }
+
         if (t.wrongLocations.length > 0) {
             // Modulo first, because teleportCurrentIndex is global, not per color
             // (makes enumeration start at 1, but doesn't matter since the array is shuffled anyway)
             Manager.teleportCurrentIndex = (Manager.teleportCurrentIndex + 1) % t.wrongLocations.length;
             picked = t.wrongLocations[Manager.teleportCurrentIndex]!;
-            }
+        }
         else if (t.unpaintedLocations.length > 0) {
             Manager.teleportCurrentIndex = (Manager.teleportCurrentIndex + 1) % t.unpaintedLocations.length;
             picked = t.unpaintedLocations[Manager.teleportCurrentIndex]!;

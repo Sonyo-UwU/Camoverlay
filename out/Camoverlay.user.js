@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.7.16
+// @version      1.8.0
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -444,6 +444,19 @@ function addCanvasListeners(canvas) {
       });
     }
   });
+}
+
+// dist/PRNG.js
+function splitmix32(a) {
+  return function() {
+    a |= 0;
+    a = a + 2654435769 | 0;
+    let t = a ^ a >>> 16;
+    t = Math.imul(t, 569420461);
+    t = t ^ t >>> 15;
+    t = Math.imul(t, 1935289751);
+    return ((t = t ^ t >>> 15) >>> 0) / 4294967296;
+  };
 }
 
 // dist/Template.js
@@ -1232,6 +1245,19 @@ var ManagerClass = class _ManagerClass {
   }
   flyToNextIncorrect(t) {
     let picked;
+    const prng = splitmix32(t.wrongLocations.length + t.unpaintedLocations.length);
+    for (let i = t.wrongLocations.length - 1; i > 0; i--) {
+      const j = Math.floor(prng() * (i + 1));
+      const temp = t.wrongLocations[i];
+      t.wrongLocations[i] = t.wrongLocations[j];
+      t.wrongLocations[j] = temp;
+    }
+    for (let i = t.unpaintedLocations.length - 1; i > 0; i--) {
+      const j = Math.floor(prng() * (i + 1));
+      const temp = t.unpaintedLocations[i];
+      t.unpaintedLocations[i] = t.unpaintedLocations[j];
+      t.unpaintedLocations[j] = temp;
+    }
     if (t.wrongLocations.length > 0) {
       Manager.teleportCurrentIndex = (Manager.teleportCurrentIndex + 1) % t.wrongLocations.length;
       picked = t.wrongLocations[Manager.teleportCurrentIndex];
