@@ -43,6 +43,7 @@ export function workerFunction() {
 
     let rgbColorMap: Map<WplaceColorId, WorkerWplaceColor>;
     const otherColor: WorkerWplaceColor = { id: rgbToId(136, 136, 136), rgb: [136, 136, 136] };
+    const transparentColorId: WplaceColorId = rgbToId(222, 250, 206);
 
     function rgbToId(r: number, g: number, b: number): WplaceColorId {
         return r * 1000 * 1000 + g * 1000 + b as WplaceColorId;
@@ -53,7 +54,9 @@ export function workerFunction() {
         const dg = g1 - g2;
         const db = b1 - b2;
         return dr * dr + dg * dg + db * db <= 57; // Min distance (squared) between 2 colors is 115 with Dark Gray and Dark Slate, so a threshold of 115/2=57.5 is used
-    } function getColor(r: number, g: number, b: number): WorkerWplaceColor {
+    }
+
+    function getColor(r: number, g: number, b: number): WorkerWplaceColor {
         const id = rgbToId(r, g, b);
         const color = rgbColorMap.get(id);
         if (color !== undefined)
@@ -62,8 +65,8 @@ export function workerFunction() {
         return otherColor;
     }
 
-    function getClosestColor(r: number, g: number, b: number): WorkerWplaceColor {
-        const id = rgbToId(r, g, b);
+    function getClosestColor(r: number, g: number, b: number, a: number): WorkerWplaceColor {
+        const id = a < 32 ? transparentColorId : rgbToId(r, g, b);
         const color = rgbColorMap.get(id);
         if (color !== undefined)
             return color;
@@ -139,7 +142,7 @@ export function workerFunction() {
                     tiles.set(tileIndex, tile);
                 }
 
-                const color = getClosestColor(imageData.data[pixelIndex + 0]!, imageData.data[pixelIndex + 1]!, imageData.data[pixelIndex + 2]!);
+                const color = getClosestColor(imageData.data[pixelIndex + 0]!, imageData.data[pixelIndex + 1]!, imageData.data[pixelIndex + 2]!, 255);
 
                 tile.set(color.id, tile.get(color.id) ?? 0 + 1);
 
@@ -237,7 +240,7 @@ export function workerFunction() {
                     continue;
 
                 let color = getColor(template.imageData[imagePixelIndex + 0]!, template.imageData[imagePixelIndex + 1]!, template.imageData[imagePixelIndex + 2]!);
-                const paintedColor = getClosestColor(canvasImageData[canvasPixelIndex + 0]!, canvasImageData[canvasPixelIndex + 1]!, canvasImageData[canvasPixelIndex + 2]!);
+                const paintedColor = getClosestColor(canvasImageData[canvasPixelIndex + 0]!, canvasImageData[canvasPixelIndex + 1]!, canvasImageData[canvasPixelIndex + 2]!, canvasImageData[canvasPixelIndex + 3]!);
 
 
                 const pixelTileIndex = (tile.x * 10000 + tile.y) * 1000000 + (cx * 1000 + cy) as PixelIndex;
@@ -247,14 +250,10 @@ export function workerFunction() {
                         needToStoreTemplates = true;
 
                         color = paintedColor;
-                        template.imageData[imagePixelIndex + 0] = canvasImageData[canvasPixelIndex + 0]!;
-                        template.imageData[imagePixelIndex + 1] = canvasImageData[canvasPixelIndex + 1]!;
-                        template.imageData[imagePixelIndex + 2] = canvasImageData[canvasPixelIndex + 2]!;
-                        template.imageData[imagePixelIndex + 3] = canvasImageData[canvasPixelIndex + 3]!;
-
-
-                        if (template.imageData[imagePixelIndex + 3]! === 0)
-                            continue;
+                        template.imageData[imagePixelIndex + 0] = paintedColor.rgb[0];
+                        template.imageData[imagePixelIndex + 1] = paintedColor.rgb[1];
+                        template.imageData[imagePixelIndex + 2] = paintedColor.rgb[2];
+                        template.imageData[imagePixelIndex + 3] = 255;
                     }
                 }
 
@@ -287,10 +286,24 @@ export function workerFunction() {
                 }
 
                 if (enabledMap.get(color.id)) {
-                    canvasImageData[canvasPixelIndex + 0] = template.imageData[imagePixelIndex + 0]!;
-                    canvasImageData[canvasPixelIndex + 1] = template.imageData[imagePixelIndex + 1]!;
-                    canvasImageData[canvasPixelIndex + 2] = template.imageData[imagePixelIndex + 2]!;
-                    canvasImageData[canvasPixelIndex + 3] = template.imageData[imagePixelIndex + 3]!;
+                    // #deface
+                    if (color.id === transparentColorId) {
+                        if (canvasImageData[canvasPixelIndex + 3]! > 0)
+                            for (let dy = -1; dy <= 1; dy++)
+                                for (let dx = -1; dx <= 1; dx++) {
+                                    const idx = ((cy * patternSize + 1 + dy) * canvasWidth + cx * patternSize + 1 + dx) * 4;
+                                    const c = (cx + dx + cy + dy) % 2 == 0 ? 0 : 255;
+                                    canvasImageData[idx + 0] = (paintedColor.rgb[0] * 207 + c * 48) / 255;
+                                    canvasImageData[idx + 1] = (paintedColor.rgb[1] * 207 + c * 48) / 255;
+                                    canvasImageData[idx + 2] = (paintedColor.rgb[2] * 207 + c * 48) / 255;
+                                }
+                    }
+                    else {
+                        canvasImageData[canvasPixelIndex + 0] = template.imageData[imagePixelIndex + 0]!;
+                        canvasImageData[canvasPixelIndex + 1] = template.imageData[imagePixelIndex + 1]!;
+                        canvasImageData[canvasPixelIndex + 2] = template.imageData[imagePixelIndex + 2]!;
+                        canvasImageData[canvasPixelIndex + 3] = template.imageData[imagePixelIndex + 3]!;
+                    }
                 }
             }
 

@@ -178,6 +178,8 @@ export default class Template {
         if (result === null)
             return;
 
+        this.modifyPixels = [];
+
         ctx.putImageData(new ImageData(new Uint8ClampedArray(result.canvas), ctx.canvas.width, ctx.canvas.height), 0, 0);
 
         if (trackProgress) {

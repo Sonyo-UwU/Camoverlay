@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.8.0
+// @version      1.9.0
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -595,6 +595,7 @@ var Template = class _Template {
     Manager.workerDrawOnTileResolve.delete(key);
     if (result === null)
       return;
+    this.modifyPixels = [];
     ctx.putImageData(new ImageData(new Uint8ClampedArray(result.canvas), ctx.canvas.width, ctx.canvas.height), 0, 0);
     if (trackProgress) {
       this.tiles.set(tile.toIndex(), new Map(result.colorsProgress));
@@ -630,6 +631,7 @@ var Template = class _Template {
 function workerFunction() {
   let rgbColorMap2;
   const otherColor2 = { id: rgbToId2(136, 136, 136), rgb: [136, 136, 136] };
+  const transparentColorId = rgbToId2(222, 250, 206);
   function rgbToId2(r, g, b) {
     return r * 1e3 * 1e3 + g * 1e3 + b;
   }
@@ -646,8 +648,8 @@ function workerFunction() {
       return color;
     return otherColor2;
   }
-  function getClosestColor(r, g, b) {
-    const id = rgbToId2(r, g, b);
+  function getClosestColor(r, g, b, a) {
+    const id = a < 32 ? transparentColorId : rgbToId2(r, g, b);
     const color = rgbColorMap2.get(id);
     if (color !== void 0)
       return color;
@@ -708,7 +710,7 @@ function workerFunction() {
           tile = /* @__PURE__ */ new Map();
           tiles.set(tileIndex, tile);
         }
-        const color = getClosestColor(imageData.data[pixelIndex + 0], imageData.data[pixelIndex + 1], imageData.data[pixelIndex + 2]);
+        const color = getClosestColor(imageData.data[pixelIndex + 0], imageData.data[pixelIndex + 1], imageData.data[pixelIndex + 2], 255);
         tile.set(color.id, tile.get(color.id) ?? 0 + 1);
         if (color !== otherColor2) {
           imageData.data[pixelIndex + 0] = color.rgb[0];
@@ -780,18 +782,16 @@ function workerFunction() {
         if (template.imageData[imagePixelIndex + 3] === 0)
           continue;
         let color = getColor2(template.imageData[imagePixelIndex + 0], template.imageData[imagePixelIndex + 1], template.imageData[imagePixelIndex + 2]);
-        const paintedColor = getClosestColor(canvasImageData[canvasPixelIndex + 0], canvasImageData[canvasPixelIndex + 1], canvasImageData[canvasPixelIndex + 2]);
+        const paintedColor = getClosestColor(canvasImageData[canvasPixelIndex + 0], canvasImageData[canvasPixelIndex + 1], canvasImageData[canvasPixelIndex + 2], canvasImageData[canvasPixelIndex + 3]);
         const pixelTileIndex = (tile.x * 1e4 + tile.y) * 1e6 + (cx * 1e3 + cy);
         if (modifyPixels.includes(pixelTileIndex)) {
           if (color !== paintedColor) {
             needToStoreTemplates = true;
             color = paintedColor;
-            template.imageData[imagePixelIndex + 0] = canvasImageData[canvasPixelIndex + 0];
-            template.imageData[imagePixelIndex + 1] = canvasImageData[canvasPixelIndex + 1];
-            template.imageData[imagePixelIndex + 2] = canvasImageData[canvasPixelIndex + 2];
-            template.imageData[imagePixelIndex + 3] = canvasImageData[canvasPixelIndex + 3];
-            if (template.imageData[imagePixelIndex + 3] === 0)
-              continue;
+            template.imageData[imagePixelIndex + 0] = paintedColor.rgb[0];
+            template.imageData[imagePixelIndex + 1] = paintedColor.rgb[1];
+            template.imageData[imagePixelIndex + 2] = paintedColor.rgb[2];
+            template.imageData[imagePixelIndex + 3] = 255;
           }
         }
         if (trackProgress) {
@@ -816,10 +816,22 @@ function workerFunction() {
           }
         }
         if (enabledMap.get(color.id)) {
-          canvasImageData[canvasPixelIndex + 0] = template.imageData[imagePixelIndex + 0];
-          canvasImageData[canvasPixelIndex + 1] = template.imageData[imagePixelIndex + 1];
-          canvasImageData[canvasPixelIndex + 2] = template.imageData[imagePixelIndex + 2];
-          canvasImageData[canvasPixelIndex + 3] = template.imageData[imagePixelIndex + 3];
+          if (color.id === transparentColorId) {
+            if (canvasImageData[canvasPixelIndex + 3] > 0)
+              for (let dy = -1; dy <= 1; dy++)
+                for (let dx = -1; dx <= 1; dx++) {
+                  const idx = ((cy * patternSize + 1 + dy) * canvasWidth + cx * patternSize + 1 + dx) * 4;
+                  const c = (cx + dx + cy + dy) % 2 == 0 ? 0 : 255;
+                  canvasImageData[idx + 0] = (paintedColor.rgb[0] * 207 + c * 48) / 255;
+                  canvasImageData[idx + 1] = (paintedColor.rgb[1] * 207 + c * 48) / 255;
+                  canvasImageData[idx + 2] = (paintedColor.rgb[2] * 207 + c * 48) / 255;
+                }
+          } else {
+            canvasImageData[canvasPixelIndex + 0] = template.imageData[imagePixelIndex + 0];
+            canvasImageData[canvasPixelIndex + 1] = template.imageData[imagePixelIndex + 1];
+            canvasImageData[canvasPixelIndex + 2] = template.imageData[imagePixelIndex + 2];
+            canvasImageData[canvasPixelIndex + 3] = template.imageData[imagePixelIndex + 3];
+          }
         }
       }
     if (needToStoreTemplates)
