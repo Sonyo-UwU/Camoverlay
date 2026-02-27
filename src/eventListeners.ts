@@ -1,5 +1,5 @@
 import { PixelCoords } from './Coords';
-import { displayStatus } from './display';
+import { clickCloseButton, displayStatus } from './display';
 import { Manager } from './Manager';
 import { ColorSortingOptions, getColor } from './utils';
 
@@ -60,8 +60,7 @@ export function addListeners() {
                     (document.getElementsByClassName('btn btn-primary btn-lg sm:btn-xl relative z-30')[0] as HTMLElement | undefined)?.click();
                 break;
             case 'Escape':
-                const buttons = document.querySelectorAll('[d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"]');
-                buttons[buttons.length - 1]?.parentElement?.parentElement?.click();
+                clickCloseButton();
                 break;
         }
     });

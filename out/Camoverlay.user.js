@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.9.0
+// @version      1.10.0
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -262,8 +262,7 @@ function addListeners() {
           document.getElementsByClassName("btn btn-primary btn-lg sm:btn-xl relative z-30")[0]?.click();
         break;
       case "Escape":
-        const buttons = document.querySelectorAll('[d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"]');
-        buttons[buttons.length - 1]?.parentElement?.parentElement?.click();
+        clickCloseButton();
         break;
     }
   });
@@ -1235,9 +1234,9 @@ var ManagerClass = class _ManagerClass {
       let i2 = 0;
       do {
         await new Promise((resolve) => setTimeout(resolve, 50));
-        popup = document.getElementsByClassName("rounded-t-box bg-base-100 border-base-300 sm:rounded-b-box w-full border-t pt-2 sm:mb-3 sm:shadow-xl")[0]?.firstElementChild?.firstElementChild?.lastElementChild ?? null;
+        popup = document.getElementsByClassName("rounded-t-box bg-base-100 border-base-300 sm:rounded-b-box w-full border-t pt-2 sm:mb-3 sm:shadow-xl")[0]?.querySelector('[d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"]')?.parentElement?.parentElement;
         i2++;
-      } while (popup === null && i2 < 10);
+      } while (popup == null && i2 < 10);
     }
     popup.click();
   }
@@ -1445,15 +1444,21 @@ function injectOverlay() {
 </div>`.replace(/>\s*</g, "><");
   GM_addStyle(`
 .ca-display-coords {
-    padding-inline: calc(var(--spacing)*3);
-    font-size: small;
+    background-color: #FF000022;
+    border-radius: 9px;
+    font-size: .75rem;
+    margin-top: calc(var(--spacing) * 1.5);
+}
+
+.ca-display-coords > span {
+    margin-left: 1ch;
 }
 
 .ca-mark-as-correct {
     background-color: #cb4334;
     border-radius: 1em;
+    float: right;
     padding: 0 0.75ch;
-    margin-left: 1ch;
 }
 .ca-mark-as-correct:hover, .ca-mark-as-correct:focus-visible {
     background-color: #d16458;
@@ -2066,12 +2071,16 @@ function updateTemplatePixelCount(template) {
 function removeTemplateRow(name) {
   document.getElementById(`ca-template-id-${name}`)?.remove();
 }
+function clickCloseButton() {
+  const buttons = document.querySelectorAll('[d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"]');
+  buttons[buttons.length - 1]?.parentElement?.parentElement?.click();
+}
 function displayTileCoords(coords) {
   const textCoords = `Tile X: ${coords.tx}, Tile Y: ${coords.ty} ; Pixel X: ${coords.px}, Pixel Y: ${coords.py}`;
   const displayCoords = document.getElementsByClassName("ca-display-coords")[0];
   if (displayCoords !== void 0)
     displayCoords.remove();
-  const buttonsDiv = document.getElementsByClassName("hide-scrollbar flex max-w-full gap-1.5 overflow-x-auto px-3 pt-1 pb-2")[0];
+  const buttonsDiv = document.getElementsByClassName("mt-2 flex w-full justify-between sm:mt-1.5")[0];
   if (buttonsDiv === void 0)
     return;
   const template = document.getElementById("ca-coords-template").content.cloneNode(true);
@@ -2089,10 +2098,10 @@ function displayTileCoords(coords) {
       templateToModify.modifyPixels.push(pixelIndex);
       Manager.deleteTiles(coords.toTileIndex());
       button.disabled = true;
-      buttonsDiv.previousElementSibling?.previousElementSibling?.previousElementSibling?.lastChild?.click();
+      clickCloseButton();
     });
   }
-  buttonsDiv.parentElement?.insertBefore(template, buttonsDiv);
+  buttonsDiv.parentElement?.appendChild(template);
 }
 
 // dist/app.js
@@ -2113,7 +2122,7 @@ var originalFetch = unsafeWindow.fetch;
 unsafeWindow.fetch = async function(input, init) {
   const url = input instanceof Request ? input.url : input;
   const method = init?.method ?? "GET";
-  if (url.includes("/tiles/") && method === "GET") {
+  if (url.includes("/tile/") && method === "GET") {
     const coords = parseTileCoordsFromURL(url);
     const tileIndex = coords.toIndex();
     const tileInfo = Manager.tilesInfo.get(tileIndex);
@@ -2150,7 +2159,7 @@ unsafeWindow.fetch = async function(input, init) {
       const coords = parseTileCoordsFromURL(url);
       Manager.tilesInfo.delete(coords.toIndex());
     }
-  } else if (contentType.includes("image/") && url.includes("/tiles/") && method === "GET") {
+  } else if (contentType.includes("image/") && url.includes("/tile/") && method === "GET") {
     const coords = parseTileCoordsFromURL(url);
     const start = performance.now();
     const modified = await Manager.processTile(coords, response);

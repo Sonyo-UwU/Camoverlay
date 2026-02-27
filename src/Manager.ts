@@ -505,9 +505,10 @@ class ManagerClass {
             do {
                 await new Promise((resolve) => setTimeout(resolve, 50));
                 popup = (document.getElementsByClassName('rounded-t-box bg-base-100 border-base-300 sm:rounded-b-box w-full border-t pt-2 sm:mb-3 sm:shadow-xl')[0]
-                    ?.firstElementChild?.firstElementChild?.lastElementChild ?? null) as HTMLButtonElement | null;
+                    ?.querySelector('[d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"]')
+                    ?.parentElement?.parentElement) as HTMLButtonElement | null;
                 i++;
-            } while (popup === null && i < 10);
+            } while (popup == null && i < 10);
         }
         popup.click();
     }

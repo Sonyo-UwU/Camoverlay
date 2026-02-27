@@ -277,6 +277,11 @@ export function removeTemplateRow(name: string) {
     document.getElementById(`ca-template-id-${name}`)?.remove();
 }
 
+export function clickCloseButton() {
+    const buttons = document.querySelectorAll('[d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"]');
+    buttons[buttons.length - 1]?.parentElement?.parentElement?.click();
+}
+
 export function displayTileCoords(coords: PixelCoords) {
     const textCoords = `Tile X: ${coords.tx}, Tile Y: ${coords.ty} ; Pixel X: ${coords.px}, Pixel Y: ${coords.py}`;
 
@@ -284,7 +289,7 @@ export function displayTileCoords(coords: PixelCoords) {
     if (displayCoords !== undefined)
         displayCoords.remove();
 
-    const buttonsDiv = document.getElementsByClassName('hide-scrollbar flex max-w-full gap-1.5 overflow-x-auto px-3 pt-1 pb-2')[0];
+    const buttonsDiv = document.getElementsByClassName('mt-2 flex w-full justify-between sm:mt-1.5')[0];
     if (buttonsDiv === undefined)
         return;
 
@@ -309,9 +314,9 @@ export function displayTileCoords(coords: PixelCoords) {
             templateToModify.modifyPixels.push(pixelIndex);
             Manager.deleteTiles(coords.toTileIndex());
             button.disabled = true;
-            (buttonsDiv.previousElementSibling?.previousElementSibling?.previousElementSibling?.lastChild as HTMLButtonElement | undefined)?.click();
+            clickCloseButton();
         });
     }
 
-    buttonsDiv.parentElement?.insertBefore(template, buttonsDiv);
+    buttonsDiv.parentElement?.appendChild(template);
 }
