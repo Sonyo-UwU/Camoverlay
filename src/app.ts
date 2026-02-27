@@ -35,7 +35,7 @@ unsafeWindow.fetch = async function (input: Parameters<typeof window.fetch>[0], 
     const method = init?.method ?? 'GET';
 
 
-    if (url.includes('/tile/') && method === 'GET') {
+    if (url.includes('/tiles/') && method === 'GET') {
         const coords = parseTileCoordsFromURL(url);
         const tileIndex = coords.toIndex();
         const tileInfo = Manager.tilesInfo.get(tileIndex);
@@ -90,7 +90,7 @@ unsafeWindow.fetch = async function (input: Parameters<typeof window.fetch>[0], 
     }
 
     // Tiles
-    else if (contentType.includes('image/') && url.includes('/tile/') && method === 'GET') {
+    else if (contentType.includes('image/') && url.includes('/tiles/') && method === 'GET') {
         const coords = parseTileCoordsFromURL(url);
 
         const start = performance.now();

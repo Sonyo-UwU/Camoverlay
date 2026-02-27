@@ -1,18 +1,12 @@
 .ca-display-coords {
-    background-color: #FF000022;
-    border-radius: 9px;
-    font-size: .75rem;
-    margin-top: calc(var(--spacing) * 1.5);
-}
-
-.ca-display-coords > span {
-    margin-left: 1ch;
+    font-size: var(--text-xs);
+    padding-inline: calc(var(--spacing)*3);
 }
 
 .ca-mark-as-correct {
     background-color: #cb4334;
     border-radius: 1em;
-    float: right;
+    margin-left: 1ch;
     padding: 0 0.75ch;
 }
 .ca-mark-as-correct:hover, .ca-mark-as-correct:focus-visible {

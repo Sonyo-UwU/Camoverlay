@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.10.0
+// @version      1.10.1
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -1444,20 +1444,14 @@ function injectOverlay() {
 </div>`.replace(/>\s*</g, "><");
   GM_addStyle(`
 .ca-display-coords {
-    background-color: #FF000022;
-    border-radius: 9px;
-    font-size: .75rem;
-    margin-top: calc(var(--spacing) * 1.5);
-}
-
-.ca-display-coords > span {
-    margin-left: 1ch;
+    font-size: var(--text-xs);
+    padding-inline: calc(var(--spacing)*3);
 }
 
 .ca-mark-as-correct {
     background-color: #cb4334;
     border-radius: 1em;
-    float: right;
+    margin-left: 1ch;
     padding: 0 0.75ch;
 }
 .ca-mark-as-correct:hover, .ca-mark-as-correct:focus-visible {
@@ -2080,7 +2074,7 @@ function displayTileCoords(coords) {
   const displayCoords = document.getElementsByClassName("ca-display-coords")[0];
   if (displayCoords !== void 0)
     displayCoords.remove();
-  const buttonsDiv = document.getElementsByClassName("mt-2 flex w-full justify-between sm:mt-1.5")[0];
+  const buttonsDiv = document.getElementsByClassName("hide-scrollbar flex max-w-full gap-1.5 overflow-x-auto px-3 pt-1 pb-2")[0];
   if (buttonsDiv === void 0)
     return;
   const template = document.getElementById("ca-coords-template").content.cloneNode(true);
@@ -2101,7 +2095,7 @@ function displayTileCoords(coords) {
       clickCloseButton();
     });
   }
-  buttonsDiv.parentElement?.appendChild(template);
+  buttonsDiv.parentElement?.insertBefore(template, buttonsDiv);
 }
 
 // dist/app.js
@@ -2122,7 +2116,7 @@ var originalFetch = unsafeWindow.fetch;
 unsafeWindow.fetch = async function(input, init) {
   const url = input instanceof Request ? input.url : input;
   const method = init?.method ?? "GET";
-  if (url.includes("/tile/") && method === "GET") {
+  if (url.includes("/tiles/") && method === "GET") {
     const coords = parseTileCoordsFromURL(url);
     const tileIndex = coords.toIndex();
     const tileInfo = Manager.tilesInfo.get(tileIndex);
@@ -2159,7 +2153,7 @@ unsafeWindow.fetch = async function(input, init) {
       const coords = parseTileCoordsFromURL(url);
       Manager.tilesInfo.delete(coords.toIndex());
     }
-  } else if (contentType.includes("image/") && url.includes("/tile/") && method === "GET") {
+  } else if (contentType.includes("image/") && url.includes("/tiles/") && method === "GET") {
     const coords = parseTileCoordsFromURL(url);
     const start = performance.now();
     const modified = await Manager.processTile(coords, response);

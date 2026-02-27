@@ -289,7 +289,7 @@ export function displayTileCoords(coords: PixelCoords) {
     if (displayCoords !== undefined)
         displayCoords.remove();
 
-    const buttonsDiv = document.getElementsByClassName('mt-2 flex w-full justify-between sm:mt-1.5')[0];
+    const buttonsDiv = document.getElementsByClassName('hide-scrollbar flex max-w-full gap-1.5 overflow-x-auto px-3 pt-1 pb-2')[0];
     if (buttonsDiv === undefined)
         return;
 
@@ -318,5 +318,5 @@ export function displayTileCoords(coords: PixelCoords) {
         });
     }
 
-    buttonsDiv.parentElement?.appendChild(template);
+    buttonsDiv.parentElement?.insertBefore(template, buttonsDiv);
 }
