@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.10.2
+// @version      1.10.3
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -113,20 +113,22 @@ function getColor(r, g, b) {
 function computeLuminance(id) {
   const color = rgbColorMap.get(id);
   if (color === otherColor)
-    return 1;
+    return 2;
   if (color.wplaceOrder === 63)
-    return 0;
+    return 3;
   return 0.299 * (color.rgb[0] / 255) + 0.587 * (color.rgb[1] / 255) + 0.114 * (color.rgb[2] / 255);
 }
 function computeHue(id) {
   const color = rgbColorMap.get(id);
   if (color === otherColor)
-    return 360;
+    return 361;
   if (color.wplaceOrder === 63)
-    return 0;
+    return 362;
   const [red, green, blue] = color.rgb;
   const min = Math.min(Math.min(red, green), blue);
   const max = Math.max(Math.max(red, green), blue);
+  if (min === max)
+    return 0;
   let hue = 0;
   if (max === red)
     hue = (green - blue) / (max - min);
@@ -209,6 +211,7 @@ var rgbColorMap = /* @__PURE__ */ new Map();
 for (const color of colorPalette) {
   rgbColorMap.set(rgbToId(...color.rgb), { ...color, id: rgbToId(...color.rgb) });
 }
+rgbColorMap.set(otherColor.id, otherColor);
 
 // dist/eventListeners.js
 function addListeners() {
@@ -629,7 +632,7 @@ var Template = class _Template {
 // dist/worker.js
 function workerFunction() {
   let rgbColorMap2;
-  const otherColor2 = { id: rgbToId2(136, 136, 136), rgb: [136, 136, 136] };
+  let otherColor2;
   const transparentColorId = rgbToId2(222, 250, 206);
   function rgbToId2(r, g, b) {
     return r * 1e3 * 1e3 + g * 1e3 + b;
@@ -673,6 +676,7 @@ function workerFunction() {
     switch (m.name) {
       case "Init":
         rgbColorMap2 = new Map(m.data.rgbColorMap);
+        otherColor2 = rgbColorMap2.get(rgbToId2(136, 136, 136));
         break;
       case "CreateTemplate":
         templateFromBitmap(m.data);
@@ -806,7 +810,7 @@ function workerFunction() {
             colorsProgress.set(color.id, progress);
           }
           progress.total++;
-          if (canvasImageData[canvasPixelIndex + 3] === 0) {
+          if (color.id !== transparentColorId && canvasImageData[canvasPixelIndex + 3] === 0) {
             progress.unpainted++;
             progress.unpaintedLocations.push(pixelTileIndex);
           } else if (color !== paintedColor) {
@@ -1111,7 +1115,12 @@ var ManagerClass = class _ManagerClass {
         colorsArray.sort((a, b) => computeLuminance(a[0]) - computeLuminance(b[0]));
         break;
       case "Hue":
-        colorsArray.sort((a, b) => computeHue(b[0]) - computeHue(a[0]));
+        colorsArray.sort((a, b) => {
+          const d = computeHue(b[0]) - computeHue(a[0]);
+          if (d !== 0)
+            return d;
+          return computeLuminance(a[0]) - computeLuminance(b[0]);
+        });
         break;
       default:
         this.settings.colorSorting;

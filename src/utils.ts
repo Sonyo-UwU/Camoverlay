@@ -87,9 +87,9 @@ export function getColor(r: number, g: number, b: number): WplaceColor {
 export function computeLuminance(id: WplaceColorId): number {
     const color = rgbColorMap.get(id)!;
     if (color === otherColor)
-        return 1;
+        return 2;
     if (color.wplaceOrder === 63)
-        return 0;
+        return 3;
 
     return 0.299 * (color.rgb[0] / 255) + 0.587 * (color.rgb[1] / 255) + 0.114 * (color.rgb[2] / 255); // Range 0-1
 }
@@ -97,14 +97,17 @@ export function computeLuminance(id: WplaceColorId): number {
 export function computeHue(id: WplaceColorId): number {
     const color = rgbColorMap.get(id)!;
     if (color === otherColor)
-        return 360;
+        return 361;
     if (color.wplaceOrder === 63)
-        return 0;
+        return 362;
 
     const [red, green, blue] = color.rgb;
 
     const min = Math.min(Math.min(red, green), blue);
     const max = Math.max(Math.max(red, green), blue);
+
+    if (min === max)
+        return 0;
 
     let hue = 0;
     if (max === red)
@@ -191,3 +194,4 @@ export const rgbColorMap = new Map<WplaceColorId, WplaceColor>();
 for (const color of colorPalette) {
     rgbColorMap.set(rgbToId(...color.rgb), { ...color, id: rgbToId(...color.rgb) });
 }
+rgbColorMap.set(otherColor.id, otherColor);

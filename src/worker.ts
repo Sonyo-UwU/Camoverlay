@@ -42,7 +42,7 @@ export function workerFunction() {
     //#region Utils
 
     let rgbColorMap: Map<WplaceColorId, WorkerWplaceColor>;
-    const otherColor: WorkerWplaceColor = { id: rgbToId(136, 136, 136), rgb: [136, 136, 136] };
+    let otherColor: WorkerWplaceColor;
     const transparentColorId: WplaceColorId = rgbToId(222, 250, 206);
 
     function rgbToId(r: number, g: number, b: number): WplaceColorId {
@@ -98,6 +98,7 @@ export function workerFunction() {
         switch (m.name) {
             case 'Init':
                 rgbColorMap = new Map<WplaceColorId, WorkerWplaceColor>(m.data.rgbColorMap);
+                otherColor = rgbColorMap.get(rgbToId(136, 136, 136))!;
                 break;
             case 'CreateTemplate':
                 templateFromBitmap(m.data);
@@ -273,7 +274,7 @@ export function workerFunction() {
                     }
 
                     progress.total++;
-                    if (canvasImageData[canvasPixelIndex + 3] === 0) {
+                    if (color.id !== transparentColorId && canvasImageData[canvasPixelIndex + 3] === 0) {
                         // Unpainted
                         progress.unpainted++;
                         progress.unpaintedLocations.push(pixelTileIndex);

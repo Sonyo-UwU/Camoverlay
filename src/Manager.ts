@@ -341,7 +341,12 @@ class ManagerClass {
                 colorsArray.sort((a, b) => computeLuminance(a[0]) - computeLuminance(b[0]));
                 break;
             case ColorSortingOptions.Hue:
-                colorsArray.sort((a, b) => computeHue(b[0]) - computeHue(a[0]));
+                colorsArray.sort((a, b) => {
+                    const d = computeHue(b[0]) - computeHue(a[0]);
+                    if (d !== 0)
+                        return d;
+                    return computeLuminance(a[0]) - computeLuminance(b[0]);
+                });
                 break;
 
             default:
