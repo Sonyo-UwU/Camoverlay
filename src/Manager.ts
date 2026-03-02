@@ -560,12 +560,12 @@ class ManagerClass {
         if (t.wrongLocations.length > 0) {
             // Modulo first, because teleportCurrentIndex is global, not per color
             // (makes enumeration start at 1, but doesn't matter since the array is shuffled anyway)
-            Manager.teleportCurrentIndex = (Manager.teleportCurrentIndex + 1) % t.wrongLocations.length;
-            picked = t.wrongLocations[Manager.teleportCurrentIndex]!;
+            this.teleportCurrentIndex = (this.teleportCurrentIndex + 1) % t.wrongLocations.length;
+            picked = t.wrongLocations[this.teleportCurrentIndex]!;
         }
         else if (t.unpaintedLocations.length > 0) {
-            Manager.teleportCurrentIndex = (Manager.teleportCurrentIndex + 1) % t.unpaintedLocations.length;
-            picked = t.unpaintedLocations[Manager.teleportCurrentIndex]!;
+            this.teleportCurrentIndex = (this.teleportCurrentIndex + 1) % t.unpaintedLocations.length;
+            picked = t.unpaintedLocations[this.teleportCurrentIndex]!;
         }
         else
             return;

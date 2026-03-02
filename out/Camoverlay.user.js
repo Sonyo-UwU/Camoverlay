@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.10.3
+// @version      1.10.4
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -705,8 +705,10 @@ function workerFunction() {
     for (let y = 0; y < imageData.height; y++)
       for (let x = 0; x < imageData.width; x++) {
         const pixelIndex = (y * imageData.width + x) * 4;
-        if (imageData.data[pixelIndex + 3] < 128)
+        if (imageData.data[pixelIndex + 3] < 128) {
+          imageData.data[pixelIndex + 3] = 0;
           continue;
+        }
         const tileIndex = (coords.tx + Math.floor((coords.px + x) / 1e3)) % 2048 * 1e4 + (coords.ty + Math.floor((coords.py + y) / 1e3)) % 2048;
         let tile = tiles.get(tileIndex);
         if (tile === void 0) {
@@ -719,6 +721,7 @@ function workerFunction() {
           imageData.data[pixelIndex + 0] = color.rgb[0];
           imageData.data[pixelIndex + 1] = color.rgb[1];
           imageData.data[pixelIndex + 2] = color.rgb[2];
+          imageData.data[pixelIndex + 3] = 255;
         }
       }
     templates.set(name, { imageData: imageData.data, width: canvas.width, height: canvas.height, coords });
@@ -1280,11 +1283,11 @@ var ManagerClass = class _ManagerClass {
       t.unpaintedLocations[j] = temp;
     }
     if (t.wrongLocations.length > 0) {
-      Manager.teleportCurrentIndex = (Manager.teleportCurrentIndex + 1) % t.wrongLocations.length;
-      picked = t.wrongLocations[Manager.teleportCurrentIndex];
+      this.teleportCurrentIndex = (this.teleportCurrentIndex + 1) % t.wrongLocations.length;
+      picked = t.wrongLocations[this.teleportCurrentIndex];
     } else if (t.unpaintedLocations.length > 0) {
-      Manager.teleportCurrentIndex = (Manager.teleportCurrentIndex + 1) % t.unpaintedLocations.length;
-      picked = t.unpaintedLocations[Manager.teleportCurrentIndex];
+      this.teleportCurrentIndex = (this.teleportCurrentIndex + 1) % t.unpaintedLocations.length;
+      picked = t.unpaintedLocations[this.teleportCurrentIndex];
     } else
       return;
     this.flyTo(PixelCoords.fromIndex(picked).toGeoCoords(true), 17.5);

@@ -133,8 +133,10 @@ export function workerFunction() {
                 const pixelIndex = (y * imageData.width + x) * 4;
 
                 // Ignore transparent pixels
-                if (imageData.data[pixelIndex + 3]! < 128)
+                if (imageData.data[pixelIndex + 3]! < 128) {
+                    imageData.data[pixelIndex + 3] = 0;
                     continue;
+                }
 
                 const tileIndex = (coords.tx + Math.floor((coords.px + x) / 1000)) % 2048 * 10000 + (coords.ty + Math.floor((coords.py + y) / 1000)) % 2048 as TileIndex;
                 let tile = tiles.get(tileIndex);
@@ -151,6 +153,7 @@ export function workerFunction() {
                     imageData.data[pixelIndex + 0] = color.rgb[0];
                     imageData.data[pixelIndex + 1] = color.rgb[1];
                     imageData.data[pixelIndex + 2] = color.rgb[2];
+                    imageData.data[pixelIndex + 3] = 255;
                 }
             }
 
