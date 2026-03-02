@@ -312,7 +312,7 @@ export function displayTileCoords(coords: PixelCoords) {
     else {
         button.addEventListener('click', () => {
             templateToModify.modifyPixels.push(pixelIndex);
-            Manager.deleteTiles(coords.toTileIndex());
+            Manager.refreshTiles(coords.toTileIndex(), true);
             button.disabled = true;
             clickCloseButton();
         });

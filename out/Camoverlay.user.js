@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.10.1
+// @version      1.10.2
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -971,7 +971,7 @@ var ManagerClass = class _ManagerClass {
       this.tilesInfo.delete(index);
     this.wplaceMap?.refreshTiles("pixel-art-layer");
   }
-  refreshTiles(indices) {
+  refreshTiles(indices, trackProgress) {
     if (indices === void 0)
       indices = this.tilesInfo.keys();
     else if (typeof indices !== "object" || !(Symbol.iterator in indices)) {
@@ -980,7 +980,7 @@ var ManagerClass = class _ManagerClass {
     for (const index of indices) {
       const info = this.tilesInfo.get(index);
       if (info !== void 0)
-        info.shouldUseOrig = true;
+        info.shouldUseOrig = trackProgress ? 2 : 1;
     }
     this.wplaceMap?.refreshTiles("pixel-art-layer");
   }
@@ -1141,7 +1141,7 @@ var ManagerClass = class _ManagerClass {
     if (tileInfo === void 0) {
       tileInfo = {
         lastModified: 0,
-        shouldUseOrig: false,
+        shouldUseOrig: 0,
         origBlob: null,
         fullBlob: null
       };
@@ -1167,8 +1167,9 @@ var ManagerClass = class _ManagerClass {
   }
   async processTileFromOrig(tile) {
     const tileInfo = this.tilesInfo.get(tile.toIndex());
-    tileInfo.shouldUseOrig = false;
-    const modifiedBlob = await this.drawOnTile(tile, tileInfo.origBlob, false);
+    const trackProgress = tileInfo.shouldUseOrig === 2;
+    tileInfo.shouldUseOrig = 0;
+    const modifiedBlob = await this.drawOnTile(tile, tileInfo.origBlob, trackProgress);
     tileInfo.fullBlob = modifiedBlob;
     return new Response(modifiedBlob, {
       headers: new Headers([["content-type", "image/png"], ["content-length", modifiedBlob.size.toString()]]),
@@ -2090,7 +2091,7 @@ function displayTileCoords(coords) {
   } else {
     button.addEventListener("click", () => {
       templateToModify.modifyPixels.push(pixelIndex);
-      Manager.deleteTiles(coords.toTileIndex());
+      Manager.refreshTiles(coords.toTileIndex(), true);
       button.disabled = true;
       clickCloseButton();
     });

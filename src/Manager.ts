@@ -169,9 +169,9 @@ class ManagerClass {
     }
 
     refreshTiles(): void;
-    refreshTiles(index: TileIndex): void;
-    refreshTiles(indices: Iterable<TileIndex>): void;
-    refreshTiles(indices?: TileIndex | Iterable<TileIndex>): void {
+    refreshTiles(index: TileIndex, trackProgress?: boolean): void;
+    refreshTiles(indices: Iterable<TileIndex>, trackProgress?: boolean): void;
+    refreshTiles(indices?: TileIndex | Iterable<TileIndex>, trackProgress?: boolean): void {
         if (indices === undefined)
             indices = this.tilesInfo.keys();
         else if (typeof indices !== 'object' || !(Symbol.iterator in indices)) {
@@ -181,7 +181,7 @@ class ManagerClass {
         for (const index of indices) {
             const info = this.tilesInfo.get(index);
             if (info !== undefined)
-                info.shouldUseOrig = true;
+                info.shouldUseOrig = trackProgress ? 2 : 1;
         }
 
         this.wplaceMap?.refreshTiles('pixel-art-layer');
@@ -382,7 +382,7 @@ class ManagerClass {
         if (tileInfo === undefined) {
             tileInfo = {
                 lastModified: 0,
-                shouldUseOrig: false,
+                shouldUseOrig: 0,
                 origBlob: null,
                 fullBlob: null
             };
@@ -417,9 +417,11 @@ class ManagerClass {
 
     async processTileFromOrig(tile: TileCoords): Promise<Response> {
         const tileInfo = this.tilesInfo.get(tile.toIndex())!;
-        tileInfo.shouldUseOrig = false;
 
-        const modifiedBlob = await this.drawOnTile(tile, tileInfo.origBlob!, false);
+        const trackProgress = tileInfo.shouldUseOrig === 2;
+        tileInfo.shouldUseOrig = 0;
+
+        const modifiedBlob = await this.drawOnTile(tile, tileInfo.origBlob!, trackProgress);
 
         tileInfo.fullBlob = modifiedBlob;
 

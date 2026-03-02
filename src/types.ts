@@ -5,7 +5,7 @@ export type PixelIndex = number & { readonly b: unique symbol; };
 
 export type TileInfo = {
     lastModified: EpochTimeStamp;
-    shouldUseOrig: boolean;
+    shouldUseOrig: 0 | 1 | 2;
     origBlob: Blob | null;
     fullBlob: Blob | null;
 };
