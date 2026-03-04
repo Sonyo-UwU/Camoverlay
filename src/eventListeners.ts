@@ -81,7 +81,7 @@ export function addListeners() {
     });
 
     document.getElementById('ca-fly-hq')!.addEventListener('click', () => {
-        Manager.flyToFit(new PixelCoords(1054, 713, 337, 494), 2269, 1537, 1);
+        Manager.flyToFit(new PixelCoords(1054, 713, 152, 468), 2457, 1566, 1);
     });
 
     function pasted(e: ClipboardEvent) {

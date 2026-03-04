@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.10.4
+// @version      1.10.5
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -282,7 +282,7 @@ function addListeners() {
     }
   });
   document.getElementById("ca-fly-hq").addEventListener("click", () => {
-    Manager.flyToFit(new PixelCoords(1054, 713, 337, 494), 2269, 1537, 1);
+    Manager.flyToFit(new PixelCoords(1054, 713, 152, 468), 2457, 1566, 1);
   });
   function pasted(e) {
     const values = e.clipboardData?.getData("text").split(" ").filter((n) => n).map(Number).filter((n) => !isNaN(n));
