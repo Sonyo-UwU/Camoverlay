@@ -289,7 +289,7 @@ export function displayTileCoords(coords: PixelCoords) {
     if (displayCoords !== undefined)
         displayCoords.remove();
 
-    const buttonsDiv = document.getElementsByClassName('hide-scrollbar flex max-w-full gap-1.5 overflow-x-auto px-3 pt-1 pb-2')[0];
+    const buttonsDiv = document.getElementsByClassName('mt-auto flex w-full justify-between')[0];
     if (buttonsDiv === undefined)
         return;
 

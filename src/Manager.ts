@@ -1,6 +1,5 @@
 import { PixelCoords, TileCoords } from './Coords';
 import { addColorRow, addTemplateRow, displayStatus, removeTemplateRow } from './display';
-import { addCanvasListeners } from './eventListeners';
 import { MessageCreateTemplate, MessageDrawOnTile, MessageInit, WorkerResponse } from './Messages';
 import { splitmix32 } from './PRNG';
 import Template from './Template';
@@ -492,8 +491,6 @@ class ManagerClass {
         if (canvas === null)
             return;
 
-        addCanvasListeners(canvas);
-
         let popup: HTMLButtonElement | null = null;
         while (popup === null) {
             await new Promise((resolve) => setTimeout(resolve, 1500));
@@ -511,7 +508,7 @@ class ManagerClass {
             let i = 0;
             do {
                 await new Promise((resolve) => setTimeout(resolve, 50));
-                popup = (document.getElementsByClassName('rounded-t-box bg-base-100 border-base-300 sm:rounded-b-box w-full border-t pt-2 sm:mb-3 sm:shadow-xl')[0]
+                popup = (document.getElementsByClassName('rounded-t-box bg-base-100 border-base-300 sm:rounded-b-box w-full border-t bg-cover bg-center pt-2 sm:mb-3 sm:shadow-xl')[0]
                     ?.querySelector('[d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"]')
                     ?.parentElement?.parentElement) as HTMLButtonElement | null;
                 i++;

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.10.5
+// @version      1.10.6
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -76,377 +76,6 @@ var PixelCoords = class _PixelCoords {
     return `[${this.tx}, ${this.ty} ; ${this.px}, ${this.py}]`;
   }
 };
-
-// dist/utils.js
-function parsePixelCoordsFromURL(url) {
-  const urlSplitted = url.split("/");
-  const last = urlSplitted[urlSplitted.length - 1];
-  return new PixelCoords(parseInt(urlSplitted[urlSplitted.length - 2]), parseInt(urlSplitted[urlSplitted.length - 1]), parseInt(last.substring(last.indexOf("?") + 3)), parseInt(last.substring(last.indexOf("&") + 3)));
-}
-function parseTileCoordsFromURL(url) {
-  const urlSplitted = url.split("/");
-  return new TileCoords(parseInt(urlSplitted[urlSplitted.length - 2] ?? ""), parseInt(urlSplitted[urlSplitted.length - 1] ?? ""));
-}
-function getZoomLevelForPixelSize(x) {
-  return Math.log2(x / 100) + 18.6;
-}
-function functionBody(f) {
-  return f.substring(f.indexOf("{") + 1, f.lastIndexOf("}"));
-}
-function twoDigits(n, radix = 10) {
-  return n < radix ? "0" + n.toString(radix) : n.toString(radix);
-}
-function rgbToId(r, g, b) {
-  return r * 1e3 * 1e3 + g * 1e3 + b;
-}
-function rgbToCss(rgb) {
-  return twoDigits(rgb[0], 16) + twoDigits(rgb[1], 16) + twoDigits(rgb[2], 16);
-}
-var otherColor = { internalId: -1, id: rgbToId(136, 136, 136), name: "Other", rgb: [136, 136, 136], wplaceOrder: 64 };
-function getColor(r, g, b) {
-  const id = rgbToId(r, g, b);
-  const color = rgbColorMap.get(id);
-  if (color !== void 0)
-    return color;
-  return otherColor;
-}
-function computeLuminance(id) {
-  const color = rgbColorMap.get(id);
-  if (color === otherColor)
-    return 2;
-  if (color.wplaceOrder === 63)
-    return 3;
-  return 0.299 * (color.rgb[0] / 255) + 0.587 * (color.rgb[1] / 255) + 0.114 * (color.rgb[2] / 255);
-}
-function computeHue(id) {
-  const color = rgbColorMap.get(id);
-  if (color === otherColor)
-    return 361;
-  if (color.wplaceOrder === 63)
-    return 362;
-  const [red, green, blue] = color.rgb;
-  const min = Math.min(Math.min(red, green), blue);
-  const max = Math.max(Math.max(red, green), blue);
-  if (min === max)
-    return 0;
-  let hue = 0;
-  if (max === red)
-    hue = (green - blue) / (max - min);
-  else if (max === green)
-    hue = 2 + (blue - red) / (max - min);
-  else
-    hue = 4 + (red - green) / (max - min);
-  hue *= 60;
-  if (hue < 0)
-    hue += 360;
-  return hue;
-}
-var colorPalette = [
-  { internalId: 0, name: "Transparent", rgb: [222, 250, 206], wplaceOrder: 63 },
-  { internalId: 1, name: "Black", rgb: [0, 0, 0], wplaceOrder: 0 },
-  { internalId: 2, name: "Dark Gray", rgb: [60, 60, 60], wplaceOrder: 1 },
-  { internalId: 3, name: "Gray", rgb: [120, 120, 120], wplaceOrder: 2 },
-  { internalId: 4, name: "Light Gray", rgb: [210, 210, 210], wplaceOrder: 4 },
-  { internalId: 5, name: "White", rgb: [255, 255, 255], wplaceOrder: 5 },
-  { internalId: 6, name: "Deep Red", rgb: [96, 0, 24], wplaceOrder: 6 },
-  { internalId: 7, name: "Red", rgb: [237, 28, 36], wplaceOrder: 8 },
-  { internalId: 8, name: "Orange", rgb: [255, 127, 39], wplaceOrder: 11 },
-  { internalId: 9, name: "Gold", rgb: [246, 170, 9], wplaceOrder: 12 },
-  { internalId: 10, name: "Yellow", rgb: [249, 221, 59], wplaceOrder: 13 },
-  { internalId: 11, name: "Light Yellow", rgb: [255, 250, 188], wplaceOrder: 14 },
-  { internalId: 12, name: "Dark Green", rgb: [14, 185, 104], wplaceOrder: 21 },
-  { internalId: 13, name: "Green", rgb: [19, 230, 123], wplaceOrder: 22 },
-  { internalId: 14, name: "Light Green", rgb: [135, 255, 94], wplaceOrder: 23 },
-  { internalId: 15, name: "Dark Teal", rgb: [12, 129, 110], wplaceOrder: 24 },
-  { internalId: 16, name: "Teal", rgb: [16, 174, 166], wplaceOrder: 25 },
-  { internalId: 17, name: "Light Teal", rgb: [19, 225, 190], wplaceOrder: 26 },
-  { internalId: 18, name: "Dark Blue", rgb: [40, 80, 158], wplaceOrder: 30 },
-  { internalId: 19, name: "Blue", rgb: [64, 147, 228], wplaceOrder: 31 },
-  { internalId: 20, name: "Cyan", rgb: [96, 247, 242], wplaceOrder: 28 },
-  { internalId: 21, name: "Indigo", rgb: [107, 80, 246], wplaceOrder: 34 },
-  { internalId: 22, name: "Light Indigo", rgb: [153, 177, 251], wplaceOrder: 35 },
-  { internalId: 23, name: "Dark Purple", rgb: [120, 12, 153], wplaceOrder: 39 },
-  { internalId: 24, name: "Purple", rgb: [170, 56, 185], wplaceOrder: 40 },
-  { internalId: 25, name: "Light Purple", rgb: [224, 159, 249], wplaceOrder: 41 },
-  { internalId: 26, name: "Dark Pink", rgb: [203, 0, 122], wplaceOrder: 42 },
-  { internalId: 27, name: "Pink", rgb: [236, 31, 128], wplaceOrder: 43 },
-  { internalId: 28, name: "Light Pink", rgb: [243, 141, 169], wplaceOrder: 44 },
-  { internalId: 29, name: "Dark Brown", rgb: [104, 70, 52], wplaceOrder: 48 },
-  { internalId: 30, name: "Brown", rgb: [149, 104, 42], wplaceOrder: 49 },
-  { internalId: 31, name: "Beige", rgb: [248, 178, 119], wplaceOrder: 55 },
-  { internalId: 32, name: "Medium Gray", rgb: [170, 170, 170], wplaceOrder: 3 },
-  { internalId: 33, name: "Dark Red", rgb: [165, 14, 30], wplaceOrder: 7 },
-  { internalId: 34, name: "Light Red", rgb: [250, 128, 114], wplaceOrder: 9 },
-  { internalId: 35, name: "Dark Orange", rgb: [228, 92, 26], wplaceOrder: 10 },
-  { internalId: 36, name: "Light Tan", rgb: [214, 181, 148], wplaceOrder: 53 },
-  { internalId: 37, name: "Dark Goldenrod", rgb: [156, 132, 49], wplaceOrder: 15 },
-  { internalId: 38, name: "Goldenrod", rgb: [197, 173, 49], wplaceOrder: 16 },
-  { internalId: 39, name: "Light Goldenrod", rgb: [232, 212, 95], wplaceOrder: 17 },
-  { internalId: 40, name: "Dark Olive", rgb: [74, 107, 58], wplaceOrder: 18 },
-  { internalId: 41, name: "Olive", rgb: [90, 148, 74], wplaceOrder: 19 },
-  { internalId: 42, name: "Light Olive", rgb: [132, 197, 115], wplaceOrder: 20 },
-  { internalId: 43, name: "Dark Cyan", rgb: [15, 121, 159], wplaceOrder: 27 },
-  { internalId: 44, name: "Light Cyan", rgb: [187, 250, 242], wplaceOrder: 29 },
-  { internalId: 45, name: "Light Blue", rgb: [125, 199, 255], wplaceOrder: 32 },
-  { internalId: 46, name: "Dark Indigo", rgb: [77, 49, 184], wplaceOrder: 33 },
-  { internalId: 47, name: "Dark Slate Blue", rgb: [74, 66, 132], wplaceOrder: 36 },
-  { internalId: 48, name: "Slate Blue", rgb: [122, 113, 196], wplaceOrder: 37 },
-  { internalId: 49, name: "Light Slate Blue", rgb: [181, 174, 241], wplaceOrder: 38 },
-  { internalId: 50, name: "Light Brown", rgb: [219, 164, 99], wplaceOrder: 50 },
-  { internalId: 51, name: "Dark Beige", rgb: [209, 128, 81], wplaceOrder: 54 },
-  { internalId: 52, name: "Light Beige", rgb: [255, 197, 165], wplaceOrder: 56 },
-  { internalId: 53, name: "Dark Peach", rgb: [155, 82, 73], wplaceOrder: 45 },
-  { internalId: 54, name: "Peach", rgb: [209, 128, 120], wplaceOrder: 46 },
-  { internalId: 55, name: "Light Peach", rgb: [250, 182, 164], wplaceOrder: 47 },
-  { internalId: 56, name: "Dark Tan", rgb: [123, 99, 82], wplaceOrder: 51 },
-  { internalId: 57, name: "Tan", rgb: [156, 132, 107], wplaceOrder: 52 },
-  { internalId: 58, name: "Dark Slate", rgb: [51, 57, 65], wplaceOrder: 60 },
-  { internalId: 59, name: "Slate", rgb: [109, 117, 141], wplaceOrder: 61 },
-  { internalId: 60, name: "Light Slate", rgb: [179, 185, 209], wplaceOrder: 62 },
-  { internalId: 61, name: "Dark Stone", rgb: [109, 100, 63], wplaceOrder: 57 },
-  { internalId: 62, name: "Stone", rgb: [148, 140, 107], wplaceOrder: 58 },
-  { internalId: 63, name: "Light Stone", rgb: [205, 197, 158], wplaceOrder: 59 }
-];
-var rgbColorMap = /* @__PURE__ */ new Map();
-for (const color of colorPalette) {
-  rgbColorMap.set(rgbToId(...color.rgb), { ...color, id: rgbToId(...color.rgb) });
-}
-rgbColorMap.set(otherColor.id, otherColor);
-
-// dist/eventListeners.js
-function addListeners() {
-  document.addEventListener("keydown", (e) => {
-    if (e.ctrlKey || e.altKey)
-      return;
-    switch (e.key) {
-      case "v":
-        document.getElementById("ca-enable-selected").click();
-        break;
-      case "a":
-        document.getElementById("ca-enable-all").click();
-        break;
-      case "d":
-        document.getElementById("ca-disable-all").click();
-        break;
-      case "n":
-        if (!Manager.loggedIn)
-          break;
-        const colorList = document.getElementById("ca-color-list");
-        for (let i = 0; i < colorList.childElementCount; i++) {
-          if (colorList.children[i].firstElementChild.checked) {
-            const nextRow = colorList.children[i + 1];
-            if (nextRow === void 0)
-              break;
-            nextRow.children[1].click();
-            nextRow.children[2].click();
-            nextRow.scrollIntoView({ "behavior": "smooth", "block": "center" });
-            break;
-          }
-        }
-        break;
-      case "N":
-        if (!Manager.loggedIn)
-          break;
-        const colorListR = document.getElementById("ca-color-list");
-        for (let i = 0; i < colorListR.childElementCount; i++) {
-          if (colorListR.children[i].firstElementChild.checked) {
-            const nextRow = colorListR.children[i - 1];
-            if (nextRow === void 0)
-              break;
-            nextRow.children[1].click();
-            nextRow.children[2].click();
-            nextRow.scrollIntoView({ "behavior": "smooth", "block": "center" });
-            break;
-          }
-        }
-        break;
-      case "i":
-        if (Manager.loggedIn)
-          document.getElementsByClassName("btn btn-primary btn-lg sm:btn-xl relative z-30")[0]?.click();
-        break;
-      case "Escape":
-        clickCloseButton();
-        break;
-    }
-  });
-  document.getElementById("ca-image-collapse").addEventListener("click", () => {
-    const overlay = document.getElementById("ca-overlay");
-    if (overlay.classList.contains("collapsed")) {
-      overlay.classList.remove("collapsed");
-      setTimeout(() => {
-        overlay.style.overflow = "";
-      }, 500);
-    } else {
-      overlay.style.overflow = "hidden";
-      overlay.classList.add("collapsed");
-    }
-  });
-  document.getElementById("ca-fly-hq").addEventListener("click", () => {
-    Manager.flyToFit(new PixelCoords(1054, 713, 152, 468), 2457, 1566, 1);
-  });
-  function pasted(e) {
-    const values = e.clipboardData?.getData("text").split(" ").filter((n) => n).map(Number).filter((n) => !isNaN(n));
-    if (values === void 0 || values.length !== 4)
-      return;
-    e.preventDefault();
-    Manager.setInputCoords(new PixelCoords(values[0], values[1], values[2], values[3]));
-  }
-  document.getElementById("ca-input-tx").addEventListener("paste", pasted);
-  document.getElementById("ca-input-ty").addEventListener("paste", pasted);
-  document.getElementById("ca-input-px").addEventListener("paste", pasted);
-  document.getElementById("ca-input-py").addEventListener("paste", pasted);
-  document.getElementById("ca-coords-button").addEventListener("click", () => {
-    if (Manager.lastClickedCoords === null) {
-      displayStatus("Click on the canvas first to pick coordinates");
-      return;
-    }
-    Manager.setInputCoords(Manager.lastClickedCoords);
-  });
-  document.getElementById("ca-copy-coords-button").addEventListener("click", async () => {
-    const coords = Manager.getInputCoords();
-    if (coords === null)
-      return;
-    const s = `${coords.tx} ${coords.ty} ${coords.px} ${coords.py}`;
-    await navigator.clipboard.writeText(s);
-    const svg = document.getElementById("ca-copy-coords-button")?.firstElementChild;
-    if (svg !== void 0) {
-      svg.style.fill = "#2b8f1f";
-      setTimeout(() => svg.style.fill = "", 500);
-    }
-  });
-  document.getElementById("ca-setting-ui-size").addEventListener("change", (e) => {
-    Manager.settings.uiSize = e.target.value;
-    Manager.storeGlobal();
-    const overlay = document.getElementById("ca-overlay");
-    overlay.style.transition = "none";
-    overlay.style.setProperty("--ca-ui-size", Manager.settings.uiSize + "%");
-    setTimeout(() => document.getElementById("ca-overlay").style.transition = "", 100);
-  });
-  document.getElementById("ca-setting-hide-completed").addEventListener("change", (e) => {
-    Manager.settings.hideCompleted = e.target.checked;
-    Manager.storeGlobal();
-    Manager.rebuildColorList();
-  });
-  document.getElementById("ca-sort-select").addEventListener("change", (e) => {
-    Manager.settings.colorSorting = e.target.value;
-    Manager.storeGlobal();
-    Manager.rebuildColorList();
-  });
-  document.getElementById("ca-sort-reverse").addEventListener("click", () => {
-    Manager.settings.colorSortingReversed = !Manager.settings.colorSortingReversed;
-    Manager.storeGlobal();
-    Manager.rebuildColorList();
-  });
-  document.getElementById("ca-enable-all").addEventListener("click", () => {
-    Manager.enabledColors.keys().forEach((id) => {
-      Manager.enabledColors.set(id, true);
-      const checkbox = document.getElementById("ca-color-id-" + id)?.firstElementChild;
-      if (checkbox !== void 0)
-        checkbox.checked = true;
-    });
-    Manager.refreshTiles();
-    Manager.storeGlobal();
-  });
-  document.getElementById("ca-disable-all").addEventListener("click", () => {
-    Manager.enabledColors.keys().forEach((id) => {
-      Manager.enabledColors.set(id, false);
-      const checkbox = document.getElementById("ca-color-id-" + id)?.firstElementChild;
-      if (checkbox !== void 0)
-        checkbox.checked = false;
-    });
-    Manager.refreshTiles();
-    Manager.storeGlobal();
-  });
-  document.getElementById("ca-enable-selected").addEventListener("click", () => {
-    const background = document.getElementsByClassName("mb-4 mt-3")[0]?.getElementsByClassName("border-primary")[0]?.style.background;
-    if (background === void 0) {
-      displayStatus(`No color selected`);
-      return;
-    }
-    let rgb = background.slice(4, -1).split(", ").map(Number);
-    if (rgb.length !== 3)
-      rgb = [222, 250, 206];
-    const color = getColor(rgb[0], rgb[1], rgb[2]);
-    let inPalette = false;
-    Manager.enabledColors.keys().forEach((id) => {
-      const checkbox = document.getElementById("ca-color-id-" + id)?.firstElementChild;
-      if (id === color.id) {
-        inPalette = true;
-        Manager.enabledColors.set(id, true);
-        if (checkbox !== void 0) {
-          checkbox.checked = true;
-          checkbox.scrollIntoView({ "behavior": "smooth", "block": "center" });
-        } else {
-          displayStatus("Selected color is already completed");
-        }
-      } else {
-        Manager.enabledColors.set(id, false);
-        if (checkbox !== void 0)
-          checkbox.checked = false;
-      }
-    });
-    if (!inPalette)
-      displayStatus(`${color.name} is not in palette`);
-    Manager.refreshTiles();
-    Manager.storeGlobal();
-  });
-  document.getElementById("ca-select-button").addEventListener("click", () => {
-    document.getElementById("ca-file-input").click();
-  });
-  document.getElementById("ca-select-button").addEventListener("contextmenu", (e) => {
-    document.getElementById("ca-select-button").textContent = "Select file";
-    document.getElementById("ca-file-input").value = "";
-    e.preventDefault();
-  });
-  document.getElementById("ca-file-input").addEventListener("change", (e) => {
-    if (e.target.files.length > 0)
-      document.getElementById("ca-select-button").innerText = e.target.files[0].name;
-  });
-  document.getElementById("ca-create-button").addEventListener("click", async (e) => {
-    const fileInput = document.getElementById("ca-file-input");
-    if (fileInput.files.length < 1) {
-      displayStatus("Select a file to upload");
-      return;
-    }
-    const coords = Manager.getInputCoords();
-    if (coords === null) {
-      displayStatus("Invalid coordinates");
-      return;
-    }
-    e.target.disabled = true;
-    await Manager.createTemplate(coords, fileInput.files[0]);
-    e.target.disabled = false;
-  });
-  document.getElementById("ca-converter-button").addEventListener("click", () => {
-    window.open("https://pepoafonso.github.io/color_converter_wplace/", "_blank", "noopener noreferrer");
-  });
-}
-function addCanvasListeners(canvas) {
-  canvas.addEventListener("auxclick", (e) => {
-    if (e.button === 1) {
-      if (!Manager.loggedIn)
-        return;
-      document.getElementsByClassName("btn btn-primary btn-lg sm:btn-xl relative z-30")[0]?.click();
-      setTimeout(() => {
-        const keypressEvent = new KeyboardEvent("keypress", {
-          bubbles: true,
-          cancelable: true,
-          key: "i",
-          code: "KeyI"
-        });
-        document.activeElement.dispatchEvent(keypressEvent);
-        const clickEvent = new MouseEvent("click", {
-          bubbles: true,
-          cancelable: true,
-          clientX: e.clientX,
-          clientY: e.clientY,
-          button: 0
-        });
-        canvas.dispatchEvent(clickEvent);
-      });
-    }
-  });
-}
 
 // dist/PRNG.js
 function splitmix32(a) {
@@ -628,6 +257,142 @@ var Template = class _Template {
     };
   }
 };
+
+// dist/utils.js
+function parsePixelCoordsFromURL(url) {
+  const urlSplitted = url.split("/");
+  const last = urlSplitted[urlSplitted.length - 1];
+  return new PixelCoords(parseInt(urlSplitted[urlSplitted.length - 2]), parseInt(urlSplitted[urlSplitted.length - 1]), parseInt(last.substring(last.indexOf("?") + 3)), parseInt(last.substring(last.indexOf("&") + 3)));
+}
+function parseTileCoordsFromURL(url) {
+  const urlSplitted = url.split("/");
+  return new TileCoords(parseInt(urlSplitted[urlSplitted.length - 2] ?? ""), parseInt(urlSplitted[urlSplitted.length - 1] ?? ""));
+}
+function getZoomLevelForPixelSize(x) {
+  return Math.log2(x / 100) + 18.6;
+}
+function functionBody(f) {
+  return f.substring(f.indexOf("{") + 1, f.lastIndexOf("}"));
+}
+function twoDigits(n, radix = 10) {
+  return n < radix ? "0" + n.toString(radix) : n.toString(radix);
+}
+function rgbToId(r, g, b) {
+  return r * 1e3 * 1e3 + g * 1e3 + b;
+}
+function rgbToCss(rgb) {
+  return twoDigits(rgb[0], 16) + twoDigits(rgb[1], 16) + twoDigits(rgb[2], 16);
+}
+var otherColor = { internalId: -1, id: rgbToId(136, 136, 136), name: "Other", rgb: [136, 136, 136], wplaceOrder: 64 };
+function getColor(r, g, b) {
+  const id = rgbToId(r, g, b);
+  const color = rgbColorMap.get(id);
+  if (color !== void 0)
+    return color;
+  return otherColor;
+}
+function computeLuminance(id) {
+  const color = rgbColorMap.get(id);
+  if (color === otherColor)
+    return 2;
+  if (color.wplaceOrder === 63)
+    return 3;
+  return 0.299 * (color.rgb[0] / 255) + 0.587 * (color.rgb[1] / 255) + 0.114 * (color.rgb[2] / 255);
+}
+function computeHue(id) {
+  const color = rgbColorMap.get(id);
+  if (color === otherColor)
+    return 361;
+  if (color.wplaceOrder === 63)
+    return 362;
+  const [red, green, blue] = color.rgb;
+  const min = Math.min(Math.min(red, green), blue);
+  const max = Math.max(Math.max(red, green), blue);
+  if (min === max)
+    return 0;
+  let hue = 0;
+  if (max === red)
+    hue = (green - blue) / (max - min);
+  else if (max === green)
+    hue = 2 + (blue - red) / (max - min);
+  else
+    hue = 4 + (red - green) / (max - min);
+  hue *= 60;
+  if (hue < 0)
+    hue += 360;
+  return hue;
+}
+var colorPalette = [
+  { internalId: 0, name: "Transparent", rgb: [222, 250, 206], wplaceOrder: 63 },
+  { internalId: 1, name: "Black", rgb: [0, 0, 0], wplaceOrder: 0 },
+  { internalId: 2, name: "Dark Gray", rgb: [60, 60, 60], wplaceOrder: 1 },
+  { internalId: 3, name: "Gray", rgb: [120, 120, 120], wplaceOrder: 2 },
+  { internalId: 4, name: "Light Gray", rgb: [210, 210, 210], wplaceOrder: 4 },
+  { internalId: 5, name: "White", rgb: [255, 255, 255], wplaceOrder: 5 },
+  { internalId: 6, name: "Deep Red", rgb: [96, 0, 24], wplaceOrder: 6 },
+  { internalId: 7, name: "Red", rgb: [237, 28, 36], wplaceOrder: 8 },
+  { internalId: 8, name: "Orange", rgb: [255, 127, 39], wplaceOrder: 11 },
+  { internalId: 9, name: "Gold", rgb: [246, 170, 9], wplaceOrder: 12 },
+  { internalId: 10, name: "Yellow", rgb: [249, 221, 59], wplaceOrder: 13 },
+  { internalId: 11, name: "Light Yellow", rgb: [255, 250, 188], wplaceOrder: 14 },
+  { internalId: 12, name: "Dark Green", rgb: [14, 185, 104], wplaceOrder: 21 },
+  { internalId: 13, name: "Green", rgb: [19, 230, 123], wplaceOrder: 22 },
+  { internalId: 14, name: "Light Green", rgb: [135, 255, 94], wplaceOrder: 23 },
+  { internalId: 15, name: "Dark Teal", rgb: [12, 129, 110], wplaceOrder: 24 },
+  { internalId: 16, name: "Teal", rgb: [16, 174, 166], wplaceOrder: 25 },
+  { internalId: 17, name: "Light Teal", rgb: [19, 225, 190], wplaceOrder: 26 },
+  { internalId: 18, name: "Dark Blue", rgb: [40, 80, 158], wplaceOrder: 30 },
+  { internalId: 19, name: "Blue", rgb: [64, 147, 228], wplaceOrder: 31 },
+  { internalId: 20, name: "Cyan", rgb: [96, 247, 242], wplaceOrder: 28 },
+  { internalId: 21, name: "Indigo", rgb: [107, 80, 246], wplaceOrder: 34 },
+  { internalId: 22, name: "Light Indigo", rgb: [153, 177, 251], wplaceOrder: 35 },
+  { internalId: 23, name: "Dark Purple", rgb: [120, 12, 153], wplaceOrder: 39 },
+  { internalId: 24, name: "Purple", rgb: [170, 56, 185], wplaceOrder: 40 },
+  { internalId: 25, name: "Light Purple", rgb: [224, 159, 249], wplaceOrder: 41 },
+  { internalId: 26, name: "Dark Pink", rgb: [203, 0, 122], wplaceOrder: 42 },
+  { internalId: 27, name: "Pink", rgb: [236, 31, 128], wplaceOrder: 43 },
+  { internalId: 28, name: "Light Pink", rgb: [243, 141, 169], wplaceOrder: 44 },
+  { internalId: 29, name: "Dark Brown", rgb: [104, 70, 52], wplaceOrder: 48 },
+  { internalId: 30, name: "Brown", rgb: [149, 104, 42], wplaceOrder: 49 },
+  { internalId: 31, name: "Beige", rgb: [248, 178, 119], wplaceOrder: 55 },
+  { internalId: 32, name: "Medium Gray", rgb: [170, 170, 170], wplaceOrder: 3 },
+  { internalId: 33, name: "Dark Red", rgb: [165, 14, 30], wplaceOrder: 7 },
+  { internalId: 34, name: "Light Red", rgb: [250, 128, 114], wplaceOrder: 9 },
+  { internalId: 35, name: "Dark Orange", rgb: [228, 92, 26], wplaceOrder: 10 },
+  { internalId: 36, name: "Light Tan", rgb: [214, 181, 148], wplaceOrder: 53 },
+  { internalId: 37, name: "Dark Goldenrod", rgb: [156, 132, 49], wplaceOrder: 15 },
+  { internalId: 38, name: "Goldenrod", rgb: [197, 173, 49], wplaceOrder: 16 },
+  { internalId: 39, name: "Light Goldenrod", rgb: [232, 212, 95], wplaceOrder: 17 },
+  { internalId: 40, name: "Dark Olive", rgb: [74, 107, 58], wplaceOrder: 18 },
+  { internalId: 41, name: "Olive", rgb: [90, 148, 74], wplaceOrder: 19 },
+  { internalId: 42, name: "Light Olive", rgb: [132, 197, 115], wplaceOrder: 20 },
+  { internalId: 43, name: "Dark Cyan", rgb: [15, 121, 159], wplaceOrder: 27 },
+  { internalId: 44, name: "Light Cyan", rgb: [187, 250, 242], wplaceOrder: 29 },
+  { internalId: 45, name: "Light Blue", rgb: [125, 199, 255], wplaceOrder: 32 },
+  { internalId: 46, name: "Dark Indigo", rgb: [77, 49, 184], wplaceOrder: 33 },
+  { internalId: 47, name: "Dark Slate Blue", rgb: [74, 66, 132], wplaceOrder: 36 },
+  { internalId: 48, name: "Slate Blue", rgb: [122, 113, 196], wplaceOrder: 37 },
+  { internalId: 49, name: "Light Slate Blue", rgb: [181, 174, 241], wplaceOrder: 38 },
+  { internalId: 50, name: "Light Brown", rgb: [219, 164, 99], wplaceOrder: 50 },
+  { internalId: 51, name: "Dark Beige", rgb: [209, 128, 81], wplaceOrder: 54 },
+  { internalId: 52, name: "Light Beige", rgb: [255, 197, 165], wplaceOrder: 56 },
+  { internalId: 53, name: "Dark Peach", rgb: [155, 82, 73], wplaceOrder: 45 },
+  { internalId: 54, name: "Peach", rgb: [209, 128, 120], wplaceOrder: 46 },
+  { internalId: 55, name: "Light Peach", rgb: [250, 182, 164], wplaceOrder: 47 },
+  { internalId: 56, name: "Dark Tan", rgb: [123, 99, 82], wplaceOrder: 51 },
+  { internalId: 57, name: "Tan", rgb: [156, 132, 107], wplaceOrder: 52 },
+  { internalId: 58, name: "Dark Slate", rgb: [51, 57, 65], wplaceOrder: 60 },
+  { internalId: 59, name: "Slate", rgb: [109, 117, 141], wplaceOrder: 61 },
+  { internalId: 60, name: "Light Slate", rgb: [179, 185, 209], wplaceOrder: 62 },
+  { internalId: 61, name: "Dark Stone", rgb: [109, 100, 63], wplaceOrder: 57 },
+  { internalId: 62, name: "Stone", rgb: [148, 140, 107], wplaceOrder: 58 },
+  { internalId: 63, name: "Light Stone", rgb: [205, 197, 158], wplaceOrder: 59 }
+];
+var rgbColorMap = /* @__PURE__ */ new Map();
+for (const color of colorPalette) {
+  rgbColorMap.set(rgbToId(...color.rgb), { ...color, id: rgbToId(...color.rgb) });
+}
+rgbColorMap.set(otherColor.id, otherColor);
 
 // dist/worker.js
 function workerFunction() {
@@ -1232,7 +997,6 @@ var ManagerClass = class _ManagerClass {
     } while (canvas === null && i < 20);
     if (canvas === null)
       return;
-    addCanvasListeners(canvas);
     let popup = null;
     while (popup === null) {
       await new Promise((resolve) => setTimeout(resolve, 1500));
@@ -1247,7 +1011,7 @@ var ManagerClass = class _ManagerClass {
       let i2 = 0;
       do {
         await new Promise((resolve) => setTimeout(resolve, 50));
-        popup = document.getElementsByClassName("rounded-t-box bg-base-100 border-base-300 sm:rounded-b-box w-full border-t pt-2 sm:mb-3 sm:shadow-xl")[0]?.querySelector('[d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"]')?.parentElement?.parentElement;
+        popup = document.getElementsByClassName("rounded-t-box bg-base-100 border-base-300 sm:rounded-b-box w-full border-t bg-cover bg-center pt-2 sm:mb-3 sm:shadow-xl")[0]?.querySelector('[d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"]')?.parentElement?.parentElement;
         i2++;
       } while (popup == null && i2 < 10);
     }
@@ -1457,15 +1221,15 @@ function injectOverlay() {
 </div>`.replace(/>\s*</g, "><");
   GM_addStyle(`
 .ca-display-coords {
-    font-size: var(--text-xs);
-    padding-inline: calc(var(--spacing)*3);
+    font-size: 11px;
+    padding-inline: calc(var(--spacing)*1.5);
 }
 
 .ca-mark-as-correct {
     background-color: #cb4334;
     border-radius: 1em;
     margin-left: 1ch;
-    padding: 0 0.75ch;
+    padding: 0 0.5ch;
 }
 .ca-mark-as-correct:hover, .ca-mark-as-correct:focus-visible {
     background-color: #d16458;
@@ -1476,6 +1240,9 @@ function injectOverlay() {
 .ca-mark-as-correct:disabled {
     background-color: #d68d85;
     cursor: not-allowed;
+}
+.ca-mark-as-correct::before {
+    font-size: 12px;
 }
 
 #ca-overlay {
@@ -2087,7 +1854,7 @@ function displayTileCoords(coords) {
   const displayCoords = document.getElementsByClassName("ca-display-coords")[0];
   if (displayCoords !== void 0)
     displayCoords.remove();
-  const buttonsDiv = document.getElementsByClassName("hide-scrollbar flex max-w-full gap-1.5 overflow-x-auto px-3 pt-1 pb-2")[0];
+  const buttonsDiv = document.getElementsByClassName("mt-auto flex w-full justify-between")[0];
   if (buttonsDiv === void 0)
     return;
   const template = document.getElementById("ca-coords-template").content.cloneNode(true);
@@ -2109,6 +1876,215 @@ function displayTileCoords(coords) {
     });
   }
   buttonsDiv.parentElement?.insertBefore(template, buttonsDiv);
+}
+
+// dist/eventListeners.js
+function addListeners() {
+  document.addEventListener("keydown", (e) => {
+    if (e.ctrlKey || e.altKey)
+      return;
+    switch (e.key) {
+      case "v":
+        document.getElementById("ca-enable-selected").click();
+        break;
+      case "a":
+        document.getElementById("ca-enable-all").click();
+        break;
+      case "d":
+        document.getElementById("ca-disable-all").click();
+        break;
+      case "n":
+        if (!Manager.loggedIn)
+          break;
+        const colorList = document.getElementById("ca-color-list");
+        for (let i = 0; i < colorList.childElementCount; i++) {
+          if (colorList.children[i].firstElementChild.checked) {
+            const nextRow = colorList.children[i + 1];
+            if (nextRow === void 0)
+              break;
+            nextRow.children[1].click();
+            nextRow.children[2].click();
+            nextRow.scrollIntoView({ "behavior": "smooth", "block": "center" });
+            break;
+          }
+        }
+        break;
+      case "N":
+        if (!Manager.loggedIn)
+          break;
+        const colorListR = document.getElementById("ca-color-list");
+        for (let i = 0; i < colorListR.childElementCount; i++) {
+          if (colorListR.children[i].firstElementChild.checked) {
+            const nextRow = colorListR.children[i - 1];
+            if (nextRow === void 0)
+              break;
+            nextRow.children[1].click();
+            nextRow.children[2].click();
+            nextRow.scrollIntoView({ "behavior": "smooth", "block": "center" });
+            break;
+          }
+        }
+        break;
+      case "i":
+        if (Manager.loggedIn)
+          document.getElementsByClassName("btn btn-primary btn-lg sm:btn-xl relative z-30")[0]?.click();
+        break;
+      case "Escape":
+        clickCloseButton();
+        break;
+    }
+  });
+  document.getElementById("ca-image-collapse").addEventListener("click", () => {
+    const overlay = document.getElementById("ca-overlay");
+    if (overlay.classList.contains("collapsed")) {
+      overlay.classList.remove("collapsed");
+      setTimeout(() => {
+        overlay.style.overflow = "";
+      }, 500);
+    } else {
+      overlay.style.overflow = "hidden";
+      overlay.classList.add("collapsed");
+    }
+  });
+  document.getElementById("ca-fly-hq").addEventListener("click", () => {
+    Manager.flyToFit(new PixelCoords(1054, 713, 152, 468), 2457, 1566, 1);
+  });
+  function pasted(e) {
+    const values = e.clipboardData?.getData("text").split(" ").filter((n) => n).map(Number).filter((n) => !isNaN(n));
+    if (values === void 0 || values.length !== 4)
+      return;
+    e.preventDefault();
+    Manager.setInputCoords(new PixelCoords(values[0], values[1], values[2], values[3]));
+  }
+  document.getElementById("ca-input-tx").addEventListener("paste", pasted);
+  document.getElementById("ca-input-ty").addEventListener("paste", pasted);
+  document.getElementById("ca-input-px").addEventListener("paste", pasted);
+  document.getElementById("ca-input-py").addEventListener("paste", pasted);
+  document.getElementById("ca-coords-button").addEventListener("click", () => {
+    if (Manager.lastClickedCoords === null) {
+      displayStatus("Click on the canvas first to pick coordinates");
+      return;
+    }
+    Manager.setInputCoords(Manager.lastClickedCoords);
+  });
+  document.getElementById("ca-copy-coords-button").addEventListener("click", async () => {
+    const coords = Manager.getInputCoords();
+    if (coords === null)
+      return;
+    const s = `${coords.tx} ${coords.ty} ${coords.px} ${coords.py}`;
+    await navigator.clipboard.writeText(s);
+    const svg = document.getElementById("ca-copy-coords-button")?.firstElementChild;
+    if (svg !== void 0) {
+      svg.style.fill = "#2b8f1f";
+      setTimeout(() => svg.style.fill = "", 500);
+    }
+  });
+  document.getElementById("ca-setting-ui-size").addEventListener("change", (e) => {
+    Manager.settings.uiSize = e.target.value;
+    Manager.storeGlobal();
+    const overlay = document.getElementById("ca-overlay");
+    overlay.style.transition = "none";
+    overlay.style.setProperty("--ca-ui-size", Manager.settings.uiSize + "%");
+    setTimeout(() => document.getElementById("ca-overlay").style.transition = "", 100);
+  });
+  document.getElementById("ca-setting-hide-completed").addEventListener("change", (e) => {
+    Manager.settings.hideCompleted = e.target.checked;
+    Manager.storeGlobal();
+    Manager.rebuildColorList();
+  });
+  document.getElementById("ca-sort-select").addEventListener("change", (e) => {
+    Manager.settings.colorSorting = e.target.value;
+    Manager.storeGlobal();
+    Manager.rebuildColorList();
+  });
+  document.getElementById("ca-sort-reverse").addEventListener("click", () => {
+    Manager.settings.colorSortingReversed = !Manager.settings.colorSortingReversed;
+    Manager.storeGlobal();
+    Manager.rebuildColorList();
+  });
+  document.getElementById("ca-enable-all").addEventListener("click", () => {
+    Manager.enabledColors.keys().forEach((id) => {
+      Manager.enabledColors.set(id, true);
+      const checkbox = document.getElementById("ca-color-id-" + id)?.firstElementChild;
+      if (checkbox !== void 0)
+        checkbox.checked = true;
+    });
+    Manager.refreshTiles();
+    Manager.storeGlobal();
+  });
+  document.getElementById("ca-disable-all").addEventListener("click", () => {
+    Manager.enabledColors.keys().forEach((id) => {
+      Manager.enabledColors.set(id, false);
+      const checkbox = document.getElementById("ca-color-id-" + id)?.firstElementChild;
+      if (checkbox !== void 0)
+        checkbox.checked = false;
+    });
+    Manager.refreshTiles();
+    Manager.storeGlobal();
+  });
+  document.getElementById("ca-enable-selected").addEventListener("click", () => {
+    const background = document.getElementsByClassName("mb-4 mt-3")[0]?.getElementsByClassName("border-primary")[0]?.style.background;
+    if (background === void 0) {
+      displayStatus(`No color selected`);
+      return;
+    }
+    let rgb = background.slice(4, -1).split(", ").map(Number);
+    if (rgb.length !== 3)
+      rgb = [222, 250, 206];
+    const color = getColor(rgb[0], rgb[1], rgb[2]);
+    let inPalette = false;
+    Manager.enabledColors.keys().forEach((id) => {
+      const checkbox = document.getElementById("ca-color-id-" + id)?.firstElementChild;
+      if (id === color.id) {
+        inPalette = true;
+        Manager.enabledColors.set(id, true);
+        if (checkbox !== void 0) {
+          checkbox.checked = true;
+          checkbox.scrollIntoView({ "behavior": "smooth", "block": "center" });
+        } else {
+          displayStatus("Selected color is already completed");
+        }
+      } else {
+        Manager.enabledColors.set(id, false);
+        if (checkbox !== void 0)
+          checkbox.checked = false;
+      }
+    });
+    if (!inPalette)
+      displayStatus(`${color.name} is not in palette`);
+    Manager.refreshTiles();
+    Manager.storeGlobal();
+  });
+  document.getElementById("ca-select-button").addEventListener("click", () => {
+    document.getElementById("ca-file-input").click();
+  });
+  document.getElementById("ca-select-button").addEventListener("contextmenu", (e) => {
+    document.getElementById("ca-select-button").textContent = "Select file";
+    document.getElementById("ca-file-input").value = "";
+    e.preventDefault();
+  });
+  document.getElementById("ca-file-input").addEventListener("change", (e) => {
+    if (e.target.files.length > 0)
+      document.getElementById("ca-select-button").innerText = e.target.files[0].name;
+  });
+  document.getElementById("ca-create-button").addEventListener("click", async (e) => {
+    const fileInput = document.getElementById("ca-file-input");
+    if (fileInput.files.length < 1) {
+      displayStatus("Select a file to upload");
+      return;
+    }
+    const coords = Manager.getInputCoords();
+    if (coords === null) {
+      displayStatus("Invalid coordinates");
+      return;
+    }
+    e.target.disabled = true;
+    await Manager.createTemplate(coords, fileInput.files[0]);
+    e.target.disabled = false;
+  });
+  document.getElementById("ca-converter-button").addEventListener("click", () => {
+    window.open("https://pepoafonso.github.io/color_converter_wplace/", "_blank", "noopener noreferrer");
+  });
 }
 
 // dist/app.js
