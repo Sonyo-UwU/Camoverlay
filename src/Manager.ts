@@ -1,9 +1,9 @@
 import { PixelCoords, TileCoords } from './Coords';
 import { addColorRow, addTemplateRow, displayStatus, removeTemplateRow } from './display';
-import { MessageCreateTemplate, MessageDrawOnTile, MessageInit, WorkerResponse } from './Messages';
+import type { MessageCreateTemplate, MessageDrawOnTile, MessageInit, WorkerResponse } from './Messages';
 import { splitmix32 } from './PRNG';
 import Template from './Template';
-import { JsonifiedValue, PixelIndex, PromiseResolve, TeleportPixels, TileIndex, TileInfo, TileProgress, UserSettings, WplaceColorId, WplaceMap } from './types';
+import type { JsonifiedValue, PixelIndex, PromiseResolve, TeleportPixels, TileIndex, TileInfo, TileProgress, UserSettings, WplaceColorId, WplaceMap } from './types';
 import { ColorSortingOptions, computeHue, computeLuminance, functionBody, getZoomLevelForPixelSize, rgbColorMap } from './utils';
 import { workerFunction } from './worker';
 

@@ -1,4 +1,4 @@
-import { PixelIndex, TileIndex } from './types';
+import type { PixelIndex, TileIndex } from './types';
 
 export type TileCoordsObject = {
     readonly x: number;

@@ -1,5 +1,5 @@
 import { PixelCoords, TileCoords } from './Coords';
-import { WplaceColor, WplaceColorId } from './types';
+import type { WplaceColor, WplaceColorId } from './types';
 
 
 export const enum ColorSortingOptions {
@@ -11,6 +11,7 @@ export const enum ColorSortingOptions {
     Luminance = 'Luminance',
     Hue = 'Hue'
 };
+
 export function parsePixelCoordsFromURL(url: string): PixelCoords {
     const urlSplitted = url.split('/');
     const last = urlSplitted[urlSplitted.length - 1]!;

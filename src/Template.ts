@@ -1,8 +1,8 @@
 import { PixelCoords, TileCoords } from './Coords';
 import { updateTemplatePixelCount } from './display';
 import { Manager } from './Manager';
-import { MessageCreateTemplate, MessageDrawOnTile, MessageTemplateFromStorage } from './Messages';
-import { JsonifiedValue, PixelIndex, TileIndex, TileProgress, TileProgressLocations, WplaceColorId } from './types';
+import type { MessageCreateTemplate, MessageDrawOnTile, MessageTemplateFromStorage } from './Messages';
+import type { JsonifiedValue, PixelIndex, TileIndex, TileProgress, TileProgressLocations, WplaceColorId } from './types';
 
 type StoredTemplate = JsonifiedValue<Omit<Template, 'toJSON' | 'imageData' | 'tiles' | 'totalProgress' | 'modifyPixels'> & {
     tiles: [TileIndex, [WplaceColorId, number][]][];
