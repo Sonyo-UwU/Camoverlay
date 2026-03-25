@@ -377,12 +377,13 @@ div#ca-overlay {
 }
 .ca-template-name {
     flex: unset;
+    font-weight: bold;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
-.ca-template-name {
-    font-weight: bold;
+.ca-template-name:not([contenteditable]) {
+    cursor: pointer;
 }
 .ca-template-right {
     align-items: center;
