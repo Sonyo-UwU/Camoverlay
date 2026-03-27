@@ -179,7 +179,6 @@ div#ca-overlay {
     vertical-align: middle;
 }
 .ca-icon-button svg {
-    width: 50%;
     margin: 0 auto;
     fill: #111;
 }
@@ -201,14 +200,6 @@ div#ca-overlay {
 .ca-coords-input::-webkit-inner-spin-button {
     -webkit-appearance: none;
     margin: 0;
-}
-
-#ca-copy-coords-button > svg {
-    fill: white;
-    stroke: #111;
-    transition-property: fill;
-    transition-duration: 250ms;
-    width: 70%;
 }
 
 #ca-settings {
@@ -237,9 +228,6 @@ div#ca-overlay {
     justify-content: space-between;
     margin-top: 0.5em;
 }
-#ca-enable-selected svg {
-    width: 80%;
-}
 
 #ca-sorting {
     display: flex;
@@ -251,12 +239,6 @@ div#ca-overlay {
     flex: 1 0 auto;
     text-align: center;
     margin: 0 1ch;
-}
-
-#ca-sort-reverse > svg {
-    width: 65%;
-    stroke: #111;
-    stroke-width: 0.625em;
 }
 
 #ca-color-list {
@@ -299,9 +281,6 @@ div#ca-overlay {
 .ca-color-row > button {
     height: 1.3em;
     width: 1.3em;
-}
-.ca-color-row > button > svg {
-    width: 80%;
 }
 .ca-color-name {
     flex: unset;
@@ -362,18 +341,8 @@ div#ca-overlay {
 .ca-template-copy {
     margin-left: 0.5ch;
 }
-.ca-template-copy > svg {
-    fill: white;
-    stroke: #111;
-    transition-property: fill;
-    transition-duration: 250ms;
-    width: 70%;
-}
 .ca-teleport-incorrect {
     margin-left: 0.5ch;
-}
-.ca-teleport-incorrect > svg {
-    width: 87%;
 }
 .ca-template-name {
     flex: unset;

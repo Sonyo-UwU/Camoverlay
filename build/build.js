@@ -34,12 +34,21 @@ await esbuild.build({
     }
 }).catch(() => process.exit(1));
 
-// Correct inconsistent end of lines, and inject html and css
+const svgs = new Map();
+for (const file of fs.readdirSync('src/assets')) {
+    if (!file.endsWith('.svg'))
+        continue;
+
+    svgs.set(file.slice(0, -4), fs.readFileSync(`src/assets/${file}`, 'utf8'));
+}
+
+// Correct inconsistent end of lines, and inject html, css and svgs
 fs.writeFileSync(
     'out/Camoverlay.user.js',
     fs.readFileSync('out/Camoverlay.user.js', 'utf8')
-        .replace('%overlay.html%', fs.readFileSync('src/overlay.html', 'utf8'))
-        .replace('%overlay.css%', fs.readFileSync('src/overlay.css', 'utf8'))
+        .replace('%overlay.html%', fs.readFileSync('src/assets/overlay.html', 'utf8'))
+        .replace('%overlay.css%', fs.readFileSync('src/assets/overlay.css', 'utf8'))
+        .replaceAll(/(\r\n\s*)<!--%svg%([a-z]+)-->/g, (_, whitespace, name) => whitespace + svgs.get(name).replaceAll('\r\n', whitespace))
         .replaceAll('\r\n', '\n').replaceAll('\n', '\r\n'),
     'utf8'
 );

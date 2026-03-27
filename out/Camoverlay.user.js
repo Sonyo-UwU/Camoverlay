@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.11.2
+// @version      1.11.3
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -1077,8 +1077,8 @@ function injectOverlay() {
             <input type="checkbox" />
             <div class="ca-color-display"></div>
             <button class="ca-icon-button">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
-                    <path d="M240-120q-45 0-89-22t-71-58q26 0 53-20.5t27-59.5q0-50 35-85t85-35q50 0 85 35t35 85q0 66-47 113t-113 47Zm230-240L360-470l358-358q11-11 27.5-11.5T774-828l54 54q12 12 12 28t-12 28L470-360Z"></path>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" style="width: 80%">
+                    <path d="M240-120q-45 0-89-22t-71-58q26 0 53-20.5t27-59.5q0-50 35-85t85-35 85 35 35 85q0 66-47 113t-113 47m230-240L360-470l358-358q11-11 27.5-11.5T774-828l54 54q12 12 12 28t-12 28z" />
                 </svg>
             </button>
             <span class="ca-color-count"></span>
@@ -1092,14 +1092,14 @@ function injectOverlay() {
                 <div>
                     <button class="ca-icon-button ca-template-fly">✈️</button>
                     <button class="ca-icon-button ca-template-copy">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                            <path d="M11 7h6v6h-6z" />
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" style="fill: #fff; stroke: #111; transition-property: fill; transition-duration: 250ms; width: 70%">
+                            <path d="M11 7h6v6H9z" />
                             <path d="M6.5 3h8.1c2.24 0 3.36 0 4.216.436a4 4 0 0 1 1.748 1.748C21 6.04 21 7.16 21 9.4v7.1M6.2 21h8.1c1.12 0 1.68 0 2.108-.218a2 2 0 0 0 .874-.874c.218-.428.218-.988.218-2.108V9.7c0-1.12 0-1.68-.218-2.108a2 2 0 0 0-.874-.874C15.98 6.5 15.42 6.5 14.3 6.5H6.2c-1.12 0-1.68 0-2.108.218a2 2 0 0 0-.874.874C3 8.02 3 8.58 3 9.7v8.1c0 1.12 0 1.68.218 2.108a2 2 0 0 0 .874.874C4.52 21 5.08 21 6.2 21" stroke-width="2" stroke-linecap="round" />
                         </svg>
                     </button>
                     <button class="ca-icon-button ca-teleport-incorrect">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor">
-                            <path d="M300-240q25 0 42.5-17.5T360-300t-17.5-42.5T300-360t-42.5 17.5T240-300t17.5 42.5T300-240m0-360q25 0 42.5-17.5T360-660t-17.5-42.5T300-720t-42.5 17.5T240-660t17.5 42.5T300-600m180 180q25 0 42.5-17.5T540-480t-17.5-42.5T480-540t-42.5 17.5T420-480t17.5 42.5T480-420m180 180q25 0 42.5-17.5T720-300t-17.5-42.5T660-360t-42.5 17.5T600-300t17.5 42.5T660-240m0-360q25 0 42.5-17.5T720-660t-17.5-42.5T660-720t-42.5 17.5T600-660t17.5 42.5T660-600M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120zm0-80h560v-560H200zm0-560v560z"></path>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" style="width: 87%">
+                            <path d="M300-240q25 0 42.5-17.5T360-300t-17.5-42.5T300-360t-42.5 17.5T240-300t17.5 42.5T300-240m0-360q25 0 42.5-17.5T360-660t-17.5-42.5T300-720t-42.5 17.5T240-660t17.5 42.5T300-600m180 180q25 0 42.5-17.5T540-480t-17.5-42.5T480-540t-42.5 17.5T420-480t17.5 42.5T480-420m180 180q25 0 42.5-17.5T720-300t-17.5-42.5T660-360t-42.5 17.5T600-300t17.5 42.5T660-240m0-360q25 0 42.5-17.5T720-660t-17.5-42.5T660-720t-42.5 17.5T600-660t17.5 42.5T660-600M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120zm0-80h560v-560H200zm0-560v560z" />
                         </svg>
                     </button>
                 </div>
@@ -1119,7 +1119,12 @@ function injectOverlay() {
     <div id="ca-header">
         <img id="ca-image-collapse" src="https://cdn.bsky.app/img/avatar/plain/did:plc:kwmxodxbf5nshavpy5r5l3jj/bafkreiaddzuq5vgrpi3aeufp7gwkbameb426d4vb4zlxvc6c4vo23wkn5a@jpeg" />
         <h1>Camoverlay</h1>
-        <button id="ca-fly-hq" class="ca-icon-button">✈️</button>
+        <button id="ca-discord" class="ca-icon-button tooltip tooltip-bottom" data-tip="Discord connection">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width: 71%; fill: #7298da">
+                <path d="M20.317 4.37a19.8 19.8 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.3 18.3 0 0 0-5.487 0 13 13 0 0 0-.617-1.25.08.08 0 0 0-.079-.037A19.7 19.7 0 0 0 3.677 4.37a.1.1 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.08.08 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.08.08 0 0 0 .084-.028 14 14 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13 13 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10 10 0 0 0 .372-.292.07.07 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.07.07 0 0 1 .078.01q.181.149.373.292a.077.077 0 0 1-.006.127 12.3 12.3 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.08.08 0 0 0 .084.028 19.8 19.8 0 0 0 6.002-3.03.08.08 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.06.06 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418m7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418" />
+            </svg>
+        </button>
+        <button id="ca-fly-hq" class="ca-icon-button tooltip tooltip-bottom" data-tip="Fly to HQ">✈️</button>
     </div>
     <hr />
     <div id="ca-user-info" style="display: none;">
@@ -1132,10 +1137,10 @@ function injectOverlay() {
     <div id="ca-automation">
         <div id="ca-coords">
             <button id="ca-coords-button" class="ca-icon-button">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 6">
-                    <circle cx="2" cy="2" r="2"></circle>
-                    <path d="M2 6 L3.7 3 L0.3 3 Z"></path>
-                    <circle cx="2" cy="2" r="0.7" fill="white"></circle>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 6" style="width: 50%">
+                    <circle cx="2" cy="2" r="2" />
+                    <path d="m2 6 1.7-3H.3Z" />
+                    <circle cx="2" cy="2" r=".7" fill="#fff" />
                 </svg>
             </button>
             <input id="ca-input-tx" class="ca-coords-input" type="number" min="0" max="2047" step="1" placeholder="Tl X" />
@@ -1143,8 +1148,8 @@ function injectOverlay() {
             <input id="ca-input-px" class="ca-coords-input" type="number" min="0" max="999" step="1" placeholder="Px X" />
             <input id="ca-input-py" class="ca-coords-input" type="number" min="0" max="999" step="1" placeholder="Px Y" />
             <button id="ca-copy-coords-button" class="ca-icon-button">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                    <path d="M11 7h6v6h-6z" />
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" style="fill: #fff; stroke: #111; transition-property: fill; transition-duration: 250ms; width: 70%">
+                    <path d="M11 7h6v6H9z" />
                     <path d="M6.5 3h8.1c2.24 0 3.36 0 4.216.436a4 4 0 0 1 1.748 1.748C21 6.04 21 7.16 21 9.4v7.1M6.2 21h8.1c1.12 0 1.68 0 2.108-.218a2 2 0 0 0 .874-.874c.218-.428.218-.988.218-2.108V9.7c0-1.12 0-1.68-.218-2.108a2 2 0 0 0-.874-.874C15.98 6.5 15.42 6.5 14.3 6.5H6.2c-1.12 0-1.68 0-2.108.218a2 2 0 0 0-.874.874C3 8.02 3 8.58 3 9.7v8.1c0 1.12 0 1.68.218 2.108a2 2 0 0 0 .874.874C4.52 21 5.08 21 6.2 21" stroke-width="2" stroke-linecap="round" />
                 </svg>
             </button>
@@ -1171,8 +1176,8 @@ function injectOverlay() {
                 <option value="Hue">Hue</option>
             </select>
             <button id="ca-sort-reverse" class="ca-icon-button">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 489.389 489.389">
-                    <path d="M261.294 326.102c-8.3-7.3-21.8-6.2-29.1 2.1l-77 86.8v-346.9c0-11.4-9.4-20.8-20.8-20.8s-20.8 9.4-20.8 20.8v346.9l-77-86.8c-8.3-8.3-20.8-9.4-29.1-2.1-8.3 8.3-9.4 20.8-2.1 29.1l113.4 126.9c8.5 10.5 23.5 8.9 30.2 0l114.4-126.9c7.3-8.2 6.3-21.8-2.1-29.1m222.7-191.4-112.4-126.9c-10-10.1-22.5-10.7-31.2 0l-114.4 126.9c-7.3 8.3-6.2 21.8 2.1 29.1 12.8 10.2 25.7 3.2 29.1-2.1l77-86.8v345.9c0 11.4 9.4 20.8 20.8 20.8s20.8-8.3 20.8-19.8v-346.8l77 86.8c8.3 8.3 20.8 9.4 29.1 2.1 8.3-8.4 9.4-20.9 2.1-29.2"></path>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 489.389 489.389" style="width: 65%; stroke: #111; stroke-width: 0.625em;">
+                    <path d="M261.294 326.102c-8.3-7.3-21.8-6.2-29.1 2.1l-77 86.8v-346.9c0-11.4-9.4-20.8-20.8-20.8s-20.8 9.4-20.8 20.8v346.9l-77-86.8c-8.3-8.3-20.8-9.4-29.1-2.1-8.3 8.3-9.4 20.8-2.1 29.1l113.4 126.9c8.5 10.5 23.5 8.9 30.2 0l114.4-126.9c7.3-8.2 6.3-21.8-2.1-29.1m222.7-191.4-112.4-126.9c-10-10.1-22.5-10.7-31.2 0l-114.4 126.9c-7.3 8.3-6.2 21.8 2.1 29.1 12.8 10.2 25.7 3.2 29.1-2.1l77-86.8v345.9c0 11.4 9.4 20.8 20.8 20.8s20.8-8.3 20.8-19.8v-346.8l77 86.8c8.3 8.3 20.8 9.4 29.1 2.1 8.3-8.4 9.4-20.9 2.1-29.2" />
                 </svg>
             </button>
         </div>
@@ -1193,8 +1198,8 @@ function injectOverlay() {
                 <div class="tooltip-content">
                     <kbd class="kbd kbd-xs text-base-content touchscreen:hidden ml-0.5 rounded-md">V</kbd>
                 </div>
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
-                    <path d="M120-120v-190l358-358-58-56 58-56 76 76 124-124q5-5 12.5-8t15.5-3q8 0 15 3t13 8l94 94q5 6 8 13t3 15q0 8-3 15.5t-8 12.5L705-555l76 78-57 57-56-58-358 358H120Zm80-80h78l332-334-76-76-334 332v78Zm447-410 96-96-37-37-96 96 37 37Zm0 0-37-37 37 37Z"></path>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" style="width: 80%">
+                    <path d="M120-120v-190l358-358-58-56 58-56 76 76 124-124q5-5 12.5-8t15.5-3 15 3 13 8l94 94q5 6 8 13t3 15-3 15.5-8 12.5L705-555l76 78-57 57-56-58-358 358zm80-80h78l332-334-76-76-334 332zm447-410 96-96-37-37-96 96zm0 0-37-37z" />
                 </svg>
             </button>
         </div>
@@ -1401,7 +1406,6 @@ div#ca-overlay {
     vertical-align: middle;
 }
 .ca-icon-button svg {
-    width: 50%;
     margin: 0 auto;
     fill: #111;
 }
@@ -1423,14 +1427,6 @@ div#ca-overlay {
 .ca-coords-input::-webkit-inner-spin-button {
     -webkit-appearance: none;
     margin: 0;
-}
-
-#ca-copy-coords-button > svg {
-    fill: white;
-    stroke: #111;
-    transition-property: fill;
-    transition-duration: 250ms;
-    width: 70%;
 }
 
 #ca-settings {
@@ -1459,9 +1455,6 @@ div#ca-overlay {
     justify-content: space-between;
     margin-top: 0.5em;
 }
-#ca-enable-selected svg {
-    width: 80%;
-}
 
 #ca-sorting {
     display: flex;
@@ -1473,12 +1466,6 @@ div#ca-overlay {
     flex: 1 0 auto;
     text-align: center;
     margin: 0 1ch;
-}
-
-#ca-sort-reverse > svg {
-    width: 65%;
-    stroke: #111;
-    stroke-width: 0.625em;
 }
 
 #ca-color-list {
@@ -1521,9 +1508,6 @@ div#ca-overlay {
 .ca-color-row > button {
     height: 1.3em;
     width: 1.3em;
-}
-.ca-color-row > button > svg {
-    width: 80%;
 }
 .ca-color-name {
     flex: unset;
@@ -1584,18 +1568,8 @@ div#ca-overlay {
 .ca-template-copy {
     margin-left: 0.5ch;
 }
-.ca-template-copy > svg {
-    fill: white;
-    stroke: #111;
-    transition-property: fill;
-    transition-duration: 250ms;
-    width: 70%;
-}
 .ca-teleport-incorrect {
     margin-left: 0.5ch;
-}
-.ca-teleport-incorrect > svg {
-    width: 87%;
 }
 .ca-template-name {
     flex: unset;
