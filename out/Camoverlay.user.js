@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.12.1
+// @version      1.12.2
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -1116,7 +1116,16 @@ var ManagerClass = class _ManagerClass {
     }
     return true;
   }
-  disableDiscordConnection() {
+  async disableDiscordConnection() {
+    const res = await fetch("https://www.twitchtools-sonyo.fr/wplace/delete", {
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+      body: JSON.stringify({ pass: this.settings.discordConnectionPass })
+    });
+    if (res.status !== 200) {
+      alert("Error while trying to disable discord connection");
+      return;
+    }
     this.settings.discordConnectionPass = "";
     this.storeGlobal();
   }
@@ -2224,8 +2233,6 @@ unsafeWindow.fetch = async function(input, init) {
     Manager.lastClickedCoords = coords;
     displayTileCoords(coords);
   } else if (url.endsWith("/paint") && method === "POST") {
-    debugger;
-    console.log(init?.body);
     const tiles = JSON.parse(init?.body ?? "")?.tiles;
     if (tiles !== void 0)
       for (const tile of tiles) {

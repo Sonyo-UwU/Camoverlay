@@ -93,8 +93,6 @@ unsafeWindow.fetch = async function (input: Parameters<typeof window.fetch>[0], 
 
     else if (url.endsWith('/paint') && method === 'POST') {
         // Painted
-        debugger;
-        console.log(init?.body);
         const tiles: {
             x: number;
             y: number;

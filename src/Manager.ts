@@ -645,8 +645,18 @@ class ManagerClass {
         return true;
     }
 
-    disableDiscordConnection(): void {
-        // TODO: request server to close connection
+    async disableDiscordConnection(): Promise<void> {
+        const res = await fetch('https://www.twitchtools-sonyo.fr/wplace/delete', {
+            headers: { 'Content-Type': 'application/json' },
+            method: 'POST',
+            body: JSON.stringify({ pass: this.settings.discordConnectionPass })
+        });
+
+        if (res.status !== 200) {
+            alert('Error while trying to disable discord connection');
+            return;
+        }
+
         this.settings.discordConnectionPass = '';
         this.storeGlobal();
     }

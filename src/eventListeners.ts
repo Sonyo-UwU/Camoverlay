@@ -85,7 +85,7 @@ export function addListeners() {
             if (!confirm('Discord connection is enabled. Do you want to disable it?'))
                 return;
 
-            await Manager.disableDiscordConnection();
+            await Manager.disableDiscordConnection()
             return;
         }
 
