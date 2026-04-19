@@ -1,3 +1,4 @@
+import { TileCoords } from './Coords';
 import { addAllianceButtonBack, displayStatus, displayTileCoords, displayUserData, importFont, injectOverlay } from './display';
 import { addListeners } from './eventListeners';
 import { Manager } from './Manager';
@@ -70,24 +71,44 @@ unsafeWindow.fetch = async function (input: Parameters<typeof window.fetch>[0], 
             displayUserData(json);
             document.querySelectorAll('.ca-color-row button').forEach(b => (b as HTMLButtonElement).style.display = '');
             document.getElementById('ca-user-info')!.style.display = '';
-            Manager.loggedIn = true;
+            if (Manager.discordId === '')
+                Manager.discordId = json.discordId;
+            Manager.userId = json.id;
+
+            if (Manager.loggedIn)
+                // Don't update on first load
+                Manager.updateDiscordConnection();
+            else
+                Manager.loggedIn = true;
         }
     }
 
-    else if (contentType.includes('application/json') && url.includes('/pixel/')) {
+    else if (contentType.includes('application/json') && url.includes('/pixel/') && method === 'GET') {
         // Pixel
-        if (method === 'GET') {
-            const coords = parsePixelCoordsFromURL(url);
+        const coords = parsePixelCoordsFromURL(url);
 
-            Manager.lastClickedCoords = coords;
-            displayTileCoords(coords);
-        }
+        Manager.lastClickedCoords = coords;
+        displayTileCoords(coords);
+    }
 
+    else if (url.endsWith('/paint') && method === 'POST') {
         // Painted
-        else if (method === 'POST') {
-            const coords = parseTileCoordsFromURL(url);
-            Manager.tilesInfo.delete(coords.toIndex());
-        }
+        debugger;
+        console.log(init?.body);
+        const tiles: {
+            x: number;
+            y: number;
+            pixels: {
+                colors: number[];
+                x: number[];
+                y: number[];
+            };
+        }[] = JSON.parse(init?.body as string ?? '')?.tiles;
+        if (tiles !== undefined)
+            for (const tile of tiles) {
+                const coords = new TileCoords(tile.x, tile.y);
+                Manager.tilesInfo.delete(coords.toIndex());
+            }
     }
 
     // Tiles

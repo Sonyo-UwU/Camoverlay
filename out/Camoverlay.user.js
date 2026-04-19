@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.12.0
+// @version      1.12.1
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -2211,17 +2211,27 @@ unsafeWindow.fetch = async function(input, init) {
       displayUserData(json);
       document.querySelectorAll(".ca-color-row button").forEach((b) => b.style.display = "");
       document.getElementById("ca-user-info").style.display = "";
-      Manager.loggedIn = true;
+      if (Manager.discordId === "")
+        Manager.discordId = json.discordId;
+      Manager.userId = json.id;
+      if (Manager.loggedIn)
+        Manager.updateDiscordConnection();
+      else
+        Manager.loggedIn = true;
     }
-  } else if (contentType.includes("application/json") && url.includes("/pixel/")) {
-    if (method === "GET") {
-      const coords = parsePixelCoordsFromURL(url);
-      Manager.lastClickedCoords = coords;
-      displayTileCoords(coords);
-    } else if (method === "POST") {
-      const coords = parseTileCoordsFromURL(url);
-      Manager.tilesInfo.delete(coords.toIndex());
-    }
+  } else if (contentType.includes("application/json") && url.includes("/pixel/") && method === "GET") {
+    const coords = parsePixelCoordsFromURL(url);
+    Manager.lastClickedCoords = coords;
+    displayTileCoords(coords);
+  } else if (url.endsWith("/paint") && method === "POST") {
+    debugger;
+    console.log(init?.body);
+    const tiles = JSON.parse(init?.body ?? "")?.tiles;
+    if (tiles !== void 0)
+      for (const tile of tiles) {
+        const coords = new TileCoords(tile.x, tile.y);
+        Manager.tilesInfo.delete(coords.toIndex());
+      }
   } else if (contentType.includes("image/") && url.includes("/tiles/") && method === "GET") {
     const coords = parseTileCoordsFromURL(url);
     const start = performance.now();
