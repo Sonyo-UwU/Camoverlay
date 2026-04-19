@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.11.3
+// @version      1.12.0
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -632,6 +632,9 @@ var ManagerClass = class _ManagerClass {
   teleportCurrentIndex;
   lastClickedCoords;
   loggedIn;
+  userId;
+  discordId;
+  needToAlertDiscordConnection;
   userFullCharges;
   settings;
   wplaceMap;
@@ -663,10 +666,14 @@ var ManagerClass = class _ManagerClass {
     this.teleportCurrentIndex = 0;
     this.lastClickedCoords = null;
     this.loggedIn = false;
+    this.userId = -1;
+    this.discordId = "";
+    this.needToAlertDiscordConnection = false;
     this.userFullCharges = /* @__PURE__ */ new Date();
     this.settings = {
       colorSorting: "Total",
       colorSortingReversed: false,
+      discordConnectionPass: "",
       uiSize: "100",
       hideCompleted: false
     };
@@ -694,6 +701,8 @@ var ManagerClass = class _ManagerClass {
       document.getElementById("ca-sort-select").value = this.settings.colorSorting;
       if (stored.settings.colorSortingReversed !== void 0)
         this.settings.colorSortingReversed = stored.settings.colorSortingReversed;
+      if (stored.settings.discordConnectionPass !== void 0)
+        this.settings.discordConnectionPass = stored.settings.discordConnectionPass;
       if (stored.settings.uiSize !== void 0)
         this.settings.uiSize = stored.settings.uiSize;
       document.getElementById("ca-setting-ui-size").value = this.settings.uiSize;
@@ -1055,6 +1064,61 @@ var ManagerClass = class _ManagerClass {
     } else
       return;
     this.flyTo(PixelCoords.fromIndex(picked).toGeoCoords(true), 17.5);
+  }
+  async enableDiscordConnection() {
+    const discordId = prompt("Enter your discord id:", this.discordId);
+    if (discordId === null || discordId === "")
+      return;
+    this.discordId = discordId;
+    const res = await fetch("https://www.twitchtools-sonyo.fr/wplace/create", {
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+      body: JSON.stringify({ wplaceId: this.userId, discordId })
+    });
+    if (res.status !== 200) {
+      alert("Error while trying to enable discord connection");
+      return;
+    }
+    const pass = (await res.json()).pass;
+    alert("Confirm the connection using the message you recieved in your DMs by SonyoBot.");
+    this.needToAlertDiscordConnection = true;
+    this.settings.discordConnectionPass = pass;
+    this.storeGlobal();
+    setTimeout(this.checkConnection, 5 * 1e3);
+  }
+  async checkConnection() {
+    if (!await Manager.updateDiscordConnection()) {
+      setTimeout(Manager.checkConnection, 5 * 1e3);
+    }
+  }
+  async updateDiscordConnection() {
+    if (this.settings.discordConnectionPass === "")
+      return true;
+    const res = await fetch("https://www.twitchtools-sonyo.fr/wplace/info", {
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+      body: JSON.stringify({ pass: this.settings.discordConnectionPass, fullChargesTime: this.userFullCharges.getTime() })
+    });
+    if (res.status === 400) {
+      if (this.needToAlertDiscordConnection) {
+        alert("The discord connection was refused.");
+        this.needToAlertDiscordConnection = false;
+        this.settings.discordConnectionPass = "";
+      }
+      return true;
+    }
+    if (res.status !== 200) {
+      return false;
+    }
+    if (this.needToAlertDiscordConnection) {
+      alert("Discord connection succesful!");
+      this.needToAlertDiscordConnection = false;
+    }
+    return true;
+  }
+  disableDiscordConnection() {
+    this.settings.discordConnectionPass = "";
+    this.storeGlobal();
   }
 };
 var Manager = new ManagerClass();
@@ -1945,6 +2009,21 @@ function addListeners() {
       overlay.style.overflow = "hidden";
       overlay.classList.add("collapsed");
     }
+  });
+  document.getElementById("ca-discord").addEventListener("click", async () => {
+    if (Manager.settings.discordConnectionPass !== "") {
+      if (!confirm("Discord connection is enabled. Do you want to disable it?"))
+        return;
+      await Manager.disableDiscordConnection();
+      return;
+    }
+    if (Manager.userId <= 0) {
+      alert("Couldn't find your Wplace user ID, if your are logged in, wait a few seconds and then retry.");
+      return;
+    }
+    if (!confirm("Enable discord connection? This will send a message in your DMs containing info about your current charge count that will continuously update when you place pixels."))
+      return;
+    await Manager.enableDiscordConnection();
   });
   document.getElementById("ca-fly-hq").addEventListener("click", () => {
     Manager.flyToFit(new PixelCoords(1054, 713, 152, 468), 2457, 1566, 1);

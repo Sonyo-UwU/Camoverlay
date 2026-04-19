@@ -80,6 +80,26 @@ export function addListeners() {
         }
     });
 
+    document.getElementById('ca-discord')!.addEventListener('click', async () => {
+        if (Manager.settings.discordConnectionPass !== '') {
+            if (!confirm('Discord connection is enabled. Do you want to disable it?'))
+                return;
+
+            await Manager.disableDiscordConnection();
+            return;
+        }
+
+        if (Manager.userId <= 0) {
+            alert("Couldn't find your Wplace user ID, if your are logged in, wait a few seconds and then retry.");
+            return;
+        }
+
+        if (!confirm('Enable discord connection? This will send a message in your DMs containing info about your current charge count that will continuously update when you place pixels.'))
+            return;
+
+        await Manager.enableDiscordConnection();
+    });
+
     document.getElementById('ca-fly-hq')!.addEventListener('click', () => {
         Manager.flyToFit(new PixelCoords(1054, 713, 152, 468), 2457, 1566, 1);
     });

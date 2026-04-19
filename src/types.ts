@@ -26,6 +26,7 @@ export type TileProgressLocations = TileProgress & TeleportPixels;
 export type UserSettings = {
     colorSorting: ColorSortingOptions;
     colorSortingReversed: boolean;
+    discordConnectionPass: string;
     uiSize: string;
     hideCompleted: boolean;
 };

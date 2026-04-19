@@ -28,6 +28,9 @@ class ManagerClass {
     teleportCurrentIndex: number;
     lastClickedCoords: PixelCoords | null;
     loggedIn: boolean;
+    userId: number;
+    discordId: string;
+    needToAlertDiscordConnection: boolean;
     userFullCharges: Date;
     settings: UserSettings;
     wplaceMap: WplaceMap | null;
@@ -64,10 +67,14 @@ class ManagerClass {
         this.teleportCurrentIndex = 0;
         this.lastClickedCoords = null;
         this.loggedIn = false;
+        this.userId = -1;
+        this.discordId = '';
+        this.needToAlertDiscordConnection = false;
         this.userFullCharges = new Date();
         this.settings = {
             colorSorting: ColorSortingOptions.Total,
             colorSortingReversed: false,
+            discordConnectionPass: '',
             uiSize: '100',
             hideCompleted: false
         };
@@ -101,6 +108,9 @@ class ManagerClass {
 
             if (stored.settings.colorSortingReversed !== undefined)
                 this.settings.colorSortingReversed = stored.settings.colorSortingReversed;
+
+            if (stored.settings.discordConnectionPass !== undefined)
+                this.settings.discordConnectionPass = stored.settings.discordConnectionPass;
 
             if (stored.settings.uiSize !== undefined)
                 this.settings.uiSize = stored.settings.uiSize;
@@ -568,6 +578,77 @@ class ManagerClass {
             return;
 
         this.flyTo(PixelCoords.fromIndex(picked).toGeoCoords(true), 17.5);
+    }
+
+    async enableDiscordConnection(): Promise<void> {
+        const discordId = prompt('Enter your discord id:', this.discordId);
+        if (discordId === null || discordId === '')
+            return;
+
+        this.discordId = discordId;
+        const res = await fetch('https://www.twitchtools-sonyo.fr/wplace/create', {
+            headers: { 'Content-Type': 'application/json' },
+            method: 'POST',
+            body: JSON.stringify({ wplaceId: this.userId, discordId: discordId })
+        });
+
+        if (res.status !== 200) {
+            alert('Error while trying to enable discord connection');
+            return;
+        }
+
+        const pass = (await res.json()).pass as string;
+
+        alert('Confirm the connection using the message you recieved in your DMs by SonyoBot.');
+        this.needToAlertDiscordConnection = true;
+        this.settings.discordConnectionPass = pass;
+        this.storeGlobal();
+
+        setTimeout(this.checkConnection, 5 * 1000);
+    }
+
+    async checkConnection(): Promise<void> {
+        if (!await Manager.updateDiscordConnection()) {
+            setTimeout(Manager.checkConnection, 5 * 1000);
+        }
+    }
+
+    async updateDiscordConnection(): Promise<boolean> {
+        if (this.settings.discordConnectionPass === '')
+            return true;
+
+        const res = await fetch('https://www.twitchtools-sonyo.fr/wplace/info', {
+            headers: { 'Content-Type': 'application/json' },
+            method: 'POST',
+            body: JSON.stringify({ pass: this.settings.discordConnectionPass, fullChargesTime: this.userFullCharges.getTime() })
+        });
+
+        if (res.status === 400) {
+            // Connection refused
+            if (this.needToAlertDiscordConnection) {
+                alert('The discord connection was refused.');
+                this.needToAlertDiscordConnection = false;
+                this.settings.discordConnectionPass = '';
+            }
+            return true;
+        }
+        if (res.status !== 200) {
+            // Connection not accepted yet (or error)
+            return false;
+        }
+
+        if (this.needToAlertDiscordConnection) {
+            alert('Discord connection succesful!');
+            this.needToAlertDiscordConnection = false;
+        }
+
+        return true;
+    }
+
+    disableDiscordConnection(): void {
+        // TODO: request server to close connection
+        this.settings.discordConnectionPass = '';
+        this.storeGlobal();
     }
 }
 
