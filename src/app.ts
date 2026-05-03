@@ -3,14 +3,25 @@ import { addAllianceButtonBack, displayStatus, displayTileCoords, displayUserDat
 import { addListeners } from './eventListeners';
 import { Manager } from './Manager';
 import type { ScriptGetInfo, UserData } from './types';
-import { parsePixelCoordsFromURL, parseTileCoordsFromURL } from './utils';
+import { parsePixelCoordsFromURL, parseTileCoordsFromURL, setIntervalAndExecute } from './utils';
 
 declare const GM_info: ScriptGetInfo;
 declare const unsafeWindow: typeof window;
 
+function everythingLoaded() {
+    setIntervalAndExecute(() => {
+        if (!Manager.loggedIn) {
+            // Maybe the first /me request was not intercepted or the server is down, try sending another
+            unsafeWindow.fetch('https://backend.wplace.live/me', { credentials: 'include' });
+        }
+    }, 5000);
+
+    Manager.loadAllTiles();
+}
+
 await Manager.createWorker();
 
-Manager.getMapObject();
+Manager.getMapObject().then(everythingLoaded);
 
 importFont();
 injectOverlay();
@@ -22,13 +33,6 @@ await Manager.loadTemplates();
 
 // Display version
 document.getElementById('ca-version')!.innerText = 'version ' + GM_info.script.version;
-
-setInterval(() => {
-    if (!Manager.loggedIn) {
-        // Maybe the first /me request was not intercepted or the server is down, try sending another
-        unsafeWindow.fetch('https://backend.wplace.live/me', { credentials: 'include' });
-    }
-}, 10000);
 
 // Override fetch
 const originalFetch = unsafeWindow.fetch;

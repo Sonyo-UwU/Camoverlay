@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.12.2
+// @version      1.13.0
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -29,6 +29,9 @@ var TileCoords = class _TileCoords {
   }
   static toIndex(x, y) {
     return x * 1e4 + y;
+  }
+  static fromIndex(i) {
+    return new _TileCoords(Math.floor(i / 1e4), i % 1e4);
   }
   toIndex() {
     return _TileCoords.toIndex(this.x, this.y);
@@ -273,6 +276,10 @@ function getZoomLevelForPixelSize(x) {
 }
 function functionBody(f) {
   return f.substring(f.indexOf("{") + 1, f.lastIndexOf("}"));
+}
+function setIntervalAndExecute(handler, timeout, ...args) {
+  handler(...args);
+  return setInterval(handler, timeout, ...args);
 }
 function twoDigits(n, radix = 10) {
   return n < radix ? "0" + n.toString(radix) : n.toString(radix);
@@ -629,6 +636,7 @@ var ManagerClass = class _ManagerClass {
   templates;
   tilesInfo;
   enabledColors;
+  lockColorList;
   teleportCurrentIndex;
   lastClickedCoords;
   loggedIn;
@@ -663,6 +671,7 @@ var ManagerClass = class _ManagerClass {
     this.templates = [];
     this.tilesInfo = /* @__PURE__ */ new Map();
     this.enabledColors = /* @__PURE__ */ new Map();
+    this.lockColorList = false;
     this.teleportCurrentIndex = 0;
     this.lastClickedCoords = null;
     this.loggedIn = false;
@@ -844,6 +853,8 @@ var ManagerClass = class _ManagerClass {
     this.rebuildColorList();
   }
   rebuildColorList() {
+    if (this.lockColorList)
+      return;
     const list = document.getElementById("ca-color-list");
     while (list.firstChild)
       list.firstChild.remove();
@@ -981,6 +992,20 @@ var ManagerClass = class _ManagerClass {
         await template.drawOnTile(tile, ctx, trackProgress);
     return await canvas.convertToBlob();
   }
+  async loadAllTiles() {
+    this.lockColorList = true;
+    for (const template of this.templates)
+      for (const idx of template.tiles.keys())
+        if (!this.tilesInfo.has(idx)) {
+          const tileCoords = TileCoords.fromIndex(idx);
+          const enabled = template.enabled;
+          template.enabled = true;
+          await unsafeWindow.fetch(`https://backend.wplace.live/files/s0/tiles/${tileCoords.x}/${tileCoords.y}.png`);
+          template.enabled = enabled;
+        }
+    this.lockColorList = false;
+    this.rebuildColorList();
+  }
   /* Snipet inspired from https://github.com/t-wy/Wplace-BlueMarble-Userscripts/tree/custom-improve */
   async getMapObject() {
     const origMapValues = Map.prototype.values;
@@ -1008,7 +1033,7 @@ var ManagerClass = class _ManagerClass {
       return;
     let popup = null;
     while (popup === null) {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
       const clickEvent = new MouseEvent("click", {
         bubbles: true,
         cancelable: true,
@@ -2176,8 +2201,16 @@ function addListeners() {
 }
 
 // dist/app.js
+function everythingLoaded() {
+  setIntervalAndExecute(() => {
+    if (!Manager.loggedIn) {
+      unsafeWindow.fetch("https://backend.wplace.live/me", { credentials: "include" });
+    }
+  }, 5e3);
+  Manager.loadAllTiles();
+}
 await Manager.createWorker();
-Manager.getMapObject();
+Manager.getMapObject().then(everythingLoaded);
 importFont();
 injectOverlay();
 addAllianceButtonBack();
@@ -2185,11 +2218,6 @@ addListeners();
 Manager.loadGlobals();
 await Manager.loadTemplates();
 document.getElementById("ca-version").innerText = "version " + GM_info.script.version;
-setInterval(() => {
-  if (!Manager.loggedIn) {
-    unsafeWindow.fetch("https://backend.wplace.live/me", { credentials: "include" });
-  }
-}, 1e4);
 var originalFetch = unsafeWindow.fetch;
 unsafeWindow.fetch = async function(input, init) {
   const url = input instanceof Request ? input.url : input;

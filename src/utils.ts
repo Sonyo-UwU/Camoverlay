@@ -40,6 +40,11 @@ export function functionBody(f: string): string {
     return f.substring(f.indexOf('{') + 1, f.lastIndexOf('}'));
 }
 
+export function setIntervalAndExecute<T extends any[]>(handler: (...args: T) => any, timeout?: number, ...args: T): number {
+    handler(...args);
+    return setInterval(handler, timeout, ...args);
+}
+
 
 export function twoDigits(n: number, radix: number = 10): string {
     return n < radix ? '0' + n.toString(radix) : n.toString(radix);

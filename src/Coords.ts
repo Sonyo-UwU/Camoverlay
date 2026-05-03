@@ -24,6 +24,10 @@ export class TileCoords {
         return x * 10000 + y as TileIndex;
     }
 
+    static fromIndex(i: TileIndex): TileCoords {
+        return new TileCoords(Math.floor(i / 10000), i % 10000);
+    }
+
     toIndex(): TileIndex {
         return TileCoords.toIndex(this.x, this.y);
     }

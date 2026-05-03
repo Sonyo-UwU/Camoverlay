@@ -25,6 +25,7 @@ class ManagerClass {
     templates: Template[];
     tilesInfo: Map<TileIndex, TileInfo>;
     enabledColors: Map<WplaceColorId, boolean>;
+    lockColorList: boolean;
     teleportCurrentIndex: number;
     lastClickedCoords: PixelCoords | null;
     loggedIn: boolean;
@@ -64,6 +65,7 @@ class ManagerClass {
         this.templates = [];
         this.tilesInfo = new Map();
         this.enabledColors = new Map();
+        this.lockColorList = false;
         this.teleportCurrentIndex = 0;
         this.lastClickedCoords = null;
         this.loggedIn = false;
@@ -295,6 +297,9 @@ class ManagerClass {
     }
 
     rebuildColorList() {
+        if (this.lockColorList)
+            return;
+
         const list = document.getElementById('ca-color-list')!;
         while (list.firstChild)
             list.firstChild!.remove();
@@ -471,6 +476,24 @@ class ManagerClass {
         return await canvas.convertToBlob();
     }
 
+    async loadAllTiles() {
+        this.lockColorList = true;
+        for (const template of this.templates)
+            for (const idx of template.tiles.keys())
+                if (!this.tilesInfo.has(idx)) {
+                    const tileCoords = TileCoords.fromIndex(idx);
+
+                    const enabled = template.enabled;
+                    template.enabled = true;
+
+                    await unsafeWindow.fetch(`https://backend.wplace.live/files/s0/tiles/${tileCoords.x}/${tileCoords.y}.png`);
+
+                    template.enabled = enabled;
+                }
+        this.lockColorList = false;
+        this.rebuildColorList();
+    }
+
     /* Snipet inspired from https://github.com/t-wy/Wplace-BlueMarble-Userscripts/tree/custom-improve */
     async getMapObject(): Promise<void> {
         // Hook Map.values function
@@ -503,7 +526,7 @@ class ManagerClass {
 
         let popup: HTMLButtonElement | null = null;
         while (popup === null) {
-            await new Promise((resolve) => setTimeout(resolve, 1500));
+            await new Promise((resolve) => setTimeout(resolve, 500));
 
             const clickEvent = new MouseEvent('click', {
                 bubbles: true,
