@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.13.1
+// @version      1.13.2
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -1737,10 +1737,10 @@ async function addAllianceButtonBack() {
   }
   const container = document.getElementsByClassName("absolute top-2 right-2 z-40")[0]?.firstElementChild;
   const node = container.lastElementChild;
-  if (node.childElementCount !== 5) {
+  if (node !== null && node.childElementCount !== 5) {
     addButton(node);
-  } else
-    console.log("AGAGA", container.lastElementChild.childElementCount);
+  } else if (node !== null)
+    console.log("AGAGA", node.childElementCount);
   const observer = new MutationObserver((mutationList) => {
     for (const mutation of mutationList)
       if (mutation.type === "childList") {
