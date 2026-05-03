@@ -59,11 +59,8 @@ export async function addAllianceButtonBack() {
     const container = document.getElementsByClassName('absolute top-2 right-2 z-40')[0]?.firstElementChild!;
 
     const node = container.lastElementChild;
-    if (node !==null && node.childElementCount !== 5) {
+    if (node !== null && node.childElementCount !== 5)
         addButton(node as HTMLElement);
-    }
-    else if (node !== null)
-        console.log('AGAGA', node.childElementCount);
 
     const observer = new MutationObserver(mutationList => {
         for (const mutation of mutationList)

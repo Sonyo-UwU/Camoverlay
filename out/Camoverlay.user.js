@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.13.2
+// @version      1.14.0
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -643,6 +643,7 @@ var ManagerClass = class _ManagerClass {
   userId;
   discordId;
   needToAlertDiscordConnection;
+  isDiscordUpdateWaiting;
   userFullCharges;
   settings;
   wplaceMap;
@@ -678,6 +679,7 @@ var ManagerClass = class _ManagerClass {
     this.userId = -1;
     this.discordId = "";
     this.needToAlertDiscordConnection = false;
+    this.isDiscordUpdateWaiting = false;
     this.userFullCharges = /* @__PURE__ */ new Date();
     this.settings = {
       colorSorting: "Total",
@@ -954,6 +956,10 @@ var ManagerClass = class _ManagerClass {
         tileInfo.origBlob = blob;
         tileInfo.fullBlob = modifiedBlob;
         tileInfo.lastModified = lastModified;
+        if (this.isDiscordUpdateWaiting) {
+          this.isDiscordUpdateWaiting = false;
+          this.updateDiscordConnection();
+        }
       }
     }
     return new Response(modifiedBlob, {
@@ -993,7 +999,6 @@ var ManagerClass = class _ManagerClass {
     return await canvas.convertToBlob();
   }
   async loadAllTiles() {
-    this.lockColorList = true;
     for (const template of this.templates)
       for (const idx of template.tiles.keys())
         if (!this.tilesInfo.has(idx)) {
@@ -1002,9 +1007,13 @@ var ManagerClass = class _ManagerClass {
           template.enabled = true;
           await unsafeWindow.fetch(`https://backend.wplace.live/files/s0/tiles/${tileCoords.x}/${tileCoords.y}.png`);
           template.enabled = enabled;
+          if (enabled)
+            this.lockColorList = true;
         }
-    this.lockColorList = false;
-    this.rebuildColorList();
+    if (this.lockColorList) {
+      this.lockColorList = false;
+      this.rebuildColorList();
+    }
   }
   /* Snipet inspired from https://github.com/t-wy/Wplace-BlueMarble-Userscripts/tree/custom-improve */
   async getMapObject() {
@@ -1116,13 +1125,34 @@ var ManagerClass = class _ManagerClass {
       setTimeout(Manager.checkConnection, 5 * 1e3);
     }
   }
+  formatDiscordMessage() {
+    function discordTimeFormat(time, format = "f") {
+      return `<t:${Math.floor(time / 1e3)}:${format}>`;
+    }
+    const templatesInfo = this.templates.map((template) => {
+      const painted = template.totalProgress.total - template.totalProgress.unpainted - template.totalProgress.wrong;
+      return `- **${template.name}**: ${painted} / ${template.totalProgress.total} (${Math.round(painted / template.totalProgress.total * 1e3) / 10}%)` + (template.totalProgress.wrong > 0 ? ` \uFFFD ${template.totalProgress.wrong} wrong` : "");
+    }).join("\n");
+    const fullChargesTime = this.userFullCharges.getTime();
+    const message = `Last data from ${discordTimeFormat(Date.now())}:
+## Full charges:
+${discordTimeFormat(fullChargesTime)} (${discordTimeFormat(fullChargesTime, "R")})` + (this.templates.length > 0 ? `
+## Templates progress:
+${templatesInfo}` : "");
+    return message;
+  }
   async updateDiscordConnection() {
     if (this.settings.discordConnectionPass === "")
       return true;
+    const needToWait = !this.templates.every((template) => template.tiles.keys().every((index) => this.tilesInfo.get(index)?.fullBlob != null));
+    if (needToWait) {
+      this.isDiscordUpdateWaiting = true;
+      return true;
+    }
     const res = await fetch("https://www.twitchtools-sonyo.fr/wplace/info", {
       headers: { "Content-Type": "application/json" },
       method: "POST",
-      body: JSON.stringify({ pass: this.settings.discordConnectionPass, fullChargesTime: this.userFullCharges.getTime() })
+      body: JSON.stringify({ pass: this.settings.discordConnectionPass, message: this.formatDiscordMessage() })
     });
     if (res.status === 400) {
       if (this.needToAlertDiscordConnection) {
@@ -1737,10 +1767,8 @@ async function addAllianceButtonBack() {
   }
   const container = document.getElementsByClassName("absolute top-2 right-2 z-40")[0]?.firstElementChild;
   const node = container.lastElementChild;
-  if (node !== null && node.childElementCount !== 5) {
+  if (node !== null && node.childElementCount !== 5)
     addButton(node);
-  } else if (node !== null)
-    console.log("AGAGA", node.childElementCount);
   const observer = new MutationObserver((mutationList) => {
     for (const mutation of mutationList)
       if (mutation.type === "childList") {
@@ -2212,8 +2240,8 @@ function everythingLoaded() {
     if (!Manager.loggedIn) {
       unsafeWindow.fetch("https://backend.wplace.live/me", { credentials: "include" });
     }
+    Manager.loadAllTiles();
   }, 5e3);
-  Manager.loadAllTiles();
 }
 await Manager.createWorker();
 Manager.getMapObject().then(everythingLoaded);

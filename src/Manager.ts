@@ -32,6 +32,7 @@ class ManagerClass {
     userId: number;
     discordId: string;
     needToAlertDiscordConnection: boolean;
+    isDiscordUpdateWaiting: boolean;
     userFullCharges: Date;
     settings: UserSettings;
     wplaceMap: WplaceMap | null;
@@ -72,6 +73,7 @@ class ManagerClass {
         this.userId = -1;
         this.discordId = '';
         this.needToAlertDiscordConnection = false;
+        this.isDiscordUpdateWaiting = false;
         this.userFullCharges = new Date();
         this.settings = {
             colorSorting: ColorSortingOptions.Total,
@@ -172,7 +174,7 @@ class ManagerClass {
         else if (typeof indices !== 'object' || !(Symbol.iterator in indices)) {
             indices = [indices];
         }
-    
+
         for (const index of indices)
             this.tilesInfo.delete(index);
 
@@ -422,6 +424,11 @@ class ManagerClass {
                 tileInfo.origBlob = blob;
                 tileInfo.fullBlob = modifiedBlob;
                 tileInfo.lastModified = lastModified;
+
+                if (this.isDiscordUpdateWaiting) {
+                    this.isDiscordUpdateWaiting = false;
+                    this.updateDiscordConnection();
+                }
             }
         }
 
@@ -477,7 +484,6 @@ class ManagerClass {
     }
 
     async loadAllTiles() {
-        this.lockColorList = true;
         for (const template of this.templates)
             for (const idx of template.tiles.keys())
                 if (!this.tilesInfo.has(idx)) {
@@ -489,9 +495,13 @@ class ManagerClass {
                     await unsafeWindow.fetch(`https://backend.wplace.live/files/s0/tiles/${tileCoords.x}/${tileCoords.y}.png`);
 
                     template.enabled = enabled;
+                    if (enabled)
+                        this.lockColorList = true;
                 }
-        this.lockColorList = false;
-        this.rebuildColorList();
+        if (this.lockColorList) {
+            this.lockColorList = false;
+            this.rebuildColorList();
+        }
     }
 
     /* Snipet inspired from https://github.com/t-wy/Wplace-BlueMarble-Userscripts/tree/custom-improve */
@@ -553,7 +563,7 @@ class ManagerClass {
     flyTo(center: [number, number], zoom: number = 13) {
         this.wplaceMap?.flyTo({ center: center, zoom: zoom });
     }
-    
+
     flyToFit(topLeft: PixelCoords, width: number, height: number, extraProportion: number = 1.1): void {
         if (this.wplaceMap === null)
             return;
@@ -568,7 +578,7 @@ class ManagerClass {
 
         this.flyTo(new PixelCoords(topLeft.tx, topLeft.ty, topLeft.px + width / 2, topLeft.py + height / 2).toGeoCoords(false), finalZoom);
     }
-    
+
     flyToNextIncorrect(t: TeleportPixels): void {
         let picked: PixelIndex;
 
@@ -636,14 +646,42 @@ class ManagerClass {
         }
     }
 
+    formatDiscordMessage(): string {
+        function discordTimeFormat(time: number, format: string = 'f'): string {
+            return `<t:${Math.floor(time / 1000)}:${format}>`;
+        }
+
+        const templatesInfo = this.templates.map(template => {
+            const painted = template.totalProgress.total - template.totalProgress.unpainted - template.totalProgress.wrong;
+            return `- **${template.name}**: ` +
+                `${painted} / ${template.totalProgress.total} (${Math.round(painted / template.totalProgress.total * 1000) / 10}%)` +
+                (template.totalProgress.wrong > 0 ? ` • ${template.totalProgress.wrong} wrong` : '');
+        }).join('\n');
+
+        const fullChargesTime = this.userFullCharges.getTime();
+        const message =
+            `Last data from ${discordTimeFormat(Date.now())}:\n` +
+            `## Full charges:\n${discordTimeFormat(fullChargesTime)} (${discordTimeFormat(fullChargesTime, 'R')})` +
+            (this.templates.length > 0 ? `\n## Templates progress:\n${templatesInfo}` : '');
+
+        return message;
+    }
+
     async updateDiscordConnection(): Promise<boolean> {
         if (this.settings.discordConnectionPass === '')
             return true;
 
+        const needToWait = !this.templates.every(template => template.tiles.keys().every(index => this.tilesInfo.get(index)?.fullBlob != null));
+        if (needToWait) {
+            this.isDiscordUpdateWaiting = true;
+            return true;
+        }
+
+
         const res = await fetch('https://www.twitchtools-sonyo.fr/wplace/info', {
             headers: { 'Content-Type': 'application/json' },
             method: 'POST',
-            body: JSON.stringify({ pass: this.settings.discordConnectionPass, fullChargesTime: this.userFullCharges.getTime() })
+            body: JSON.stringify({ pass: this.settings.discordConnectionPass, message: this.formatDiscordMessage() })
         });
 
         if (res.status === 400) {

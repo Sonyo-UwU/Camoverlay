@@ -14,9 +14,9 @@ function everythingLoaded() {
             // Maybe the first /me request was not intercepted or the server is down, try sending another
             unsafeWindow.fetch('https://backend.wplace.live/me', { credentials: 'include' });
         }
-    }, 5000);
 
-    Manager.loadAllTiles();
+        Manager.loadAllTiles();
+    }, 5000);
 }
 
 await Manager.createWorker();
