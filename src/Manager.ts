@@ -489,14 +489,15 @@ class ManagerClass {
                 if (!this.tilesInfo.has(idx)) {
                     const tileCoords = TileCoords.fromIndex(idx);
 
-                    const enabled = template.enabled;
-                    template.enabled = true;
+                    const wasEnabled = template.enabled;
+                    if (!wasEnabled) {
+                        template.enabled = true;
+                        this.lockColorList = true;
+                    }
 
                     await unsafeWindow.fetch(`https://backend.wplace.live/files/s0/tiles/${tileCoords.x}/${tileCoords.y}.png`);
 
-                    template.enabled = enabled;
-                    if (enabled)
-                        this.lockColorList = true;
+                    template.enabled = wasEnabled;
                 }
         if (this.lockColorList) {
             this.lockColorList = false;

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.14.0
+// @version      1.14.1
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -1003,12 +1003,13 @@ var ManagerClass = class _ManagerClass {
       for (const idx of template.tiles.keys())
         if (!this.tilesInfo.has(idx)) {
           const tileCoords = TileCoords.fromIndex(idx);
-          const enabled = template.enabled;
-          template.enabled = true;
-          await unsafeWindow.fetch(`https://backend.wplace.live/files/s0/tiles/${tileCoords.x}/${tileCoords.y}.png`);
-          template.enabled = enabled;
-          if (enabled)
+          const wasEnabled = template.enabled;
+          if (!wasEnabled) {
+            template.enabled = true;
             this.lockColorList = true;
+          }
+          await unsafeWindow.fetch(`https://backend.wplace.live/files/s0/tiles/${tileCoords.x}/${tileCoords.y}.png`);
+          template.enabled = wasEnabled;
         }
     if (this.lockColorList) {
       this.lockColorList = false;
