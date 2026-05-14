@@ -111,6 +111,7 @@ div#ca-overlay {
 
 #ca-overlay input[type="checkbox"] {
     height: 1.2em;
+    cursor: pointer;
 }
 #ca-overlay input[type="range"] {
     height: 2em;

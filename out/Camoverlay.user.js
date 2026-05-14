@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.14.1
+// @version      1.14.2
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -1467,6 +1467,7 @@ div#ca-overlay {
 
 #ca-overlay input[type="checkbox"] {
     height: 1.2em;
+    cursor: pointer;
 }
 #ca-overlay input[type="range"] {
     height: 2em;
