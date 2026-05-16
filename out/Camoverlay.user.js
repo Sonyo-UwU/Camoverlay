@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.14.2
+// @version      1.14.3
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -645,6 +645,7 @@ var ManagerClass = class _ManagerClass {
   needToAlertDiscordConnection;
   isDiscordUpdateWaiting;
   userFullCharges;
+  chargesTimerTimeoutId;
   settings;
   wplaceMap;
   worker;
@@ -681,6 +682,7 @@ var ManagerClass = class _ManagerClass {
     this.needToAlertDiscordConnection = false;
     this.isDiscordUpdateWaiting = false;
     this.userFullCharges = /* @__PURE__ */ new Date();
+    this.chargesTimerTimeoutId = -1;
     this.settings = {
       colorSorting: "Total",
       colorSortingReversed: false,
@@ -1790,10 +1792,13 @@ function displayFullCharges() {
   else
     text = `${twoDigits(Math.floor(s / 60))}m${twoDigits(Math.floor(s) % 60)}s`;
   document.getElementById("ca-user-charges").innerText = text;
+  clearTimeout(Manager.chargesTimerTimeoutId);
+  if (ms <= 0)
+    return;
   if (s > 3601)
-    setTimeout(displayFullCharges, ms % 6e4);
+    Manager.chargesTimerTimeoutId = setTimeout(displayFullCharges, ms % 6e4);
   else
-    setTimeout(displayFullCharges, ms % 1e3);
+    Manager.chargesTimerTimeoutId = setTimeout(displayFullCharges, ms % 1e3);
 }
 function displayUserData(data) {
   const nextLevelPixels = Math.ceil(Math.pow(Math.floor(data.level) * Math.pow(30, 0.65), 1 / 0.65) - data.pixelsPainted);

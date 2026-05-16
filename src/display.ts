@@ -82,14 +82,19 @@ function displayFullCharges(): void {
     if (s > 3600)
         text = `${twoDigits(Math.floor(s / 3600))}h${twoDigits(Math.floor(s / 60) % 60)}m`;
     else
-        text = `${twoDigits(Math.floor(s / 60))}m${twoDigits(Math.floor(s) % 60)}s`;
+        text = `${twoDigits(Math.floor(s / 60  ))}m${twoDigits(Math.floor(s     ) % 60)}s`;
 
     document.getElementById('ca-user-charges')!.innerText = text;
 
+
+    clearTimeout(Manager.chargesTimerTimeoutId);
+    if (ms <= 0)
+        return;
+
     if (s > 3601)
-        setTimeout(displayFullCharges, ms % 60000);
+        Manager.chargesTimerTimeoutId = setTimeout(displayFullCharges, ms % 60000);
     else
-        setTimeout(displayFullCharges, ms % 1000);
+        Manager.chargesTimerTimeoutId = setTimeout(displayFullCharges, ms % 1000);
 }
 
 export function displayUserData(data: UserData) {

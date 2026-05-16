@@ -34,6 +34,7 @@ class ManagerClass {
     needToAlertDiscordConnection: boolean;
     isDiscordUpdateWaiting: boolean;
     userFullCharges: Date;
+    chargesTimerTimeoutId: number;
     settings: UserSettings;
     wplaceMap: WplaceMap | null;
     worker!: Worker;
@@ -75,6 +76,7 @@ class ManagerClass {
         this.needToAlertDiscordConnection = false;
         this.isDiscordUpdateWaiting = false;
         this.userFullCharges = new Date();
+        this.chargesTimerTimeoutId = -1;
         this.settings = {
             colorSorting: ColorSortingOptions.Total,
             colorSortingReversed: false,
