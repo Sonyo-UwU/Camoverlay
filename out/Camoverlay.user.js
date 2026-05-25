@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.14.3
+// @version      1.14.4
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -1278,12 +1278,7 @@ function injectOverlay() {
             <input id="ca-input-ty" class="ca-coords-input" type="number" min="0" max="2047" step="1" placeholder="Tl Y" />
             <input id="ca-input-px" class="ca-coords-input" type="number" min="0" max="999" step="1" placeholder="Px X" />
             <input id="ca-input-py" class="ca-coords-input" type="number" min="0" max="999" step="1" placeholder="Px Y" />
-            <button id="ca-copy-coords-button" class="ca-icon-button">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" style="fill: #fff; stroke: #111; transition-property: fill; transition-duration: 250ms; width: 70%">
-                    <path d="M11 7h6v6H9z" />
-                    <path d="M6.5 3h8.1c2.24 0 3.36 0 4.216.436a4 4 0 0 1 1.748 1.748C21 6.04 21 7.16 21 9.4v7.1M6.2 21h8.1c1.12 0 1.68 0 2.108-.218a2 2 0 0 0 .874-.874c.218-.428.218-.988.218-2.108V9.7c0-1.12 0-1.68-.218-2.108a2 2 0 0 0-.874-.874C15.98 6.5 15.42 6.5 14.3 6.5H6.2c-1.12 0-1.68 0-2.108.218a2 2 0 0 0-.874.874C3 8.02 3 8.58 3 9.7v8.1c0 1.12 0 1.68.218 2.108a2 2 0 0 0 .874.874C4.52 21 5.08 21 6.2 21" stroke-width="2" stroke-linecap="round" />
-                </svg>
-            </button>
+            <button id="ca-fly-to-coords-button" class="ca-icon-button">✈️</button>
         </div>
         <div id="ca-settings">
             <div>
@@ -1911,7 +1906,7 @@ function addTemplateRow(template) {
     const svg = target.tagName.toLowerCase() === "path" ? target.parentElement : target.firstElementChild;
     if (svg !== null) {
       svg.style.fill = "#2b8f1f";
-      setTimeout(() => svg.style.fill = "", 500);
+      setTimeout(() => svg.style.fill = "#fff", 500);
     }
   });
   const teleport = row.querySelector(".ca-teleport-incorrect");
@@ -2121,17 +2116,10 @@ function addListeners() {
     }
     Manager.setInputCoords(Manager.lastClickedCoords);
   });
-  document.getElementById("ca-copy-coords-button").addEventListener("click", async () => {
+  document.getElementById("ca-fly-to-coords-button").addEventListener("click", async () => {
     const coords = Manager.getInputCoords();
-    if (coords === null)
-      return;
-    const s = `${coords.tx} ${coords.ty} ${coords.px} ${coords.py}`;
-    await navigator.clipboard.writeText(s);
-    const svg = document.getElementById("ca-copy-coords-button")?.firstElementChild;
-    if (svg !== void 0) {
-      svg.style.fill = "#2b8f1f";
-      setTimeout(() => svg.style.fill = "", 500);
-    }
+    if (coords !== null)
+      Manager.flyTo(coords.toGeoCoords(true));
   });
   document.getElementById("ca-setting-ui-size").addEventListener("change", (e) => {
     Manager.settings.uiSize = e.target.value;

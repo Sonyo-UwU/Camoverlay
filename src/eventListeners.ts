@@ -127,21 +127,10 @@ export function addListeners() {
         Manager.setInputCoords(Manager.lastClickedCoords);
     });
 
-    document.getElementById('ca-copy-coords-button')!.addEventListener('click', async () => {
+    document.getElementById('ca-fly-to-coords-button')!.addEventListener('click', async () => {
         const coords = Manager.getInputCoords();
-        if (coords === null)
-            return;
-
-        const s = `${coords.tx} ${coords.ty} ${coords.px} ${coords.py}`;
-
-        await navigator.clipboard.writeText(s);
-
-        // Animation
-        const svg = document.getElementById('ca-copy-coords-button')?.firstElementChild as HTMLElement | undefined;
-        if (svg !== undefined) {
-            svg.style.fill = '#2b8f1f';
-            setTimeout(() => svg.style.fill = '', 500);
-        }
+        if (coords !== null)
+            Manager.flyTo(coords.toGeoCoords(true));
     });
 
     document.getElementById('ca-setting-ui-size')!.addEventListener('change', e => {

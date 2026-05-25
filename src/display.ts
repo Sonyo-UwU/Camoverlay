@@ -234,7 +234,7 @@ export function addTemplateRow(template: Template) {
         const svg = (target.tagName.toLowerCase() === 'path' ? target.parentElement : target.firstElementChild) as HTMLElement | null;
         if (svg !== null) {
             svg.style.fill = '#2b8f1f';
-            setTimeout(() => svg.style.fill = '', 500);
+            setTimeout(() => svg.style.fill = '#fff', 500);
         }
     });
 
