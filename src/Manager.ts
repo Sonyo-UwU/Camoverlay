@@ -658,7 +658,7 @@ class ManagerClass {
             const painted = template.totalProgress.total - template.totalProgress.unpainted - template.totalProgress.wrong;
             return `- **${template.name}**: ` +
                 `${painted} / ${template.totalProgress.total} (${Math.round(painted / template.totalProgress.total * 1000) / 10}%)` +
-                (template.totalProgress.wrong > 0 ? ` • ${template.totalProgress.wrong} wrong` : '');
+                (template.totalProgress.wrong > 0 ? ` â€¢ ${template.totalProgress.wrong} wrong` : '');
         }).join('\n');
 
         const fullChargesTime = this.userFullCharges.getTime();

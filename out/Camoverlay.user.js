@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.14.4
+// @version      1.14.5
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -1134,7 +1134,7 @@ var ManagerClass = class _ManagerClass {
     }
     const templatesInfo = this.templates.map((template) => {
       const painted = template.totalProgress.total - template.totalProgress.unpainted - template.totalProgress.wrong;
-      return `- **${template.name}**: ${painted} / ${template.totalProgress.total} (${Math.round(painted / template.totalProgress.total * 1e3) / 10}%)` + (template.totalProgress.wrong > 0 ? ` \uFFFD ${template.totalProgress.wrong} wrong` : "");
+      return `- **${template.name}**: ${painted} / ${template.totalProgress.total} (${Math.round(painted / template.totalProgress.total * 1e3) / 10}%)` + (template.totalProgress.wrong > 0 ? ` \u2022 ${template.totalProgress.wrong} wrong` : "");
     }).join("\n");
     const fullChargesTime = this.userFullCharges.getTime();
     const message = `Last data from ${discordTimeFormat(Date.now())}:

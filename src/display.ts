@@ -1,4 +1,4 @@
-﻿import { PixelCoords } from './Coords';
+import { PixelCoords } from './Coords';
 import { Manager } from './Manager';
 import Template from './Template';
 import type { TeleportPixels, TileProgress, UserData, WplaceColorId } from './types';
