@@ -101,7 +101,9 @@ export function addListeners() {
     });
 
     document.getElementById('ca-fly-hq')!.addEventListener('click', () => {
-        Manager.flyToFit(new PixelCoords(1054, 713, 152, 468), 2457, 1566, 1);
+        const topleft = new PixelCoords(1054, 713, 152, 454);
+        const bottomright = new PixelCoords(1056, 715, 608, 33);
+        Manager.flyToFit(topleft, bottomright.tx * 1000 + bottomright.px - topleft.tx * 1000 - topleft.px + 1, bottomright.ty * 1000 + bottomright.py - topleft.ty * 1000 - topleft.py + 1, 1);
     });
 
     function pasted(e: ClipboardEvent) {
