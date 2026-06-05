@@ -622,7 +622,7 @@ class ManagerClass {
             return;
 
         this.discordId = discordId;
-        const res = await fetch('https://www.twitchtools-sonyo.fr/wplace/create', {
+        const res = await fetch('https://sonyo.fr/wplace/create', {
             headers: { 'Content-Type': 'application/json' },
             method: 'POST',
             body: JSON.stringify({ wplaceId: this.userId, discordId: discordId })
@@ -681,7 +681,7 @@ class ManagerClass {
         }
 
 
-        const res = await fetch('https://www.twitchtools-sonyo.fr/wplace/info', {
+        const res = await fetch('https://sonyo.fr/wplace/info', {
             headers: { 'Content-Type': 'application/json' },
             method: 'POST',
             body: JSON.stringify({ pass: this.settings.discordConnectionPass, message: this.formatDiscordMessage() })
@@ -710,7 +710,7 @@ class ManagerClass {
     }
 
     async disableDiscordConnection(): Promise<void> {
-        const res = await fetch('https://www.twitchtools-sonyo.fr/wplace/delete', {
+        const res = await fetch('https://sonyo.fr/wplace/delete', {
             headers: { 'Content-Type': 'application/json' },
             method: 'POST',
             body: JSON.stringify({ pass: this.settings.discordConnectionPass })

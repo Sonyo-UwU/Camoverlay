@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.14.6
+// @version      1.14.7
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -1107,7 +1107,7 @@ var ManagerClass = class _ManagerClass {
     if (discordId === null || discordId === "")
       return;
     this.discordId = discordId;
-    const res = await fetch("https://www.twitchtools-sonyo.fr/wplace/create", {
+    const res = await fetch("https://sonyo.fr/wplace/create", {
       headers: { "Content-Type": "application/json" },
       method: "POST",
       body: JSON.stringify({ wplaceId: this.userId, discordId })
@@ -1152,7 +1152,7 @@ ${templatesInfo}` : "");
       this.isDiscordUpdateWaiting = true;
       return true;
     }
-    const res = await fetch("https://www.twitchtools-sonyo.fr/wplace/info", {
+    const res = await fetch("https://sonyo.fr/wplace/info", {
       headers: { "Content-Type": "application/json" },
       method: "POST",
       body: JSON.stringify({ pass: this.settings.discordConnectionPass, message: this.formatDiscordMessage() })
@@ -1175,7 +1175,7 @@ ${templatesInfo}` : "");
     return true;
   }
   async disableDiscordConnection() {
-    const res = await fetch("https://www.twitchtools-sonyo.fr/wplace/delete", {
+    const res = await fetch("https://sonyo.fr/wplace/delete", {
       headers: { "Content-Type": "application/json" },
       method: "POST",
       body: JSON.stringify({ pass: this.settings.discordConnectionPass })
