@@ -684,7 +684,7 @@ class ManagerClass {
         const res = await fetch('https://sonyo.fr/wplace/info', {
             headers: { 'Content-Type': 'application/json' },
             method: 'POST',
-            body: JSON.stringify({ pass: this.settings.discordConnectionPass, message: this.formatDiscordMessage() })
+            body: JSON.stringify({ pass: this.settings.discordConnectionPass, message: this.formatDiscordMessage(), pingtime: this.userFullCharges.getTime() - 5 * 60 * 1000 })
         });
 
         if (res.status === 400) {

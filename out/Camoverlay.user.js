@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.14.7
+// @version      1.15.0
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -1155,7 +1155,7 @@ ${templatesInfo}` : "");
     const res = await fetch("https://sonyo.fr/wplace/info", {
       headers: { "Content-Type": "application/json" },
       method: "POST",
-      body: JSON.stringify({ pass: this.settings.discordConnectionPass, message: this.formatDiscordMessage() })
+      body: JSON.stringify({ pass: this.settings.discordConnectionPass, message: this.formatDiscordMessage(), pingtime: this.userFullCharges.getTime() - 5 * 60 * 1e3 })
     });
     if (res.status === 400) {
       if (this.needToAlertDiscordConnection) {
@@ -2091,7 +2091,7 @@ function addListeners() {
       alert("Couldn't find your Wplace user ID, if your are logged in, wait a few seconds and then retry.");
       return;
     }
-    if (!confirm("Enable discord connection? This will send a message in your DMs containing info about your current charge count that will continuously update when you place pixels."))
+    if (!confirm("Enable discord connection? This will send a message in your DMs containing info about your current charge count that will continuously update when you place pixels, and automatically ping you just before your charges are full."))
       return;
     await Manager.enableDiscordConnection();
   });

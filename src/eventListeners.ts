@@ -94,7 +94,7 @@ export function addListeners() {
             return;
         }
 
-        if (!confirm('Enable discord connection? This will send a message in your DMs containing info about your current charge count that will continuously update when you place pixels.'))
+        if (!confirm('Enable discord connection? This will send a message in your DMs containing info about your current charge count that will continuously update when you place pixels, and automatically ping you just before your charges are full.'))
             return;
 
         await Manager.enableDiscordConnection();
