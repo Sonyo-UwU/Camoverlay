@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.15.0
+// @version      1.15.1
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -1155,7 +1155,7 @@ ${templatesInfo}` : "");
     const res = await fetch("https://sonyo.fr/wplace/info", {
       headers: { "Content-Type": "application/json" },
       method: "POST",
-      body: JSON.stringify({ pass: this.settings.discordConnectionPass, message: this.formatDiscordMessage(), pingtime: this.userFullCharges.getTime() - 5 * 60 * 1e3 })
+      body: JSON.stringify({ pass: this.settings.discordConnectionPass, message: this.formatDiscordMessage(), pingtime: this.userFullCharges.getTime() - 10 * 60 * 1e3 })
     });
     if (res.status === 400) {
       if (this.needToAlertDiscordConnection) {
