@@ -145,6 +145,11 @@ export function addListeners() {
         setTimeout(() => (document.getElementById('ca-overlay') as HTMLDivElement).style.transition = '', 100);
     });
 
+    document.getElementById('ca-setting-prefer-wrong-teleport')!.addEventListener('change', e => {
+        Manager.settings.preferWrongTeleport = (e.target as HTMLInputElement).checked;
+        Manager.storeGlobal();
+    });
+
     document.getElementById('ca-setting-hide-completed')!.addEventListener('change', e => {
         Manager.settings.hideCompleted = (e.target as HTMLInputElement).checked;
         Manager.storeGlobal();

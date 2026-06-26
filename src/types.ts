@@ -29,6 +29,7 @@ export type UserSettings = {
     discordConnectionPass: string;
     uiSize: string;
     hideCompleted: boolean;
+    preferWrongTeleport: boolean;
 };
 
 export type WplaceColorId = number & { readonly b: unique symbol; };

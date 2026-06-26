@@ -82,7 +82,8 @@ class ManagerClass {
             colorSortingReversed: false,
             discordConnectionPass: '',
             uiSize: '100',
-            hideCompleted: false
+            hideCompleted: false,
+            preferWrongTeleport: true
         };
         this.wplaceMap = null;
         this.workerCreateTemplateResolve = new Map();
@@ -126,6 +127,10 @@ class ManagerClass {
             if (stored.settings.hideCompleted !== undefined)
                 this.settings.hideCompleted = stored.settings.hideCompleted;
             (document.getElementById('ca-setting-hide-completed') as HTMLInputElement).checked = this.settings.hideCompleted;
+
+            if (stored.settings.preferWrongTeleport !== undefined)
+                this.settings.preferWrongTeleport = stored.settings.preferWrongTeleport;
+            (document.getElementById('ca-setting-prefer-wrong-teleport') as HTMLInputElement).checked = this.settings.preferWrongTeleport;
         }
 
         if (stored.enabledColors !== undefined)
@@ -583,6 +588,9 @@ class ManagerClass {
     }
 
     flyToNextIncorrect(t: TeleportPixels): void {
+        if (t.wrongLocations.length == 0 && t.unpaintedLocations.length == 0)
+            return;
+
         let picked: PixelIndex;
 
         // Deterministic shuffle based on array length
@@ -600,18 +608,22 @@ class ManagerClass {
             t.unpaintedLocations[j] = temp;
         }
 
-        if (t.wrongLocations.length > 0) {
-            // Modulo first, because teleportCurrentIndex is global, not per color
-            // (makes enumeration start at 1, but doesn't matter since the array is shuffled anyway)
-            this.teleportCurrentIndex = (this.teleportCurrentIndex + 1) % t.wrongLocations.length;
-            picked = t.wrongLocations[this.teleportCurrentIndex]!;
+        if (this.settings.preferWrongTeleport) {
+            if (t.wrongLocations.length > 0) {
+                // Modulo first, because teleportCurrentIndex is global, not per color
+                // (makes enumeration start at 1, but doesn't matter since the array is shuffled anyway)
+                this.teleportCurrentIndex = (this.teleportCurrentIndex + 1) % t.wrongLocations.length;
+                picked = t.wrongLocations[this.teleportCurrentIndex]!;
+            }
+            else {
+                this.teleportCurrentIndex = (this.teleportCurrentIndex + 1) % t.unpaintedLocations.length;
+                picked = t.unpaintedLocations[this.teleportCurrentIndex]!;
+            }
         }
-        else if (t.unpaintedLocations.length > 0) {
-            this.teleportCurrentIndex = (this.teleportCurrentIndex + 1) % t.unpaintedLocations.length;
-            picked = t.unpaintedLocations[this.teleportCurrentIndex]!;
+        else {
+            this.teleportCurrentIndex = (this.teleportCurrentIndex + 1) % (t.wrongLocations.length + t.unpaintedLocations.length);
+            picked = this.teleportCurrentIndex < t.wrongLocations.length ? t.wrongLocations[this.teleportCurrentIndex]! : t.unpaintedLocations[this.teleportCurrentIndex]!;
         }
-        else
-            return;
 
         this.flyTo(PixelCoords.fromIndex(picked).toGeoCoords(true), 17.5);
     }

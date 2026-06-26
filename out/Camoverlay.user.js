@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.15.1
+// @version      1.16.0
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -688,7 +688,8 @@ var ManagerClass = class _ManagerClass {
       colorSortingReversed: false,
       discordConnectionPass: "",
       uiSize: "100",
-      hideCompleted: false
+      hideCompleted: false,
+      preferWrongTeleport: true
     };
     this.wplaceMap = null;
     this.workerCreateTemplateResolve = /* @__PURE__ */ new Map();
@@ -723,6 +724,9 @@ var ManagerClass = class _ManagerClass {
       if (stored.settings.hideCompleted !== void 0)
         this.settings.hideCompleted = stored.settings.hideCompleted;
       document.getElementById("ca-setting-hide-completed").checked = this.settings.hideCompleted;
+      if (stored.settings.preferWrongTeleport !== void 0)
+        this.settings.preferWrongTeleport = stored.settings.preferWrongTeleport;
+      document.getElementById("ca-setting-prefer-wrong-teleport").checked = this.settings.preferWrongTeleport;
     }
     if (stored.enabledColors !== void 0)
       this.enabledColors = new Map(stored.enabledColors);
@@ -1078,6 +1082,8 @@ var ManagerClass = class _ManagerClass {
     this.flyTo(new PixelCoords(topLeft.tx, topLeft.ty, topLeft.px + width / 2, topLeft.py + height / 2).toGeoCoords(false), finalZoom);
   }
   flyToNextIncorrect(t) {
+    if (t.wrongLocations.length == 0 && t.unpaintedLocations.length == 0)
+      return;
     let picked;
     const prng = splitmix32(t.wrongLocations.length + t.unpaintedLocations.length);
     for (let i = t.wrongLocations.length - 1; i > 0; i--) {
@@ -1092,14 +1098,18 @@ var ManagerClass = class _ManagerClass {
       t.unpaintedLocations[i] = t.unpaintedLocations[j];
       t.unpaintedLocations[j] = temp;
     }
-    if (t.wrongLocations.length > 0) {
-      this.teleportCurrentIndex = (this.teleportCurrentIndex + 1) % t.wrongLocations.length;
-      picked = t.wrongLocations[this.teleportCurrentIndex];
-    } else if (t.unpaintedLocations.length > 0) {
-      this.teleportCurrentIndex = (this.teleportCurrentIndex + 1) % t.unpaintedLocations.length;
-      picked = t.unpaintedLocations[this.teleportCurrentIndex];
-    } else
-      return;
+    if (this.settings.preferWrongTeleport) {
+      if (t.wrongLocations.length > 0) {
+        this.teleportCurrentIndex = (this.teleportCurrentIndex + 1) % t.wrongLocations.length;
+        picked = t.wrongLocations[this.teleportCurrentIndex];
+      } else {
+        this.teleportCurrentIndex = (this.teleportCurrentIndex + 1) % t.unpaintedLocations.length;
+        picked = t.unpaintedLocations[this.teleportCurrentIndex];
+      }
+    } else {
+      this.teleportCurrentIndex = (this.teleportCurrentIndex + 1) % (t.wrongLocations.length + t.unpaintedLocations.length);
+      picked = this.teleportCurrentIndex < t.wrongLocations.length ? t.wrongLocations[this.teleportCurrentIndex] : t.unpaintedLocations[this.teleportCurrentIndex];
+    }
     this.flyTo(PixelCoords.fromIndex(picked).toGeoCoords(true), 17.5);
   }
   async enableDiscordConnection() {
@@ -1288,6 +1298,10 @@ function injectOverlay() {
             <div>
                 Hide completed colors
                 <input id="ca-setting-hide-completed" type="checkbox">
+            </div>
+            <div>
+                Prefer wrong teleport
+                <input id="ca-setting-prefer-wrong-teleport" type="checkbox">
             </div>
         </div>
         <div id="ca-sorting">
@@ -2130,6 +2144,10 @@ function addListeners() {
     overlay.style.transition = "none";
     overlay.style.setProperty("--ca-ui-size", Manager.settings.uiSize + "%");
     setTimeout(() => document.getElementById("ca-overlay").style.transition = "", 100);
+  });
+  document.getElementById("ca-setting-prefer-wrong-teleport").addEventListener("change", (e) => {
+    Manager.settings.preferWrongTeleport = e.target.checked;
+    Manager.storeGlobal();
   });
   document.getElementById("ca-setting-hide-completed").addEventListener("change", (e) => {
     Manager.settings.hideCompleted = e.target.checked;
