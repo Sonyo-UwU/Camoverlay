@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.16.0
+// @version      1.16.1
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -1025,17 +1025,33 @@ var ManagerClass = class _ManagerClass {
   /* Snipet inspired from https://github.com/t-wy/Wplace-BlueMarble-Userscripts/tree/custom-improve */
   async getMapObject() {
     const origMapValues = Map.prototype.values;
-    const hookedMapValues = function() {
-      this.forEach((v) => {
-        if (v?.maps instanceof Set)
-          v.maps.forEach((x) => {
-            if (x?.flyTo) {
-              Manager.wplaceMap = x;
+    const hookedMapValues = function(...args) {
+      const iter = Reflect.apply(origMapValues, this, args);
+      return {
+        ...iter,
+        [Symbol.iterator]() {
+          return this;
+        },
+        next: function(...[value]) {
+          const r = iter.next(value);
+          if (!r.done) {
+            const v = r.value;
+            if (v?.maps instanceof Set) {
+              for (const y of v.maps) {
+                if (y?.flyTo) {
+                  Manager.wplaceMap = y;
+                  Map.prototype.values = origMapValues;
+                  break;
+                }
+              }
+            } else if (v?._map?.flyTo) {
+              Manager.wplaceMap = v?._map;
               Map.prototype.values = origMapValues;
             }
-          });
-      });
-      return origMapValues.call(this);
+          }
+          return r;
+        }
+      };
     };
     Map.prototype.values = hookedMapValues;
     let canvas;

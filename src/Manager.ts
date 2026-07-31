@@ -516,7 +516,37 @@ class ManagerClass {
     async getMapObject(): Promise<void> {
         // Hook Map.values function
         const origMapValues = Map.prototype.values;
-        const hookedMapValues = function (this: Map<any, any>): MapIterator<any> {
+
+        const hookedMapValues = function (this: Map<any, any>, ...args: any[]): MapIterator<any> {
+            const iter: MapIterator<any> = Reflect.apply(origMapValues, this, args);
+            return {
+                ...iter,
+                [Symbol.iterator](): MapIterator<any> {
+                    return this;
+                },
+                next: function (...[value]: [] | [unknown]): IteratorResult<any, undefined> {
+                    const r = iter.next(value);
+                    if (!r.done) {
+                        const v = r.value;
+                        if (v?.maps instanceof Set) {
+                            for (const y of v.maps) {
+                                if (y?.flyTo) {
+                                    Manager.wplaceMap = y;
+                                    Map.prototype.values = origMapValues;
+                                    break;
+                                }
+                            }
+                        } else if (v?._map?.flyTo) {
+                            Manager.wplaceMap = v?._map;
+                            Map.prototype.values = origMapValues;
+                        }
+                    }
+                    return r;
+                }
+            };
+        };
+
+        /*const hookedMapValues = function (this: Map<any, any>): MapIterator<any> {
             this.forEach(v => {
                 if (v?.maps instanceof Set)
                     (v.maps as Set<any>).forEach(x => {
@@ -527,7 +557,7 @@ class ManagerClass {
                     });
             });
             return origMapValues.call(this);
-        };
+        };*/
         Map.prototype.values = hookedMapValues;
 
         // Click on the canvas
