@@ -1,5 +1,5 @@
 import { TileCoords } from './Coords';
-import { addAllianceButtonBack, displayStatus, displayTileCoords, displayUserData, importFont, injectOverlay } from './display';
+import { displayStatus, displayTileCoords, displayUserData, importFont, injectOverlay } from './display';
 import { addListeners } from './eventListeners';
 import { Manager } from './Manager';
 import type { ScriptGetInfo, UserData } from './types';
@@ -25,7 +25,6 @@ Manager.getMapObject().then(everythingLoaded);
 
 importFont();
 injectOverlay();
-addAllianceButtonBack();
 addListeners();
 
 Manager.loadGlobals();
