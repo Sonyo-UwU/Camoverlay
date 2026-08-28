@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.16.2
+// @version      1.16.3
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -1124,7 +1124,7 @@ var ManagerClass = class _ManagerClass {
       }
     } else {
       this.teleportCurrentIndex = (this.teleportCurrentIndex + 1) % (t.wrongLocations.length + t.unpaintedLocations.length);
-      picked = this.teleportCurrentIndex < t.wrongLocations.length ? t.wrongLocations[this.teleportCurrentIndex] : t.unpaintedLocations[this.teleportCurrentIndex];
+      picked = this.teleportCurrentIndex < t.wrongLocations.length ? t.wrongLocations[this.teleportCurrentIndex] : t.unpaintedLocations[this.teleportCurrentIndex - t.wrongLocations.length];
     }
     this.flyTo(PixelCoords.fromIndex(picked).toGeoCoords(true), 17.5);
   }
@@ -1412,7 +1412,7 @@ function injectOverlay() {
     color: white;
     font-size: var(--ca-ui-size);
     max-height: 100%;
-    max-width: 19em;
+    max-width: 20em;
     padding: 0.625em;
     position: absolute;
     right: 75px;

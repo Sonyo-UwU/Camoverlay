@@ -652,7 +652,7 @@ class ManagerClass {
         }
         else {
             this.teleportCurrentIndex = (this.teleportCurrentIndex + 1) % (t.wrongLocations.length + t.unpaintedLocations.length);
-            picked = this.teleportCurrentIndex < t.wrongLocations.length ? t.wrongLocations[this.teleportCurrentIndex]! : t.unpaintedLocations[this.teleportCurrentIndex]!;
+            picked = this.teleportCurrentIndex < t.wrongLocations.length ? t.wrongLocations[this.teleportCurrentIndex]! : t.unpaintedLocations[this.teleportCurrentIndex - t.wrongLocations.length]!;
         }
 
         this.flyTo(PixelCoords.fromIndex(picked).toGeoCoords(true), 17.5);
