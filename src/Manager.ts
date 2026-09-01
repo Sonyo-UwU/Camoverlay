@@ -695,19 +695,25 @@ class ManagerClass {
         function discordTimeFormat(time: number, format: string = 'f'): string {
             return `<t:${Math.floor(time / 1000)}:${format}>`;
         }
+        function formatTemplate(name: string, total: number, unpainted: number, wrong: number) {
+            const painted = total - unpainted - wrong;
+            return `- **${name}**: ` +
+                `${painted} / ${total} (${Math.round(painted / total * 1000) / 10}%)` +
+                (wrong > 0 ? ` • ${wrong} wrong` : '');
+        }
 
-        const templatesInfo = this.templates.map(template => {
-            const painted = template.totalProgress.total - template.totalProgress.unpainted - template.totalProgress.wrong;
-            return `- **${template.name}**: ` +
-                `${painted} / ${template.totalProgress.total} (${Math.round(painted / template.totalProgress.total * 1000) / 10}%)` +
-                (template.totalProgress.wrong > 0 ? ` • ${template.totalProgress.wrong} wrong` : '');
-        }).join('\n');
+        const templatesInfo = this.templates.map(template => formatTemplate(template.name, template.totalProgress.total, template.totalProgress.unpainted, template.totalProgress.wrong)).join('\n');
+        const totalInfo = formatTemplate('Total',
+                                        this.templates.map(x => x.totalProgress.total).reduce((sum, x) => sum + x, 0),
+                                        this.templates.map(x => x.totalProgress.unpainted).reduce((sum, x) => sum + x, 0),
+                                        this.templates.map(x => x.totalProgress.wrong).reduce((sum, x) => sum + x, 0));
 
         const fullChargesTime = this.userFullCharges.getTime();
         const message =
             `Last data from ${discordTimeFormat(Date.now())}:\n` +
             `## Full charges:\n${discordTimeFormat(fullChargesTime)} (${discordTimeFormat(fullChargesTime, 'R')})` +
-            (this.templates.length > 0 ? `\n## Templates progress:\n${templatesInfo}` : '');
+            (this.templates.length > 0 ? `\n## Templates progress:\n${templatesInfo}` : '') +
+            (this.templates.length > 1 ? `\n${totalInfo}` : '');
 
         return message;
     }

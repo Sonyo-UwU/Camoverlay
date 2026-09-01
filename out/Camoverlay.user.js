@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.16.3
+// @version      1.16.4
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -1158,16 +1158,19 @@ var ManagerClass = class _ManagerClass {
     function discordTimeFormat(time, format = "f") {
       return `<t:${Math.floor(time / 1e3)}:${format}>`;
     }
-    const templatesInfo = this.templates.map((template) => {
-      const painted = template.totalProgress.total - template.totalProgress.unpainted - template.totalProgress.wrong;
-      return `- **${template.name}**: ${painted} / ${template.totalProgress.total} (${Math.round(painted / template.totalProgress.total * 1e3) / 10}%)` + (template.totalProgress.wrong > 0 ? ` \u2022 ${template.totalProgress.wrong} wrong` : "");
-    }).join("\n");
+    function formatTemplate(name, total, unpainted, wrong) {
+      const painted = total - unpainted - wrong;
+      return `- **${name}**: ${painted} / ${total} (${Math.round(painted / total * 1e3) / 10}%)` + (wrong > 0 ? ` \u2022 ${wrong} wrong` : "");
+    }
+    const templatesInfo = this.templates.map((template) => formatTemplate(template.name, template.totalProgress.total, template.totalProgress.unpainted, template.totalProgress.wrong)).join("\n");
+    const totalInfo = formatTemplate("Total", this.templates.map((x) => x.totalProgress.total).reduce((sum, x) => sum + x, 0), this.templates.map((x) => x.totalProgress.unpainted).reduce((sum, x) => sum + x, 0), this.templates.map((x) => x.totalProgress.wrong).reduce((sum, x) => sum + x, 0));
     const fullChargesTime = this.userFullCharges.getTime();
     const message = `Last data from ${discordTimeFormat(Date.now())}:
 ## Full charges:
 ${discordTimeFormat(fullChargesTime)} (${discordTimeFormat(fullChargesTime, "R")})` + (this.templates.length > 0 ? `
 ## Templates progress:
-${templatesInfo}` : "");
+${templatesInfo}` : "") + (this.templates.length > 1 ? `
+${totalInfo}` : "");
     return message;
   }
   async updateDiscordConnection() {
