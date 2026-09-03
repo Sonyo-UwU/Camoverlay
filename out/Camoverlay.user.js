@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.16.4
+// @version      1.16.5
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -202,7 +202,7 @@ var Template = class _Template {
     return ix >= 0 && ix < this.width && iy >= 0 && iy < this.height;
   }
   async drawOnTile(tile, ctx, trackProgress) {
-    if (!this.enabled || !this.overlaps(tile.toIndex()))
+    if (!this.overlaps(tile.toIndex()))
       return;
     const imageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
     const canvasImageData = imageData.data;
@@ -218,7 +218,7 @@ var Template = class _Template {
         key,
         patternSize: Manager.patternSize,
         trackProgress,
-        enabled: Manager.enabledColors.entries().toArray(),
+        enabled: !this.enabled ? Manager.enabledColors.entries().map((x) => [x[0], false]).toArray() : Manager.enabledColors.entries().toArray(),
         modifyPixels: this.modifyPixels,
         canvasWidth: ctx.canvas.width,
         canvas: canvasImageData.buffer
@@ -636,7 +636,6 @@ var ManagerClass = class _ManagerClass {
   templates;
   tilesInfo;
   enabledColors;
-  lockColorList;
   teleportCurrentIndex;
   lastClickedCoords;
   loggedIn;
@@ -673,7 +672,6 @@ var ManagerClass = class _ManagerClass {
     this.templates = [];
     this.tilesInfo = /* @__PURE__ */ new Map();
     this.enabledColors = /* @__PURE__ */ new Map();
-    this.lockColorList = false;
     this.teleportCurrentIndex = 0;
     this.lastClickedCoords = null;
     this.loggedIn = false;
@@ -861,8 +859,6 @@ var ManagerClass = class _ManagerClass {
     this.rebuildColorList();
   }
   rebuildColorList() {
-    if (this.lockColorList)
-      return;
     const list = document.getElementById("ca-color-list");
     while (list.firstChild)
       list.firstChild.remove();
@@ -935,7 +931,7 @@ var ManagerClass = class _ManagerClass {
     const tileIndex = tile.toIndex();
     let overlap = false;
     for (const template of this.templates) {
-      if (template.enabled && template.overlaps(tileIndex)) {
+      if (template.overlaps(tileIndex)) {
         overlap = true;
         break;
       }
@@ -1000,7 +996,7 @@ var ManagerClass = class _ManagerClass {
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(await createImageBitmap(blob), 0, 0, canvas.width, canvas.height);
     for (const template of this.templates)
-      if (template.enabled)
+      if (template.enabled || trackProgress)
         await template.drawOnTile(tile, ctx, trackProgress);
     return await canvas.convertToBlob();
   }
@@ -1009,18 +1005,8 @@ var ManagerClass = class _ManagerClass {
       for (const idx of template.tiles.keys())
         if (!this.tilesInfo.has(idx)) {
           const tileCoords = TileCoords.fromIndex(idx);
-          const wasEnabled = template.enabled;
-          if (!wasEnabled) {
-            template.enabled = true;
-            this.lockColorList = true;
-          }
           await unsafeWindow.fetch(`https://backend.wplace.live/files/s0/tiles/${tileCoords.x}/${tileCoords.y}.png`);
-          template.enabled = wasEnabled;
         }
-    if (this.lockColorList) {
-      this.lockColorList = false;
-      this.rebuildColorList();
-    }
   }
   /* Snipet inspired from https://github.com/t-wy/Wplace-BlueMarble-Userscripts/tree/custom-improve */
   async getMapObject() {

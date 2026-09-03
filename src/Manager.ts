@@ -25,7 +25,6 @@ class ManagerClass {
     templates: Template[];
     tilesInfo: Map<TileIndex, TileInfo>;
     enabledColors: Map<WplaceColorId, boolean>;
-    lockColorList: boolean;
     teleportCurrentIndex: number;
     lastClickedCoords: PixelCoords | null;
     loggedIn: boolean;
@@ -67,7 +66,6 @@ class ManagerClass {
         this.templates = [];
         this.tilesInfo = new Map();
         this.enabledColors = new Map();
-        this.lockColorList = false;
         this.teleportCurrentIndex = 0;
         this.lastClickedCoords = null;
         this.loggedIn = false;
@@ -306,9 +304,6 @@ class ManagerClass {
     }
 
     rebuildColorList() {
-        if (this.lockColorList)
-            return;
-
         const list = document.getElementById('ca-color-list')!;
         while (list.firstChild)
             list.firstChild!.remove();
@@ -396,7 +391,7 @@ class ManagerClass {
         // Check if any template overlaps
         let overlap = false;
         for (const template of this.templates) {
-            if (template.enabled && template.overlaps(tileIndex)) {
+            if (template.overlaps(tileIndex)) {
                 overlap = true;
                 break;
             }
@@ -484,7 +479,7 @@ class ManagerClass {
 
 
         for (const template of this.templates)
-            if (template.enabled)
+            if (template.enabled || trackProgress)
                 await template.drawOnTile(tile, ctx, trackProgress);
 
         return await canvas.convertToBlob();
@@ -495,21 +490,8 @@ class ManagerClass {
             for (const idx of template.tiles.keys())
                 if (!this.tilesInfo.has(idx)) {
                     const tileCoords = TileCoords.fromIndex(idx);
-
-                    const wasEnabled = template.enabled;
-                    if (!wasEnabled) {
-                        template.enabled = true;
-                        this.lockColorList = true;
-                    }
-
                     await unsafeWindow.fetch(`https://backend.wplace.live/files/s0/tiles/${tileCoords.x}/${tileCoords.y}.png`);
-
-                    template.enabled = wasEnabled;
                 }
-        if (this.lockColorList) {
-            this.lockColorList = false;
-            this.rebuildColorList();
-        }
     }
 
     /* Snipet inspired from https://github.com/t-wy/Wplace-BlueMarble-Userscripts/tree/custom-improve */

@@ -143,7 +143,7 @@ export default class Template {
     }
 
     async drawOnTile(tile: TileCoords, ctx: OffscreenCanvasRenderingContext2D, trackProgress: boolean): Promise<void> {
-        if (!this.enabled || !this.overlaps(tile.toIndex()))
+        if (!this.overlaps(tile.toIndex()))
             return;
 
         const imageData = ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -163,7 +163,7 @@ export default class Template {
                 key: key,
                 patternSize: Manager.patternSize,
                 trackProgress: trackProgress,
-                enabled: Manager.enabledColors.entries().toArray(),
+                enabled: !this.enabled ? Manager.enabledColors.entries().map(x => [x[0], false] as [WplaceColorId, boolean]).toArray() : Manager.enabledColors.entries().toArray(),
                 modifyPixels: this.modifyPixels,
                 canvasWidth: ctx.canvas.width,
                 canvas: canvasImageData.buffer
