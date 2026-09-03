@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.16.6
+// @version      1.16.7
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -409,11 +409,11 @@ function workerFunction() {
   function rgbToId2(r, g, b) {
     return r * 1e3 * 1e3 + g * 1e3 + b;
   }
-  function closeEnough(r1, g1, b1, r2, g2, b2) {
+  function computeDistance(r1, g1, b1, r2, g2, b2) {
     const dr = r1 - r2;
     const dg = g1 - g2;
     const db = b1 - b2;
-    return dr * dr + dg * dg + db * db <= 57;
+    return dr * dr + dg * dg + db * db;
   }
   function getColor2(r, g, b) {
     const id = rgbToId2(r, g, b);
@@ -427,11 +427,8 @@ function workerFunction() {
     const color = rgbColorMap2.get(id);
     if (color !== void 0)
       return color;
-    for (const color2 of rgbColorMap2.values()) {
-      if (closeEnough(r, g, b, ...color2.rgb))
-        return color2;
-    }
-    return otherColor2;
+    const [colorId, distance] = rgbColorMap2.entries().map(([id2, value]) => [id2, computeDistance(r, g, b, ...value.rgb)]).toArray().sort((a2, b2) => a2[1] - b2[1])[0];
+    return distance < 300 ? rgbColorMap2.get(colorId) : otherColor2;
   }
   Array.prototype.shuffle = function() {
     for (let i = this.length - 1; i > 0; i--) {

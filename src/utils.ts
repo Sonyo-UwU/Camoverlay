@@ -51,11 +51,11 @@ export function twoDigits(n: number, radix: number = 10): string {
 }
 
 
-function closeEnough(r1: number, g1: number, b1: number, r2: number, g2: number, b2: number): boolean {
+function computeDistance(r1: number, g1: number, b1: number, r2: number, g2: number, b2: number): number {
     const dr = r1 - r2;
     const dg = g1 - g2;
     const db = b1 - b2;
-    return dr * dr + dg * dg + db * db <= 57; // Min distance (squared) between 2 colors is 115 with Dark Gray and Dark Slate, so a threshold of 115/2=57.5 is used
+    return dr * dr + dg * dg + db * db;
 }
 
 function rgbToId(r: number, g: number, b: number): WplaceColorId {
@@ -74,11 +74,8 @@ export function getClosestColor(r: number, g: number, b: number): WplaceColor {
     if (color !== undefined)
         return color;
 
-    for (const color of rgbColorMap.values()) {
-        if (closeEnough(r, g, b, ...color.rgb))
-            return color;
-    }
-    return otherColor;
+    const [colorId, distance] = rgbColorMap.entries().map(([id, value]) => [id, computeDistance(r, g, b, ...value.rgb)] as const).toArray().sort((a, b) => a[1]! - b[1]!)[0]!;
+    return distance < 300 ? rgbColorMap.get(colorId)! : otherColor;    
 }
 
 export function getColor(r: number, g: number, b: number): WplaceColor {
