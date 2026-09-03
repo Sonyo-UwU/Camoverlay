@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.16.5
+// @version      1.16.6
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -1691,8 +1691,13 @@ div#ca-overlay {
 
 #ca-template-list {
     font-size: 80%;
-    max-height: 10.1em;
+    max-height: 11.4em;
     overflow: auto;
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+}
+#ca-template-list::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
 }
 #ca-template-list:empty {
     display: none;
