@@ -192,7 +192,7 @@ export function addListeners() {
     });
 
     document.getElementById('ca-enable-selected')!.addEventListener('click', () => {
-        const background = (document.getElementsByClassName('mb-4 mt-3')[0]?.getElementsByClassName('border-primary')[0] as HTMLElement | undefined)?.style.background;
+        const background = (document.getElementsByClassName('paint-palette')[0]?.getElementsByClassName('border-primary')[0] as HTMLElement | undefined)?.style.background;
         if (background === undefined) {
             displayStatus(`No color selected`);
             return;

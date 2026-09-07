@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.16.7
+// @version      1.16.8
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -1830,7 +1830,7 @@ function addColorRow(colorId, progress) {
   paint.addEventListener("click", () => {
     document.getElementsByClassName("btn btn-primary btn-lg sm:btn-xl relative z-30")[0]?.click();
     setTimeout(() => {
-      const container = document.getElementsByClassName("mb-4 mt-3")[0].firstElementChild;
+      const container = document.getElementsByClassName("paint-palette")[0];
       for (const div2 of container.children) {
         const button = div2.firstElementChild;
         const colorName = div2.getAttribute("data-tip");
@@ -2163,7 +2163,7 @@ function addListeners() {
     Manager.storeGlobal();
   });
   document.getElementById("ca-enable-selected").addEventListener("click", () => {
-    const background = document.getElementsByClassName("mb-4 mt-3")[0]?.getElementsByClassName("border-primary")[0]?.style.background;
+    const background = document.getElementsByClassName("paint-palette")[0]?.getElementsByClassName("border-primary")[0]?.style.background;
     if (background === void 0) {
       displayStatus(`No color selected`);
       return;

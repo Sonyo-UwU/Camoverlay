@@ -112,7 +112,7 @@ export function addColorRow(colorId: WplaceColorId, progress: TileProgress): voi
     paint.addEventListener('click', () => {
         (document.getElementsByClassName('btn btn-primary btn-lg sm:btn-xl relative z-30')[0] as HTMLElement | undefined)?.click();
         setTimeout(() => {
-            const container = document.getElementsByClassName('mb-4 mt-3')[0]!.firstElementChild!;
+            const container = document.getElementsByClassName('paint-palette')[0]!;
             for (const div of container.children) {
                 const button = div.firstElementChild as HTMLElement;
                 const colorName = div.getAttribute('data-tip');
