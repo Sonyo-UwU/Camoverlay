@@ -132,7 +132,7 @@ export function addListeners() {
     document.getElementById('ca-fly-to-coords-button')!.addEventListener('click', async () => {
         const coords = Manager.getInputCoords();
         if (coords !== null)
-            Manager.flyTo(coords.toGeoCoords(true));
+            Manager.flyTo(coords.toGeoCoords(true), 17.5);
     });
 
     document.getElementById('ca-setting-ui-size')!.addEventListener('change', e => {

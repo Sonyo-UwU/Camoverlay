@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.16.8
+// @version      1.16.9
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -2113,7 +2113,7 @@ function addListeners() {
   document.getElementById("ca-fly-to-coords-button").addEventListener("click", async () => {
     const coords = Manager.getInputCoords();
     if (coords !== null)
-      Manager.flyTo(coords.toGeoCoords(true));
+      Manager.flyTo(coords.toGeoCoords(true), 17.5);
   });
   document.getElementById("ca-setting-ui-size").addEventListener("change", (e) => {
     Manager.settings.uiSize = e.target.value;
