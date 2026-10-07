@@ -113,14 +113,17 @@ export function addColorRow(colorId: WplaceColorId, progress: TileProgress): voi
         (document.getElementsByClassName('btn btn-primary btn-lg sm:btn-xl relative z-30')[0] as HTMLElement | undefined)?.click();
         setTimeout(async () => {
             let container = document.getElementsByClassName('paint-palette')[0]!;
-            while (!container)
+            for (let i = 0; i < 20 && !container; i++)
             {
                 await new Promise(r => setTimeout(r, 50));
                 container = document.getElementsByClassName('paint-palette')[0]!;
             }
+            if (!container)
+                return;
+
             for (const div of container.children) {
                 const button = div.firstElementChild as HTMLElement;
-                const colorName = div.getAttribute('data-tip');
+                const colorName = button.getAttribute('aria-label');
                 if (colorName === c.name) {
                     button.click();
                     return;
