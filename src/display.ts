@@ -111,8 +111,13 @@ export function addColorRow(colorId: WplaceColorId, progress: TileProgress): voi
     paint.title = 'Double click to teleport to an incorrect pixel';
     paint.addEventListener('click', () => {
         (document.getElementsByClassName('btn btn-primary btn-lg sm:btn-xl relative z-30')[0] as HTMLElement | undefined)?.click();
-        setTimeout(() => {
-            const container = document.getElementsByClassName('paint-palette')[0]!;
+        setTimeout(async () => {
+            let container = document.getElementsByClassName('paint-palette')[0]!;
+            while (!container)
+            {
+                await new Promise(r => setTimeout(r, 50));
+                container = document.getElementsByClassName('paint-palette')[0]!;
+            }
             for (const div of container.children) {
                 const button = div.firstElementChild as HTMLElement;
                 const colorName = div.getAttribute('data-tip');
@@ -282,19 +287,14 @@ export function removeTemplateRow(name: string) {
     document.getElementById(`ca-template-id-${name}`)?.remove();
 }
 
-export function clickCloseButton() {
-    const buttons = document.querySelectorAll('[d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"]');
-    buttons[buttons.length - 1]?.parentElement?.parentElement?.click();
-}
-
 export function displayTileCoords(coords: PixelCoords) {
-    const textCoords = `Tile X: ${coords.tx}, Tile Y: ${coords.ty} ; Pixel X: ${coords.px}, Pixel Y: ${coords.py}`;
+    const textCoords = `TX: ${coords.tx}, TY: ${coords.ty} ; PX: ${coords.px}, PY: ${coords.py}`;
 
     const displayCoords = document.getElementsByClassName('ca-display-coords')[0];
     if (displayCoords !== undefined)
         displayCoords.remove();
 
-    const buttonsDiv = document.getElementsByClassName('mt-auto flex w-full justify-between')[0];
+    const buttonsDiv = document.getElementsByClassName('mt-2 flex w-full items-center justify-between gap-1')[0];
     if (buttonsDiv === undefined)
         return;
 
@@ -319,7 +319,9 @@ export function displayTileCoords(coords: PixelCoords) {
             templateToModify.modifyPixels.push(pixelIndex);
             Manager.refreshTiles(coords.toTileIndex(), true);
             button.disabled = true;
-            clickCloseButton();
+            document.getElementsByClassName('game-selected-panel')[0]
+                    ?.querySelector('[d="M7 19H5v-2h2v2Zm12 0h-2v-2h2v2ZM9 15v2H7v-2h2Zm8 2h-2v-2h2v2Zm-6-2H9v-2h2v2Zm4 0h-2v-2h2v2Zm-2-2h-2v-2h2v2Zm-2-2H9V9h2v2Zm4 0h-2V9h2v2ZM9 9H7V7h2v2Zm8 0h-2V7h2v2ZM7 7H5V5h2v2Zm12 0h-2V5h2v2Z"]')
+                    ?.parentElement?.parentElement?.click();
         });
     }
 

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.16.9
+// @version      1.16.10
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -1060,7 +1060,7 @@ var ManagerClass = class _ManagerClass {
       let i2 = 0;
       do {
         await new Promise((resolve) => setTimeout(resolve, 50));
-        popup = document.getElementsByClassName("rounded-t-box bg-base-100 border-base-300 sm:rounded-b-box w-full border-t bg-cover bg-center pt-2 sm:mb-3 sm:shadow-xl")[0]?.querySelector('[d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"]')?.parentElement?.parentElement;
+        popup = document.getElementsByClassName("game-selected-panel")[0]?.querySelector('[d="M7 19H5v-2h2v2Zm12 0h-2v-2h2v2ZM9 15v2H7v-2h2Zm8 2h-2v-2h2v2Zm-6-2H9v-2h2v2Zm4 0h-2v-2h2v2Zm-2-2h-2v-2h2v2Zm-2-2H9V9h2v2Zm4 0h-2V9h2v2ZM9 9H7V7h2v2Zm8 0h-2V7h2v2ZM7 7H5V5h2v2Zm12 0h-2V5h2v2Z"]')?.parentElement?.parentElement;
         i2++;
       } while (popup == null && i2 < 10);
     }
@@ -1370,6 +1370,7 @@ function injectOverlay() {
 .ca-display-coords {
     font-size: 11px;
     padding-inline: calc(var(--spacing)*1.5);
+    margin-top: var(--spacing);
 }
 
 .ca-mark-as-correct {
@@ -1829,8 +1830,12 @@ function addColorRow(colorId, progress) {
   paint.title = "Double click to teleport to an incorrect pixel";
   paint.addEventListener("click", () => {
     document.getElementsByClassName("btn btn-primary btn-lg sm:btn-xl relative z-30")[0]?.click();
-    setTimeout(() => {
-      const container = document.getElementsByClassName("paint-palette")[0];
+    setTimeout(async () => {
+      let container = document.getElementsByClassName("paint-palette")[0];
+      while (!container) {
+        await new Promise((r) => setTimeout(r, 50));
+        container = document.getElementsByClassName("paint-palette")[0];
+      }
       for (const div2 of container.children) {
         const button = div2.firstElementChild;
         const colorName = div2.getAttribute("data-tip");
@@ -1971,16 +1976,12 @@ function updateTemplatePixelCount(template) {
 function removeTemplateRow(name) {
   document.getElementById(`ca-template-id-${name}`)?.remove();
 }
-function clickCloseButton() {
-  const buttons = document.querySelectorAll('[d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"]');
-  buttons[buttons.length - 1]?.parentElement?.parentElement?.click();
-}
 function displayTileCoords(coords) {
-  const textCoords = `Tile X: ${coords.tx}, Tile Y: ${coords.ty} ; Pixel X: ${coords.px}, Pixel Y: ${coords.py}`;
+  const textCoords = `TX: ${coords.tx}, TY: ${coords.ty} ; PX: ${coords.px}, PY: ${coords.py}`;
   const displayCoords = document.getElementsByClassName("ca-display-coords")[0];
   if (displayCoords !== void 0)
     displayCoords.remove();
-  const buttonsDiv = document.getElementsByClassName("mt-auto flex w-full justify-between")[0];
+  const buttonsDiv = document.getElementsByClassName("mt-2 flex w-full items-center justify-between gap-1")[0];
   if (buttonsDiv === void 0)
     return;
   const template = document.getElementById("ca-coords-template").content.cloneNode(true);
@@ -1998,7 +1999,7 @@ function displayTileCoords(coords) {
       templateToModify.modifyPixels.push(pixelIndex);
       Manager.refreshTiles(coords.toTileIndex(), true);
       button.disabled = true;
-      clickCloseButton();
+      document.getElementsByClassName("game-selected-panel")[0]?.querySelector('[d="M7 19H5v-2h2v2Zm12 0h-2v-2h2v2ZM9 15v2H7v-2h2Zm8 2h-2v-2h2v2Zm-6-2H9v-2h2v2Zm4 0h-2v-2h2v2Zm-2-2h-2v-2h2v2Zm-2-2H9V9h2v2Zm4 0h-2V9h2v2ZM9 9H7V7h2v2Zm8 0h-2V7h2v2ZM7 7H5V5h2v2Zm12 0h-2V5h2v2Z"]')?.parentElement?.parentElement?.click();
     });
   }
   buttonsDiv.parentElement?.insertBefore(template, buttonsDiv);
@@ -2054,9 +2055,6 @@ function addListeners() {
       case "i":
         if (Manager.loggedIn)
           document.getElementsByClassName("btn btn-primary btn-lg sm:btn-xl relative z-30")[0]?.click();
-        break;
-      case "Escape":
-        clickCloseButton();
         break;
     }
   });

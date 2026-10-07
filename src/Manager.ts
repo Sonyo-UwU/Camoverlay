@@ -571,9 +571,9 @@ class ManagerClass {
             let i = 0;
             do {
                 await new Promise((resolve) => setTimeout(resolve, 50));
-                popup = (document.getElementsByClassName('rounded-t-box bg-base-100 border-base-300 sm:rounded-b-box w-full border-t bg-cover bg-center pt-2 sm:mb-3 sm:shadow-xl')[0]
-                    ?.querySelector('[d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"]')
-                    ?.parentElement?.parentElement) as HTMLButtonElement | null;
+                popup = (document.getElementsByClassName('game-selected-panel')[0]
+                    ?.querySelector('[d="M7 19H5v-2h2v2Zm12 0h-2v-2h2v2ZM9 15v2H7v-2h2Zm8 2h-2v-2h2v2Zm-6-2H9v-2h2v2Zm4 0h-2v-2h2v2Zm-2-2h-2v-2h2v2Zm-2-2H9V9h2v2Zm4 0h-2V9h2v2ZM9 9H7V7h2v2Zm8 0h-2V7h2v2ZM7 7H5V5h2v2Zm12 0h-2V5h2v2Z"]')
+                    ?.parentElement?.parentElement) as HTMLButtonElement | null;    
                 i++;
             } while (popup == null && i < 10);
         }

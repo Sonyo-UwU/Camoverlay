@@ -1,6 +1,7 @@
 .ca-display-coords {
     font-size: 11px;
     padding-inline: calc(var(--spacing)*1.5);
+    margin-top: var(--spacing);
 }
 
 .ca-mark-as-correct {
