@@ -80,7 +80,7 @@ div#ca-overlay {
     display: inline-block;
     font-size: 150%;
     font-weight: bold;
-    vertical-align: middle;
+    color: white;
 }
 
 #ca-overlay hr {
