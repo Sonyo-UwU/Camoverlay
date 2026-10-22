@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.16.12
+// @version      1.16.13
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -1064,7 +1064,7 @@ var ManagerClass = class _ManagerClass {
         i2++;
       } while (popup == null && i2 < 10);
     }
-    popup.click();
+    popup?.click();
   }
   flyTo(center, zoom = 13) {
     this.wplaceMap?.flyTo({ center, zoom });

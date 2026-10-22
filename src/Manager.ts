@@ -577,7 +577,7 @@ class ManagerClass {
                 i++;
             } while (popup == null && i < 10);
         }
-        popup.click();
+        popup?.click();
     }
 
     flyTo(center: [number, number], zoom: number = 13) {
