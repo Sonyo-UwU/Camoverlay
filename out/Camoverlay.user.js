@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.16.13
+// @version      1.16.14
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -1066,8 +1066,8 @@ var ManagerClass = class _ManagerClass {
     }
     popup?.click();
   }
-  flyTo(center, zoom = 13) {
-    this.wplaceMap?.flyTo({ center, zoom });
+  flyTo(center, zoom = 13, speed = 1.2) {
+    this.wplaceMap?.flyTo({ center, zoom, speed });
   }
   flyToFit(topLeft, width, height, extraProportion = 1.1) {
     if (this.wplaceMap === null)
@@ -1078,7 +1078,7 @@ var ManagerClass = class _ManagerClass {
     const xZoom = getZoomLevelForPixelSize(canvas.clientWidth / width / extraProportion);
     const yZoom = getZoomLevelForPixelSize(canvas.clientHeight / height / extraProportion);
     const finalZoom = Math.max(10.7, Math.min(18, xZoom, yZoom));
-    this.flyTo(new PixelCoords(topLeft.tx, topLeft.ty, topLeft.px + width / 2, topLeft.py + height / 2).toGeoCoords(false), finalZoom);
+    this.flyTo(new PixelCoords(topLeft.tx, topLeft.ty, topLeft.px + width / 2, topLeft.py + height / 2).toGeoCoords(false), finalZoom, 1.5);
   }
   flyToNextIncorrect(t) {
     if (t.wrongLocations.length == 0 && t.unpaintedLocations.length == 0)
@@ -1109,7 +1109,7 @@ var ManagerClass = class _ManagerClass {
       this.teleportCurrentIndex = (this.teleportCurrentIndex + 1) % (t.wrongLocations.length + t.unpaintedLocations.length);
       picked = this.teleportCurrentIndex < t.wrongLocations.length ? t.wrongLocations[this.teleportCurrentIndex] : t.unpaintedLocations[this.teleportCurrentIndex - t.wrongLocations.length];
     }
-    this.flyTo(PixelCoords.fromIndex(picked).toGeoCoords(true), 17.5);
+    this.flyTo(PixelCoords.fromIndex(picked).toGeoCoords(true), 17.5, 2.5);
   }
   async enableDiscordConnection() {
     const discordId = prompt("Enter your discord id:", this.discordId);

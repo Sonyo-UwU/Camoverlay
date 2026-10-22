@@ -580,8 +580,8 @@ class ManagerClass {
         popup?.click();
     }
 
-    flyTo(center: [number, number], zoom: number = 13) {
-        this.wplaceMap?.flyTo({ center: center, zoom: zoom });
+    flyTo(center: [number, number], zoom: number = 13, speed: number = 1.2) {
+        this.wplaceMap?.flyTo({ center: center, zoom: zoom, speed: speed });
     }
 
     flyToFit(topLeft: PixelCoords, width: number, height: number, extraProportion: number = 1.1): void {
@@ -596,7 +596,7 @@ class ManagerClass {
         const yZoom = getZoomLevelForPixelSize(canvas.clientHeight / height / extraProportion);
         const finalZoom = Math.max(10.7, Math.min(18, xZoom, yZoom));
 
-        this.flyTo(new PixelCoords(topLeft.tx, topLeft.ty, topLeft.px + width / 2, topLeft.py + height / 2).toGeoCoords(false), finalZoom);
+        this.flyTo(new PixelCoords(topLeft.tx, topLeft.ty, topLeft.px + width / 2, topLeft.py + height / 2).toGeoCoords(false), finalZoom, 1.5);
     }
 
     flyToNextIncorrect(t: TeleportPixels): void {
@@ -637,7 +637,7 @@ class ManagerClass {
             picked = this.teleportCurrentIndex < t.wrongLocations.length ? t.wrongLocations[this.teleportCurrentIndex]! : t.unpaintedLocations[this.teleportCurrentIndex - t.wrongLocations.length]!;
         }
 
-        this.flyTo(PixelCoords.fromIndex(picked).toGeoCoords(true), 17.5);
+        this.flyTo(PixelCoords.fromIndex(picked).toGeoCoords(true), 17.5, 2.5);
     }
 
     async enableDiscordConnection(): Promise<void> {

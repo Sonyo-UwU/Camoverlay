@@ -111,7 +111,7 @@ export type UserData = {
 };
 
 export type WplaceMap = {
-    flyTo: (e: { center: [number, number]; zoom: number; }, o?: never) => void;
+    flyTo: (e: { center: [number, number]; zoom: number; speed: number; }, o?: never) => void;
     refreshTiles: (p: string, e?: unknown) => void;
 };
 
