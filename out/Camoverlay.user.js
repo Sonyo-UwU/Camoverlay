@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.17.1
+// @version      1.17.2
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -1831,7 +1831,7 @@ function addColorRow(colorId, progress) {
   const paint = row.querySelector("button");
   if (!Manager.loggedIn)
     paint.style.display = "none";
-  paint.title = "Double click to teleport to an incorrect pixel";
+  paint.title = "Double click or press t to teleport to an incorrect pixel";
   paint.addEventListener("click", () => {
     document.getElementsByClassName("btn btn-primary btn-lg sm:btn-xl relative z-30")[0]?.click();
     setTimeout(async () => {
