@@ -31,7 +31,7 @@ Manager.loadGlobals();
 await Manager.loadTemplates();
 
 // Display version
-document.getElementById('ca-version')!.innerText = 'version ' + GM_info.script.version;
+document.getElementById('ca-version')!.innerText = 'v' + GM_info.script.version;
 
 // Override fetch
 const originalFetch = unsafeWindow.fetch;

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Camoverlay
 // @namespace    https://github.com/Sonyo-UwU/
-// @version      1.17.0
+// @version      1.17.1
 // @description  A remake of Blue Marble
 // @author       Sonyo
 // @license      ISC
@@ -1358,10 +1358,10 @@ function injectOverlay() {
         <div id="ca-bottom">
             <div>
                 <button id="ca-converter-button" class="ca-icon-button">🎨</button>
+                <small id="ca-version"></small>
             </div>
             <small>
-                <span>Made by Sonyo<br>Original by SwingTheVine<br>Art by <a href="https://camomille1411en.carrd.co/" target="_blank">camomille1411</a><br></span>
-                <span id="ca-version"></span>
+                Made by Sonyo<br>Art by <a href="https://camomille1411en.carrd.co/" target="_blank">camomille1411</a>
             </small>
         </div>
     </div>
@@ -1689,7 +1689,7 @@ div#ca-overlay {
 
 #ca-template-list {
     font-size: 80%;
-    max-height: 11.4em;
+    max-height: 25em;
     overflow: auto;
     -ms-overflow-style: none; /* IE and Edge */
     scrollbar-width: none; /* Firefox */
@@ -1756,6 +1756,10 @@ div#ca-overlay {
 #ca-bottom {
     display: flex;
     justify-content: space-between;
+}
+
+#ca-version {
+    margin-left: 1ch;
 }
 `);
 }
@@ -2255,7 +2259,7 @@ injectOverlay();
 addListeners();
 Manager.loadGlobals();
 await Manager.loadTemplates();
-document.getElementById("ca-version").innerText = "version " + GM_info.script.version;
+document.getElementById("ca-version").innerText = "v" + GM_info.script.version;
 var originalFetch = unsafeWindow.fetch;
 unsafeWindow.fetch = async function(input, init) {
   const url = input instanceof Request ? input.url : input;
