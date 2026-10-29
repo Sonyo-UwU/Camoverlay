@@ -55,6 +55,19 @@ export function addListeners() {
                     }
                 }
                 break;
+            case 't':
+                if (!Manager.loggedIn)
+                    break;
+                    
+                const colorListT = document.getElementById('ca-color-list')!;
+                for (let i = 0; i < colorListT.childElementCount; i++) {
+                    if ((colorListT.children[i]!.firstElementChild as HTMLInputElement).checked) {
+                        const e = new MouseEvent('dblclick');
+                        (colorListT.children[i]!.children[2] as HTMLElement).dispatchEvent(e);
+                        break;
+                    }
+                }
+                break;
             case 'i':
                 if (Manager.loggedIn)
                     (document.getElementsByClassName('btn btn-primary btn-lg sm:btn-xl relative z-30')[0] as HTMLElement | undefined)?.click();
